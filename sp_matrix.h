@@ -275,9 +275,7 @@ void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
 
 /* Print contens of the matrix in index form to the stdout */
 void sp_matrix_printf(sp_matrix_ptr self);
-#ifdef DUMP_DATA
-void sp_matrix_dump(sp_matrix_ptr self, char* filename);
-void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self, char* filename);
-#endif 
+void sp_matrix_dump(sp_matrix_ptr self, const char* filename);
+void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self, const char* filename);
 
 #endif /* __SP_MATRIX_H__ */

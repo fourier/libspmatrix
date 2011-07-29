@@ -25,7 +25,7 @@ enum
 #define EQL(x,y) ((fabs((x)-(y))<= fmax(fabs((x)),fabs((y)))*(DBL_EPSILON)) ? TRUE:FALSE)
 
 
-BOOL test_sp_matrix()
+static BOOL test_sp_matrix()
 {
   BOOL result = TRUE;
   sp_matrix mtx,mtx2,mtx3;
@@ -89,7 +89,7 @@ BOOL test_sp_matrix()
   return result;
 }
 
-BOOL test_triangle_solver()
+static BOOL test_triangle_solver()
 {
   BOOL result = TRUE;
   int i;
@@ -131,7 +131,7 @@ BOOL test_triangle_solver()
   return result;
 }
 
-BOOL test_cg_solver()
+static BOOL test_cg_solver()
 {
   BOOL result = TRUE;
   sp_matrix mtx;
@@ -169,7 +169,7 @@ BOOL test_cg_solver()
   return result;
 }
 
-BOOL test_ilu()
+static BOOL test_ilu()
 {
   BOOL result = TRUE;
   sp_matrix mtx;
@@ -293,7 +293,7 @@ BOOL test_ilu()
   return result;
 }
 
-BOOL test_pcg_ilu_solver()
+static BOOL test_pcg_ilu_solver()
 {
   BOOL result = TRUE;
   sp_matrix mtx;
@@ -336,7 +336,7 @@ BOOL test_pcg_ilu_solver()
   return result;
 }
 
-BOOL test_cholesky()
+static BOOL test_cholesky()
 {
   BOOL result = TRUE;
   /* initial matrix */

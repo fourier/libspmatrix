@@ -925,8 +925,7 @@ void sp_matrix_printf(sp_matrix_ptr self)
     indexed_array_printf(&self->storage[i]);
 }
 
-#ifdef DUMP_DATA
-void sp_matrix_dump(sp_matrix_ptr self,char* filename)
+void sp_matrix_dump(sp_matrix_ptr self, const char* filename)
 {
   FILE* f;
   int i,j;
@@ -950,11 +949,11 @@ void sp_matrix_dump(sp_matrix_ptr self,char* filename)
 }
 
 
-void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self,char* filename)
+void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self,const char* filename)
 {
   int i;
   FILE* f;
-  if ((f = fopen("global_matrix_skyline.txt","w+")))
+  if ((f = fopen(filename,"w+")))
   {
     fprintf(f,"adiag = [");
     for ( i = 0; i < self->rows_count; ++ i )
@@ -983,4 +982,3 @@ void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self,char* filename)
     fclose(f);
   }
 }
-#endif
