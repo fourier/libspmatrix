@@ -1,4 +1,23 @@
 /* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/*
+ Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+ 
+ This file is part of libspmatrix.
+
+ libspmatrix is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published
+ by the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ libspmatrix is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public License
+ along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef __SP_MATRIX_H__
 #define __SP_MATRIX_H__
 
@@ -6,7 +25,8 @@ extern const int MAX_ITER;
 extern const double TOLERANCE;
 
 
-typedef enum sparse_storage_type_enum {
+typedef enum
+{
   CRS = 0,                      /* Compressed Row Storage */
   CCS = 1                       /* Compressed Column Storage */
 } sparse_storage_type;
@@ -21,13 +41,14 @@ enum
 /*
  * Sparse matrix row/column storage array
  */
-typedef struct indexed_array_tag {
+typedef struct
+{
   int width;                    /* size of an array */
   int last_index;               /* last stored index, i.e. if width = 20
                                  * it will be 9 if only 10 nonzero elements
                                  * stored */
   int  *indexes;                /* array of column/row indexes */
-  double *values;                 /* array of values */
+  double *values;               /* array of values */
 } indexed_array;
 typedef indexed_array* indexed_array_ptr;
 
@@ -35,11 +56,12 @@ typedef indexed_array* indexed_array_ptr;
  * Sparse matrix row storage 
  * Internal format based on CRS or CCS
  */
-typedef struct sp_matrix_tag {
+typedef struct
+{
   int rows_count;
   int cols_count;
   indexed_array_ptr storage;
-  int ordered;                              /* if matrix was finalized */
+  int ordered;                               /* if matrix was finalized */
   sparse_storage_type storage_type;          /* Storage type */
 } sp_matrix;
 typedef sp_matrix* sp_matrix_ptr;
@@ -50,7 +72,8 @@ typedef sp_matrix* sp_matrix_ptr;
  * Constructed from Sparse Matrix with assumption of the symmetric
  * matrix portrait
  */
-typedef struct sp_matrix_skyline_tag {
+typedef struct
+{
   int rows_count;
   int cols_count;
   int nonzeros;                 /* number of nonzero elements in matrix */
@@ -70,7 +93,8 @@ typedef sp_matrix_skyline* sp_matrix_skyline_ptr;
  * ILU decomposition of the sparse matrix in Skyline (CSLR) format
  * ILU decomposition keeps the symmetric portrait of the sparse matrix
  */
-typedef struct sp_matrix_skyline_ilu_tag {
+typedef struct
+{
   sp_matrix_skyline parent;
   double *ilu_diag;              /* U matrix diagonal */
   double *ilu_lowertr;           /* nonzero elements of the lower(L) matrix */
@@ -169,7 +193,8 @@ void sp_matrix_compress(sp_matrix_ptr self);
 
 
 /* Matrix-vector multiplication
- * y = A*x*/
+ * y = A*x
+ */
 void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y);
 
 /*
