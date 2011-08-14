@@ -521,8 +521,8 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
 
 void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
 {
-  double tolerance = 1e-15;
-  int max_iter = 20000;
+  double tolerance = TOLERANCE;
+  int max_iter = MAX_ITER;
   int i;
   double tol = 0;
   double* r = (double*)malloc(self->rows_count*sizeof(double));
