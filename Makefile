@@ -20,7 +20,9 @@
 
 CC = gcc
 
-CFLAGS = -ggdb -pg -ansi -pedantic -Wall -Wextra -Wmissing-include-dirs -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations 
+CFLAGS = -ggdb -g -ansi -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations
+# this option not works for gcc 3.4.4
+#-Wmissing-include-dirs
 INCLUDES = -I .
 LINKFLAGS = -L. -lspmatrix 
 

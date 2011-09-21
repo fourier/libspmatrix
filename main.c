@@ -1,21 +1,21 @@
 /* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /*
- Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+  Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
  
- This file is part of libspmatrix.
+  This file is part of libspmatrix.
 
- libspmatrix is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published
- by the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+  libspmatrix is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as published
+  by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
- libspmatrix is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Lesser General Public License for more details.
+  libspmatrix is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
- You should have received a copy of the GNU Lesser General Public License
- along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU Lesser General Public License
+  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <math.h>
@@ -25,27 +25,9 @@
 
 #include "sp_matrix.h"
 
-typedef int BOOL;
-enum
+static int test_sp_matrix()
 {
-  FALSE = 0,
-  TRUE = 1
-};
-
-#ifndef DBL_EPSILON
-#define DBL_EPSILON 2.2204460492503131e-16
-#endif
-
-/*
- * Equals macro for double values
- * See http://www.rsdn.ru/forum/cpp/2640596.1.aspx for explanations
- */
-#define EQL(x,y) ((fabs((x)-(y))<= fmax(fabs((x)),fabs((y)))*(DBL_EPSILON)) ? TRUE:FALSE)
-
-
-static BOOL test_sp_matrix()
-{
-  BOOL result = TRUE;
+  int result = 1;
   sp_matrix mtx,mtx2,mtx3;
   double b[] = {1, 2, 3, 4, 3, 2, 1};
   double expected[] = {25, 34, 40, 45, 42, 16, 23};
@@ -74,7 +56,7 @@ static BOOL test_sp_matrix()
   MTX(&mtx,6,0,2);MTX(&mtx,6,1,2);MTX(&mtx,6,4,3);MTX(&mtx,6,6,8);
 
   sp_matrix_compress(&mtx);
-
+  
   /* 1st test - matrix-vector multiplication */
   sp_matrix_mv(&mtx,b,x);
   for (i = 0; i < size; ++ i)
@@ -107,9 +89,9 @@ static BOOL test_sp_matrix()
   return result;
 }
 
-static BOOL test_triangle_solver()
+static int test_triangle_solver()
 {
-  BOOL result = TRUE;
+  int result = 1;
   int i;
   sp_matrix mtx,mtx2;
   double x[5] = {0};
@@ -129,6 +111,7 @@ static BOOL test_triangle_solver()
   MTX(&mtx,2,0,-1);MTX(&mtx,2,2,3);
   MTX(&mtx,3,1,5);MTX(&mtx,3,3,6);
   MTX(&mtx,4,2,-2);MTX(&mtx,4,4,11);
+
   sp_matrix_lower_solve(&mtx,5,b,x);
   for (i = 0; i < 5; ++ i)
     result &= EQL(x_expected[i],x[i]);
@@ -149,13 +132,14 @@ static BOOL test_triangle_solver()
   return result;
 }
 
-static BOOL test_cg_solver()
+static int test_cg_solver()
 {
-  BOOL result = TRUE;
+  int result = 1;
   sp_matrix mtx;
   double v[3] = {0}, x[3] = {0};
   int max_iter = 20000;
-  double tolerance = 1e-15;
+  const double desired_tolearance = 1e-15;
+  double tolerance = desired_tolearance;
 
   /* matrix solver test  */
 
@@ -176,20 +160,21 @@ static BOOL test_cg_solver()
   MTX(&mtx,2,0,-2);MTX(&mtx,2,2,5);
 
   sp_matrix_compress(&mtx);
+
   sp_matrix_solve_cg(&mtx,v,v,&max_iter,&tolerance,x);
 
-  result = !( fabs(x[0]-1) > TOLERANCE ||
-              fabs(x[1]-2) > TOLERANCE ||
-              fabs(x[2]-3) > TOLERANCE);
+  result = ((fabs(x[0]-1) < desired_tolearance) &&
+            (fabs(x[1]-2) < desired_tolearance) &&
+            (fabs(x[2]-3) < desired_tolearance));
   sp_matrix_free(&mtx);
   
   printf("test_cg_solver result: *%s*\n",result ? "pass" : "fail");
   return result;
 }
 
-static BOOL test_ilu()
+static int test_ilu()
 {
-  BOOL result = TRUE;
+  int result = 1;
   sp_matrix mtx;
   sp_matrix_skyline m;
   sp_matrix_skyline_ilu ILU;
@@ -311,14 +296,15 @@ static BOOL test_ilu()
   return result;
 }
 
-static BOOL test_pcg_ilu_solver()
+static int test_pcg_ilu_solver()
 {
-  BOOL result = TRUE;
+  int result = 1;
   sp_matrix mtx;
   sp_matrix_skyline_ilu ilu;
   double v[3] = {0}, x[3] = {0};
   int max_iter = 20000;
-  double tolerance = 1e-15;
+  const double desired_tolearance = 1e-15;
+  double tolerance = desired_tolearance;
 
   /* matrix solver test  */
 
@@ -337,15 +323,16 @@ static BOOL test_pcg_ilu_solver()
   MTX(&mtx,0,0,1);MTX(&mtx,0,2,-2);
   MTX(&mtx,1,1,1);
   MTX(&mtx,2,0,-2);MTX(&mtx,2,2,5);
-
   sp_matrix_compress(&mtx);
+
+
   sp_matrix_create_ilu(&mtx,&ilu);
 
   sp_matrix_solve_pcg_ilu(&mtx,&ilu,v,v,&max_iter,&tolerance,x);
 
-  result = !( fabs(x[0]-1) > TOLERANCE ||
-              fabs(x[1]-2) > TOLERANCE ||
-              fabs(x[2]-3) > TOLERANCE);
+  result = ((fabs(x[0]-1) < desired_tolearance) &&
+            (fabs(x[1]-2) < desired_tolearance) &&
+            (fabs(x[2]-3) < desired_tolearance));
 
   sp_matrix_skyline_ilu_free(&ilu);
   sp_matrix_free(&mtx);
@@ -354,9 +341,9 @@ static BOOL test_pcg_ilu_solver()
   return result;
 }
 
-static BOOL test_cholesky()
+static int test_cholesky()
 {
-  BOOL result = TRUE;
+  int result = 0;
   /* initial matrix */
   /* {90, 6, 4, 46, 29, 0, 26}, */
   /* {6, 127, 34, 22, 7, 0, 38}, */
@@ -407,7 +394,6 @@ static BOOL test_cholesky()
   /* initialize skyline format from given CRS format */
   sp_matrix_skyline_init(&m,&mtx);
 
-
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_skyline_free(&m);
@@ -422,7 +408,8 @@ int main(int argc, char *argv[])
     test_triangle_solver() &&
     test_cg_solver() &&
     test_ilu() &&
-    test_pcg_ilu_solver();
+    test_pcg_ilu_solver() &&
+    test_cholesky();
   
   return 0;
 }

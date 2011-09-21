@@ -27,13 +27,8 @@
 
 #include "sp_matrix.h"
 
-/*
- * SLAE solver constants
- * possibly shall go to the initial data in future
- */
-const int MAX_ITER = 10000;
-const double TOLERANCE = 1e-10;
-
+#define TRUE 1
+#define FALSE 0
 
 void sp_matrix_init(sp_matrix_ptr mtx,
                     int rows,
@@ -192,6 +187,8 @@ void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
   assert(mtx->ordered);
   /* currenty implemented conversion only from CRS format */
   assert(mtx->storage_type == CRS);
+  /* matrix shall be with symmetric portrait */
+  assert(sp_matrix_issymmetric_portrait(mtx));
   
   self->rows_count = mtx->rows_count;
   self->cols_count = mtx->cols_count;
@@ -455,8 +452,78 @@ void sp_matrix_compress(sp_matrix_ptr self)
   printf("- nonzeros: %d\n",stored);
   printf("- fill factor: %.2f %%\n",stored/(size/100.0));
   printf("- avergare nonzeros per row: %d\n",
-         (int)rint(stored/(double)self->rows_count));
+         /* (int)rint(stored/(double)self->rows_count)); */
+         (int)(stored/(double)self->rows_count));
 }
+
+
+int sp_matrix_issymmetric(sp_matrix_ptr self)
+{
+  double *value;
+  int n = self->rows_count;
+  int i,j;
+  if  (self->rows_count != self->cols_count )
+    return 0;
+  if (self->storage_type == CRS)
+  {
+    for ( i = 0; i < n; ++ i)
+      for (j = 0; j < self->storage[i].last_index; ++ j)
+      {
+        value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
+        if ( !value )
+          return FALSE;
+        if (! EQL(*value,self->storage[i].values[j]))
+          return FALSE;
+      }
+  }
+  else                          /* CCS */
+  {
+    for ( i = 0; i < n; ++ i)
+      for (j = 0; j < self->storage[i].last_index; ++ j)
+      {
+        value = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
+        if ( !value )
+          return FALSE;
+        if (! EQL(*value,self->storage[i].values[j]))
+          return FALSE;
+      }
+    
+  }
+  return TRUE;
+}
+
+
+int sp_matrix_issymmetric_portrait(sp_matrix_ptr self)
+{
+  double *value;
+  int n = self->rows_count;
+  int i,j;
+  if  (self->rows_count != self->cols_count )
+    return 0;
+  if (self->storage_type == CRS)
+  {
+    for ( i = 0; i < n; ++ i)
+      for (j = 0; j < self->storage[i].last_index; ++ j)
+      {
+        value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
+        if ( !value )
+          return FALSE;
+      }
+  }
+  else                          /* CCS */
+  {
+    for ( i = 0; i < n; ++ i)
+      for (j = 0; j < self->storage[i].last_index; ++ j)
+      {
+        value = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
+        if ( !value )
+          return FALSE;
+      }
+  }
+  return TRUE;
+}
+
+
 
 void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y)
 {
@@ -519,6 +586,7 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
   }
 }
 
+#if 0
 void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
 {
   double tolerance = TOLERANCE;
@@ -545,6 +613,7 @@ void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
          max_iter,tolerance,tol);
   free(r);
 }
+#endif
 
 void sp_matrix_solve_cg(sp_matrix_ptr self,
                         double* b,
@@ -566,8 +635,8 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
   double residn = 0;
   int size = sizeof(double)*self->rows_count;
   int msize = self->rows_count;
-  int max_iterations = max_iter ? *max_iter : MAX_ITER;
-  double tol = tolerance ? *tolerance : TOLERANCE;
+  int max_iterations = *max_iter;
+  double tol = *tolerance;
   double* r;              /* residual */
   double* p;              /* search direction */
   double* temp;
@@ -575,7 +644,10 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
   /* check if matrix is reordered */
   if (!self->ordered)
     sp_matrix_compress(self);
-  
+
+  /* CG method works only for only symmetric matrices */
+  assert(sp_matrix_issymmetric(self));
+
   /* allocate memory for vectors */
   r = (double*)malloc(size);
   p = (double*)malloc(size);
@@ -675,14 +747,18 @@ void sp_matrix_solve_pcg_ilu(sp_matrix_ptr self,
   double residn = 0;
   int size = sizeof(double)*self->rows_count;
   int msize = self->rows_count;
-  int max_iterations = max_iter ? *max_iter : MAX_ITER;
-  double tol = tolerance ? *tolerance : TOLERANCE;
+  int max_iterations = *max_iter;
+  double tol = *tolerance;
   
   double* r;              /* residual */
   double* r1;             /* backup of the residual */
   double* p;              /* search direction */
   double* z;              /* z = M^{-1}*r */
   double* temp;
+
+  /* PCG method works only for only symmetric matrices */
+  assert(sp_matrix_issymmetric(self));
+
   
   /* allocate memory for vectors */
   r = (double*)malloc(size);
