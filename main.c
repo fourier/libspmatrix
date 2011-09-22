@@ -442,7 +442,9 @@ static int test_istrcmp()
 static int test_load()
 {
   sp_matrix_ptr result = 0;
-  result = sp_matrix_load_file("C:\\projects\\libspmatrix\\bcsstk09.mtx");
+  /* result = sp_matrix_load_file("C:\\projects\\libspmatrix\\bcsstk09.mtx"); */
+  result = sp_matrix_load_file("af23560.mtx");
+
   if (result)
   {
     sp_matrix_free(result);

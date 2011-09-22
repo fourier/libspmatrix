@@ -77,7 +77,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   {
     if ( *header_ptr != *ptr )
     {
-      fprintf(stderr, "Error reading MatrixMarket header!");
+      fprintf(stderr, "Error reading MatrixMarket header!\n");
       return contents;
     }
     header_ptr++, ptr++;
@@ -96,7 +96,10 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   else if (!sp_istrcmp(word,"array"))
     header->storage = MM_ARRAY;
   else
-    fprintf(stderr, "Unkown storage type: %s", word);
+  {
+    fprintf(stderr, "Unkown storage type: %s\n", word);
+    ptr = contents;
+  }
   free((char*)word);
 
   /* extract elements type */
@@ -111,7 +114,10 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   else if (!sp_istrcmp(word,"pattern"))
     header->elements = MM_PATTERN;
   else
-    fprintf(stderr, "Unkown elements type: %s", word);
+  {
+    fprintf(stderr, "Unkown elements type: %s\n", word);
+    ptr = contents;
+  }
   free((char*)word);
 
   /* extract portrait */
@@ -126,10 +132,39 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   else if (!sp_istrcmp(word,"Hermitian"))
     header->portrait = MM_HERMITIAN;
   else
-    fprintf(stderr, "Unkown portrait type: %s", word);
+  {
+    fprintf(stderr, "Unkown portrait type: %s\n", word);
+    ptr = contents;
+  }
   free((char*)word);
 
   return ptr;
+}
+
+/* return 1 if mm-matrix format is supported, 0 otherwise  */
+static int mm_validate_header(mm_header* header)
+{
+  if (header->object != MM_MATRIX)
+  {
+    fprintf(stderr,"MM objects other than matrix are not supported\n");
+    return 0;
+  }
+  if (header->storage != MM_COORDINATE)
+  {
+    fprintf(stderr,"Currently only coordinate format of MM files supported\n");
+    return 0;
+  }
+  if (header->elements == MM_COMPLEX)
+  {
+    fprintf(stderr,"Complex matricies not supported\n");
+    return 0;
+  }
+  if (header->portrait == MM_HERMITIAN)
+  {
+    fprintf(stderr,"Hermitian matricies not supported\n");
+    return 0;
+  }
+  return 1;
 }
 
 static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
@@ -146,7 +181,7 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
   file = fopen(filename,"rt");
   if (!file)
   {
-    fprintf(stderr,"Cannot read file %s", filename);
+    fprintf(stderr,"Cannot read file %s\n", filename);
     return self;
   }
   /* read file contents  */
@@ -162,9 +197,21 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
   fclose(file);
 
   /* TODO: implementation */
-
-  ptr = mm_read_header(contents, &header);
+  do
+  {
+    ptr = mm_read_header(contents, &header);
+    if (ptr != contents)          /* all ok */
+    {
+      if (!mm_validate_header(&header))
+      {
+        printf("Not supported matrix type\n");
+        break;
+      }
+      /* supported type */
+      
+    }
   
+  } while(0);
   /* free resources */
   free(contents);
   return self;

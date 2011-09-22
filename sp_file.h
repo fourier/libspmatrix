@@ -26,7 +26,8 @@
 /*
  * Load the sparse martix from the file.
  * Currently supported formats:
- * MM (matrix market), see http://math.nist.gov/MatrixMarket/formats.html#MMformat
+ * MM (matrix market),
+ * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
  */
 sp_matrix_ptr sp_matrix_load_file(const char* filename);
 
