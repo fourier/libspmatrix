@@ -26,6 +26,7 @@
 #include <assert.h>
 
 #include "sp_matrix.h"
+#include "sp_utils.h"
 
 #define TRUE 1
 #define FALSE 0

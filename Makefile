@@ -24,7 +24,7 @@ CFLAGS = -ggdb -g -ansi -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
 INCLUDES = -I .
-LINKFLAGS = -L. -lspmatrix 
+LINKFLAGS = -L. -lspmatrix -lm
 
 OUTPUT_SRC = main.c
 SOURCES := $(wildcard *.c)

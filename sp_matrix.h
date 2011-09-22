@@ -166,6 +166,7 @@ void sp_matrix_convert(sp_matrix_ptr mtx_from,
                        sp_matrix_ptr mtx_to,
                        sparse_storage_type type);
 
+
 /*
  * Creates ILU decomposition of the sparse matrix 
  */

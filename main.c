@@ -24,6 +24,8 @@
 #include <memory.h>
 
 #include "sp_matrix.h"
+#include "sp_utils.h"
+#include "sp_file.h"
 
 static int test_sp_matrix()
 {
@@ -136,7 +138,7 @@ static int test_cg_solver()
 {
   int result = 1;
   sp_matrix mtx;
-  double v[3] = {0}, x[3] = {0};
+  double v[3] = {0}, x[3] = {0}, z[3] = {0};
   int max_iter = 20000;
   const double desired_tolearance = 1e-15;
   double tolerance = desired_tolearance;
@@ -163,9 +165,12 @@ static int test_cg_solver()
 
   sp_matrix_solve_cg(&mtx,v,v,&max_iter,&tolerance,x);
 
-  result = ((fabs(x[0]-1) < desired_tolearance) &&
-            (fabs(x[1]-2) < desired_tolearance) &&
-            (fabs(x[2]-3) < desired_tolearance));
+  /* check for convergence */
+  sp_matrix_mv(&mtx,x,z);
+  
+  tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
+  result = tolerance < desired_tolearance*10;
+  
   sp_matrix_free(&mtx);
   
   printf("test_cg_solver result: *%s*\n",result ? "pass" : "fail");
@@ -301,7 +306,7 @@ static int test_pcg_ilu_solver()
   int result = 1;
   sp_matrix mtx;
   sp_matrix_skyline_ilu ilu;
-  double v[3] = {0}, x[3] = {0};
+  double v[3] = {0}, x[3] = {0}, z[3] = {0};
   int max_iter = 20000;
   const double desired_tolearance = 1e-15;
   double tolerance = desired_tolearance;
@@ -330,10 +335,12 @@ static int test_pcg_ilu_solver()
 
   sp_matrix_solve_pcg_ilu(&mtx,&ilu,v,v,&max_iter,&tolerance,x);
 
-  result = ((fabs(x[0]-1) < desired_tolearance) &&
-            (fabs(x[1]-2) < desired_tolearance) &&
-            (fabs(x[2]-3) < desired_tolearance));
+    /* check for convergence */
+  sp_matrix_mv(&mtx,x,z);
 
+  tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
+  result = tolerance < desired_tolearance*10;
+  
   sp_matrix_skyline_ilu_free(&ilu);
   sp_matrix_free(&mtx);
   
@@ -402,14 +409,59 @@ static int test_cholesky()
   return result;
 }
 
+static int test_istrcmp()
+{
+  int result = 1;
+  const char* str1_1 = "aaA";
+  const char* str1_2 = "aaa";
+
+  const char* str2_1 = "aaA";
+  const char* str2_2 = "aaaa";
+
+  const char* str3_1 = "aaa";
+  const char* str3_2 = "bbb";
+
+  const char* str4_1 = "";
+  const char* str4_2 = "a";
+
+  
+  printf("strcmp(%s,%s) = %d\n",str1_1,str1_2,strcmp(str1_1,str1_2));
+  printf("strcmp(%s,%s) = %d\n",str2_1,str2_2,strcmp(str2_1,str2_2));
+  printf("strcmp(%s,%s) = %d\n",str3_1,str3_2,strcmp(str3_1,str3_2));
+  printf("strcmp(%s,%s) = %d\n",str4_1,str4_2,strcmp(str4_1,str4_2));
+
+  printf("sp_istrcmp(%s,%s) = %d\n",str1_1,str1_2,sp_istrcmp(str1_1,str1_2));
+  printf("sp_istrcmp(%s,%s) = %d\n",str2_1,str2_2,sp_istrcmp(str2_1,str2_2));
+  printf("sp_istrcmp(%s,%s) = %d\n",str3_1,str3_2,sp_istrcmp(str3_1,str3_2));
+  printf("sp_istrcmp(%s,%s) = %d\n",str4_1,str4_2,sp_istrcmp(str4_1,str4_2));
+
+  printf("test_istrcmp result: *%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
+static int test_load()
+{
+  sp_matrix_ptr result = 0;
+  result = sp_matrix_load_file("C:\\projects\\libspmatrix\\bcsstk09.mtx");
+  if (result)
+  {
+    sp_matrix_free(result);
+    free(result);
+  }
+  printf("test_load: *%s*\n",result ? "pass" : "fail");
+  return result ? 1 : 0;
+}
+
+
 int main(int argc, char *argv[])
 {
-  test_sp_matrix() &&
-    test_triangle_solver() &&
-    test_cg_solver() &&
-    test_ilu() &&
-    test_pcg_ilu_solver() &&
-    test_cholesky();
-  
+  test_sp_matrix();
+  test_triangle_solver();
+  test_cg_solver();
+  test_ilu();
+  test_pcg_ilu_solver();
+  test_cholesky();
+  test_istrcmp();
+  test_load();
   return 0;
 }
