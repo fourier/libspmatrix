@@ -1,21 +1,21 @@
 /* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /*
- Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+  Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
  
- This file is part of libspmatrix.
+  This file is part of libspmatrix.
 
- libspmatrix is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published
- by the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+  libspmatrix is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as published
+  by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
- libspmatrix is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Lesser General Public License for more details.
+  libspmatrix is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
- You should have received a copy of the GNU Lesser General Public License
- along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU Lesser General Public License
+  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
@@ -174,6 +174,12 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
   FILE* file;
   const int block_size = 1024;
   const char* ptr;
+  const char* line;
+  int block_number = 0;
+  int rows, cols, nonzeros;
+  int element_number = -1;
+  int i,j;
+  double value;
   /* contents buffer */
   char* contents = calloc(block_size+1,1);
   /* auxulary counters */
@@ -196,24 +202,81 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
   /* close the file */
   fclose(file);
 
-  /* TODO: implementation */
-  do
+  /* split by lines */
+  line = strtok(contents,"\n");
+  while (line)
   {
-    ptr = mm_read_header(contents, &header);
-    if (ptr != contents)          /* all ok */
+    if (block_number == 0)      /* header */
     {
+      ptr = mm_read_header(line, &header);
+      if (ptr == line)          /* error */
+        break;
       if (!mm_validate_header(&header))
       {
         printf("Not supported matrix type\n");
         break;
       }
-      /* supported type */
-      
+      /* goto next step - parse sizes */
+      block_number++;
     }
-  
-  } while(0);
+    else if (block_number == 1) /* sizes */
+    {
+      ptr = sp_skip_whitespaces(line);
+      if (*ptr && *ptr != '%')  /* not empty line and not comment */
+      {
+        /* read sizes */
+        if (sscanf(line, "%d %d %d", &rows, &cols, &nonzeros) != 3)
+        {
+          fprintf(stderr, "Unable to parse sizes\n");
+          break;
+        }
+        self = calloc(1,sizeof(sp_matrix));
+        sp_matrix_init(self,rows,cols,sqrt((rows+cols) >> 1),CRS);
+        element_number = 0;     /* start with first element */
+        block_number++;
+      }
+    }
+    else if (block_number == 2) /* data */
+    {
+      ptr = sp_skip_whitespaces(line);
+      if (*ptr && *ptr != '%')  /* not empty line and not comment */
+      {
+        if ( header.elements == MM_PATTERN)
+        {
+          if (sscanf(line, "%d %d", &i, &j) != 2)
+          {
+            fprintf(stderr, "Unable to parse line %s\n",line);
+            break;
+          }
+          value = 1;
+        }
+        else
+        {
+          if (sscanf(line, "%d %d %lg", &i, &j, &value) != 3)
+          {
+            fprintf(stderr, "Unable to parse line %s\n",line);
+            break;
+          }
+          
+        }
+        sp_matrix_element_add(self,i-1,j-1,value);
+        element_number ++;
+      }
+    }
+    line = strtok(NULL,"\n");
+  }
+
   /* free resources */
   free(contents);
+  /* check for error */
+  if ( element_number != nonzeros)
+  {
+    fprintf("Error loading matrix, expected %d nonzeros, parsed %d\n",
+            nonzeros, element_number);
+    sp_matrix_free(self);
+    free(self);
+    self = 0;
+  }
   return self;
 }
 
