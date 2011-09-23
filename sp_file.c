@@ -30,6 +30,8 @@
  */
 
 const char* MM_HEADER_STRING = "%%MatrixMarket";
+const char* MM_HEADER_OUTPUT_ABOUT = "% Created by libspmatrix (c) "
+  "Alexey Veretennikov, https://github.com/fourier/libspmatrix\n";
 
 typedef enum
 {
@@ -84,13 +86,11 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   }
   /* extract object type */
   ptr = sp_extract_next_word(ptr,&word);
-  printf("object = %s\n", word);
   header->object = !sp_istrcmp(word,"matrix") ? MM_MATRIX : MM_OTHER;
   free((char*)word);
 
   /* extract storage type */
   ptr = sp_extract_next_word(ptr,&word);
-  printf("storage = %s\n", word);
   if (!sp_istrcmp(word,"coordinate"))
     header->storage = MM_COORDINATE;
   else if (!sp_istrcmp(word,"array"))
@@ -104,7 +104,6 @@ static const char* mm_read_header(const char* contents, mm_header* header)
 
   /* extract elements type */
   ptr = sp_extract_next_word(ptr,&word);
-  printf("elements = %s\n", word);
   if (!sp_istrcmp(word,"real"))
     header->elements = MM_REAL;
   else if (!sp_istrcmp(word,"integer"))
@@ -122,7 +121,6 @@ static const char* mm_read_header(const char* contents, mm_header* header)
 
   /* extract portrait */
   ptr = sp_extract_next_word(ptr,&word);
-  printf("portrait = %s\n", word);
   if (!sp_istrcmp(word,"general"))
     header->portrait = MM_GENERAL;
   else if (!sp_istrcmp(word,"symmetric"))
@@ -167,7 +165,7 @@ static int mm_validate_header(mm_header* header)
   return 1;
 }
 
-static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
+static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_type)
 {
   sp_matrix_ptr self = 0;
   mm_header header;
@@ -231,7 +229,7 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
           break;
         }
         self = calloc(1,sizeof(sp_matrix));
-        sp_matrix_init(self,rows,cols,sqrt((rows+cols) >> 1),CRS);
+        sp_matrix_init(self,rows,cols,nonzeros/rows + 1,storage_type);
         element_number = 0;     /* start with first element */
         block_number++;
       }
@@ -260,7 +258,15 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
           
         }
         sp_matrix_element_add(self,i-1,j-1,value);
-        element_number ++;
+        /* handle symmetry property */
+        if ( i != j )
+        {
+          if ( header.portrait == MM_SYMMETRIC )
+            sp_matrix_element_add(self,j-1,i-1,value);
+          else if (header.portrait == MM_SKEW_SYMMETRIC)
+            sp_matrix_element_add(self,j-1,i-1,-value);
+        }
+        ++ element_number;
       }
     }
     line = strtok(NULL,"\n");
@@ -271,24 +277,20 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename)
   /* check for error */
   if ( element_number != nonzeros)
   {
-    fprintf("Error loading matrix, expected %d nonzeros, parsed %d\n",
+    fprintf(stderr,"Error loading matrix, expected %d nonzeros, parsed %d\n",
             nonzeros, element_number);
     sp_matrix_free(self);
     free(self);
     self = 0;
   }
+  else
+  {
+    sp_matrix_compress(self);
+  }
   return self;
 }
 
-static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename)
-{
-  sp_matrix_ptr self = 0;
-
-  return self;
-}
-
-
-sp_matrix_ptr sp_matrix_load_file(const char* filename)
+sp_matrix_ptr sp_matrix_load_file(const char* filename, int storage_type)
 {
   sp_matrix_ptr self = 0;
   /* determine file extension */
@@ -298,10 +300,136 @@ sp_matrix_ptr sp_matrix_load_file(const char* filename)
     fprintf(stderr,"File type is not supported: %s\n", filename);
     return self;
   }
+  if (storage_type != CRS && storage_type != CCS)
+  {
+    fprintf(stderr, "Unknown storage type %d\n", storage_type);
+    return self;
+  }
   if ( !sp_istrcmp(ext,"mtx") )
-    return sp_matrix_load_file_mm(filename);
+    return sp_matrix_load_file_mm(filename, storage_type);
   else
     fprintf(stderr,"File type is not supported: .%s\n", ext);
   
   return self;
+}
+
+
+
+static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
+{
+  int result = 1;
+  FILE* file = fopen(filename,"wt+");
+  int matrix_type;
+  int i,j,n,nonzeros;
+  int size;
+  double value;
+  /* MM format limitation for the line is 1024 characters */
+  char buf[1024+1];
+  if (!file)
+  {
+    fprintf(stderr,"Error opening file %s for writing",filename);
+    return 0;
+  }
+  if ( !self->ordered )         /* order matrix */
+    sp_matrix_compress(self);
+  
+  if (sp_matrix_issymmetric(self))
+    matrix_type = MM_SYMMETRIC;
+  else if (sp_matrix_isskew_symmetric(self))
+    matrix_type = MM_SKEW_SYMMETRIC;
+  else
+    matrix_type = MM_GENERAL;
+
+  size = sprintf(buf,"%s matrix coordinate real %s\n",
+                 MM_HEADER_STRING,
+                 matrix_type == MM_GENERAL ? "general" :
+                 (matrix_type == MM_SYMMETRIC ? "symmetric" :
+                  "skew-symmetric"));
+  fwrite(buf, 1, size, file);
+  fwrite(MM_HEADER_OUTPUT_ABOUT,1,strlen(MM_HEADER_OUTPUT_ABOUT),file);
+
+  /* calculate nonzeros */
+  nonzeros = 0;
+  n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  for ( i = 0; i < n; ++ i)
+    nonzeros += self->storage[i].last_index + 1;
+
+  /*
+   * in skew symmetric matrix nzeros/2 elements in lower triangle
+   * (diagonal always empty)
+   */
+  if ( matrix_type == MM_SKEW_SYMMETRIC)
+    nonzeros  /= 2;
+  /*
+   * in symmetric matrix (nzeros-diagonal)/2 elements in lower triangle
+   */
+  if ( matrix_type == MM_SYMMETRIC)
+  {
+    j = 0;
+    for ( i = 0; i < n; ++ i)
+      if (sp_matrix_element_ptr(self,i,i))
+        j++;
+    nonzeros = (nonzeros + j)/2;
+  }
+  /* write sizes */
+  size = sprintf(buf,"%d %d %d\n",self->rows_count,self->cols_count,nonzeros);
+  fwrite(buf,1,size,file);
+
+  /* write elements */
+  for ( i = 0; i < n; ++ i)
+  {
+    for ( j = 0; j <= self->storage[i].last_index; ++ j)
+    {
+      if (matrix_type != MM_GENERAL && self->storage[i].indexes[j] > i)
+        break;
+      if (self->storage_type == CRS)
+        size = sprintf(buf,"%d %d %.16e\n",i+1,self->storage[i].indexes[j]+1,
+                       self->storage[i].values[j]);
+      else                      /* CCS */
+      {
+        value = self->storage[i].values[j];
+        /* lower triangle = -upper triangle for skew symmetic matix */
+        if (matrix_type == MM_SKEW_SYMMETRIC)
+          value = -value;
+        if (matrix_type == MM_GENERAL)
+        {
+        size = sprintf(buf,"%d %d %.16e\n",self->storage[i].indexes[j]+1,
+                       i+1,
+                       value);
+        }
+        else                    /* transposed */
+        {
+          size = sprintf(buf,"%d %d %.16e\n",i+1,self->storage[i].indexes[j]+1,
+                         value);
+        }
+      }
+      fwrite(buf,1,size,file);
+    }
+  }
+  
+  fflush(file);
+  fclose(file);
+  return result;
+}
+
+/*
+ * Save the sparse martix from the file.
+ * File format guessed from the extension
+ * Currently supported formats:
+ * MM (matrix market), file extension .mtx
+ * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
+ * Returns 0 if not possible to write(or unknown file format)
+ */
+int sp_matrix_save_file(sp_matrix_ptr self, const char* filename)
+{
+  /* determine file extension */
+  const char* ext = sp_parse_file_extension(filename);
+  if (!ext)
+  {
+    fprintf(stderr,"File type is not supported: %s\n", filename);
+    return 0;
+  }
+  if ( !sp_istrcmp(ext,"mtx") )
+    return sp_matrix_save_file_mm(self,filename);
+  return 0;
 }

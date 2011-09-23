@@ -442,9 +442,10 @@ static int test_istrcmp()
 static int test_load()
 {
   sp_matrix_ptr result = 0;
-  result = sp_matrix_load_file("af23560.mtx");
+  result = sp_matrix_load_file("bbb.mtx",CCS);
   if (result)
   {
+    sp_matrix_save_file(result,"export.mtx");
     sp_matrix_free(result);
     free(result);
   }

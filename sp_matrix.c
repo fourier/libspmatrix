@@ -338,6 +338,8 @@ double sp_matrix_element_add(sp_matrix_ptr self,int i, int j, double value)
   if (self->storage[I].last_index == self->storage[I].width - 1)
   {
     new_width = self->storage[I].width*2;
+    if (new_width <= 0)             /* avoid crashes on bad bandwidth */
+      new_width = 1;
     indexes = (int*)realloc(self->storage[I].indexes,new_width*sizeof(int));
     assert(indexes);
     self->storage[I].indexes = indexes;
@@ -464,7 +466,7 @@ int sp_matrix_issymmetric(sp_matrix_ptr self)
   int n = self->rows_count;
   int i,j;
   if  (self->rows_count != self->cols_count )
-    return 0;
+    return FALSE;
   if (self->storage_type == CRS)
   {
     for ( i = 0; i < n; ++ i)
@@ -473,7 +475,7 @@ int sp_matrix_issymmetric(sp_matrix_ptr self)
         value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
         if ( !value )
           return FALSE;
-        if (! EQL(*value,self->storage[i].values[j]))
+        if (!EQL(*value,self->storage[i].values[j]))
           return FALSE;
       }
   }
@@ -500,7 +502,7 @@ int sp_matrix_issymmetric_portrait(sp_matrix_ptr self)
   int n = self->rows_count;
   int i,j;
   if  (self->rows_count != self->cols_count )
-    return 0;
+    return FALSE;
   if (self->storage_type == CRS)
   {
     for ( i = 0; i < n; ++ i)
@@ -520,6 +522,47 @@ int sp_matrix_issymmetric_portrait(sp_matrix_ptr self)
         if ( !value )
           return FALSE;
       }
+  }
+  return TRUE;
+}
+
+int sp_matrix_isskew_symmetric(sp_matrix_ptr self)
+{
+  double *value;
+  int n = self->rows_count;
+  int i,j;
+  if  (self->rows_count != self->cols_count )
+    return FALSE;
+  if (self->storage_type == CRS)
+  {
+    for ( i = 0; i < n; ++ i)
+      for (j = 0; j < self->storage[i].last_index; ++ j)
+      {
+        value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
+        if ( !value )
+          return FALSE;
+        if (!EQL(*value,-self->storage[i].values[j]))
+          return FALSE;
+      }
+  }
+  else                          /* CCS */
+  {
+    for ( i = 0; i < n; ++ i)
+      for (j = 0; j < self->storage[i].last_index; ++ j)
+      {
+        value = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
+        if ( !value )
+          return FALSE;
+        if (! EQL(*value,-self->storage[i].values[j]))
+          return FALSE;
+      }
+    
+  }
+  /* check diagonal - it shall contain zeros */
+  for ( i = 0; i < n; ++ i)
+  {
+    if (sp_matrix_element_ptr(self,i,i))
+      return FALSE;
   }
   return TRUE;
 }

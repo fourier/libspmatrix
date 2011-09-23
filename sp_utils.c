@@ -25,6 +25,20 @@
 #include "sp_utils.h"
 
 
+static int is_from(const char c, const char* from)
+{
+  if (from && c)
+  {
+    while (*from)
+    {
+      if (c == *from)
+        return 1;
+      from++;
+    }
+  }
+  return 0;
+}
+
 /*
  * Case-insensitive ASCII 7bit string comparison
  */
@@ -83,11 +97,11 @@ const char* sp_skip_whitespaces(const char* line)
 }
 
 /*
- * Skip alphanumeric characters
+ * Skip alphanumeric characters and characters from chars array
  */
-const char* sp_skip_alnum(const char* line)
+const char* sp_skip_alnum(const char* line, const char* chars)
 {
-  while (*line && isalnum(*line))
+  while (*line && (isalnum(*line) || is_from(*line,chars)))
     line++;
   return line;
 }
@@ -103,7 +117,7 @@ const char* sp_extract_next_word(const char* line, const char** word)
   /* skip whitespaces to the object type */
   line = sp_skip_whitespaces(line);
   /* extract word */
-  end = sp_skip_alnum(line);
+  end = sp_skip_alnum(line,"-");
   *word = sp_strndup(line,end - line);
   return end;
 }

@@ -21,19 +21,6 @@
 #ifndef __SP_MATRIX_H__
 #define __SP_MATRIX_H__
 
-#include <math.h>
-
-/*
- * Simple equals macro for double values. Assuming values are always > e-16
- * For additional information, see
- * http://www.rsdn.ru/forum/cpp/2640596.1.aspx
- */
-#ifndef DBL_EPSILON
-#define DBL_EPSILON 2.2204460492503131e-16
-#endif
-#define FMAX(x,y) ((x) > (y) ? (x) : (y))
-#define EQL(x,y) ((fabs(fabs((x))-fabs((y)))<= DBL_EPSILON*2) ? 1:0)
-
 
 typedef enum
 {
@@ -207,6 +194,10 @@ int sp_matrix_issymmetric(sp_matrix_ptr self);
 
 /* returns nonzero value if the matrix protrait is symmetric */
 int sp_matrix_issymmetric_portrait(sp_matrix_ptr self);
+
+/* returns nonzero value if the matrix is skew-symmetric */
+int sp_matrix_isskew_symmetric(sp_matrix_ptr self);
+
 
 
 /* Matrix-vector multiplication

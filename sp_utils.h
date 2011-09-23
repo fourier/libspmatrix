@@ -22,6 +22,19 @@
 #define _SP_UTILS_H_
 
 #include <string.h>
+#include <math.h>
+
+/*
+ * Simple equals macro for double values. Assuming values are always > e-16
+ * For additional information, see
+ * http://www.rsdn.ru/forum/cpp/2640596.1.aspx
+ */
+#ifndef DBL_EPSILON
+#define DBL_EPSILON 2.2204460492503131e-16
+#endif
+#define FMAX(x,y) ((x) > (y) ? (x) : (y))
+#define EQL(x,y) ((fabs((x)-(y))<= DBL_EPSILON*2) ? 1:0)
+
 
 /*
  * Case-insensitive ASCII 7bit string comparison
@@ -45,9 +58,9 @@ const char* sp_parse_file_extension(const char* filename);
 const char* sp_skip_whitespaces(const char* line);
 
 /*
- * Skip alphanumeric characters
+ * Skip alphanumeric characters and characters from chars array
  */
-const char* sp_skip_alnum(const char* line);
+const char* sp_skip_alnum(const char* line, const char* chars);
 
 /*
  * Extract word from the string
