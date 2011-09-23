@@ -282,7 +282,13 @@ static int hb_extract_positional_int(const char* from, int size)
 {
   int result;
   char* buf = malloc(size+1);
-  memcpy(buf,from,size);
+  char* ptr = buf;
+  int i = 0;
+  while (i < size && *from)
+  {
+    *ptr++ = *from++;
+    ++i;
+  }
   buf[size] = '\0';
   result = atoi(buf);
   free(buf);
@@ -294,7 +300,13 @@ int hb_extract_positional_format(const char* from, int size,
 {
   int result = 0;
   char* buf = malloc(size+1);
-  memcpy(buf,from,size);
+  char* ptr = buf;
+  int i = 0;
+  while (i < size && *from)
+  {
+    *ptr++ = *from++;
+    ++i;
+  }
   buf[size] = '\0';
   result = sp_parse_fortran_format(buf,fmt);
   free(buf);
@@ -333,7 +345,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    * TITLE, (72 characters)
    * KEY, (8 characters)
    */
-  fgets(buf,HB_LINE_SIZE,file);
+  fgets(buf,HB_LINE_SIZE+1,file);
   /* skip them */
 
   /*
@@ -358,7 +370,8 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   valcrd = hb_extract_positional_int(ptr,14);
   ptr += 14;
   rhscrd = hb_extract_positional_int(ptr,14);
-  
+  printf("TOTCRD = %d, PTRCRD = %d, INDCRD = %d, VALCRD = %d, RHSCRD = %d\n",
+         totcrd, ptrcrd, indcrd, valcrd, rhscrd);
   /*
    * Line 3.
    * MXTYPE, matrix type (see table), (3 characters)
@@ -396,7 +409,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   ncol = hb_extract_positional_int(ptr,14);
   ptr += 14;
   nnzero = hb_extract_positional_int(ptr,14);
-  
+  printf("NROW = %d, NCOL = %d, NNZERO = %d\n", nrow, ncol, nnzero);
   /*
    * Line 4.
    * PTRFMT, FORTRAN I/O format for pointers, (16 characters)
@@ -443,10 +456,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    * NRHSIX, integer, number of row indices, (14 characters)
    */
   fread(buf,HB_LINE_SIZE,1,file);
-
-
-
-  
+ 
   return self;
 }
 

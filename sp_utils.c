@@ -176,6 +176,9 @@ char* sp_read_text_file(const char* filename)
  * <num-digits-in-exponent> --> \d+
  * <decimal-significand-length> --> \d+
  * <digits-after-decimal-point> --> \d+
+ *
+ * TODO: use http://people.sc.fsu.edu/~jburkardt/m_src/hb_to_mm/hb_to_mm.m
+ * as the implementation example(function s_to_format)
  */
 int sp_parse_fortran_format(const char* string, fortran_io_format* format)
 {
