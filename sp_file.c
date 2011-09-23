@@ -277,26 +277,8 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
   return self;
 }
 
-/* Extracts the integer in size bytes of the buffer from */
-static int hb_extract_positional_int(const char* from, int size)
-{
-  int result;
-  char* buf = malloc(size+1);
-  char* ptr = buf;
-  int i = 0;
-  while (i < size && *from)
-  {
-    *ptr++ = *from++;
-    ++i;
-  }
-  buf[size] = '\0';
-  result = atoi(buf);
-  free(buf);
-  return result;
-}
-
-int hb_extract_positional_format(const char* from, int size,
-                                 fortran_io_format* fmt)
+static int hb_extract_positional_format(const char* from, int size,
+                                        fortran_io_format* fmt)
 {
   int result = 0;
   char* buf = malloc(size+1);
@@ -361,15 +343,15 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    */
   fgets(buf,HB_LINE_SIZE,file);
   ptr = buf;
-  totcrd = hb_extract_positional_int(ptr,14);
+  totcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
-  ptrcrd = hb_extract_positional_int(ptr,14);
+  ptrcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
-  indcrd = hb_extract_positional_int(ptr,14);
+  indcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
-  valcrd = hb_extract_positional_int(ptr,14);
+  valcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
-  rhscrd = hb_extract_positional_int(ptr,14);
+  rhscrd = sp_extract_positional_int(ptr,14);
   printf("TOTCRD = %d, PTRCRD = %d, INDCRD = %d, VALCRD = %d, RHSCRD = %d\n",
          totcrd, ptrcrd, indcrd, valcrd, rhscrd);
   /*
@@ -404,11 +386,11 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
     return self;
   }
   ptr = buf + 14;
-  nrow = hb_extract_positional_int(ptr,14);
+  nrow = sp_extract_positional_int(ptr,14);
   ptr += 14;
-  ncol = hb_extract_positional_int(ptr,14);
+  ncol = sp_extract_positional_int(ptr,14);
   ptr += 14;
-  nnzero = hb_extract_positional_int(ptr,14);
+  nnzero = sp_extract_positional_int(ptr,14);
   printf("NROW = %d, NCOL = %d, NNZERO = %d\n", nrow, ncol, nnzero);
   /*
    * Line 4.

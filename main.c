@@ -454,7 +454,7 @@ static int test_load()
 }
 
 
-int main(int argc, char *argv[])
+int main(/* int argc, char *argv[] */)
 {
   test_sp_matrix();
   test_triangle_solver();

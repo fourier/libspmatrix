@@ -38,9 +38,12 @@
 typedef struct 
 {
   char type;
-  int width;
-  int before_point;
-  int after_point;
+  int count;                    /* count field */
+  int width;                    /* field-width field */
+  int num1;                     /* min-num-digits or decimal-significand
+                                 * or digits-after-decimal-point
+                                 */
+  int num2;                     /* num-digits-in-exponent */
 } fortran_io_format;
 
 typedef struct
@@ -89,6 +92,10 @@ const char* sp_extract_next_word(const char* line, const char** word);
  * returns 0 if unable to read
  */
 char* sp_read_text_file(const char* filename);
+
+
+/* Extracts the integer in size bytes of the buffer from */
+int sp_extract_positional_int(const char* from, int size);
 
 /*
  * Very simple Parser for FORTRAN IO Format specifiers

@@ -158,6 +158,24 @@ char* sp_read_text_file(const char* filename)
   return contents;
 }
 
+/* Extracts the integer in size bytes of the buffer from */
+int sp_extract_positional_int(const char* from, int size)
+{
+  int result;
+  char* buf = malloc(size+1);
+  char* ptr = buf;
+  int i = 0;
+  while (i < size && *from)
+  {
+    *ptr++ = *from++;
+    ++i;
+  }
+  buf[size] = '\0';
+  result = atoi(buf);
+  free(buf);
+  return result;
+}
+
 
 /*
  * Very simple Parser for FORTRAN IO Format specifiers
@@ -176,14 +194,140 @@ char* sp_read_text_file(const char* filename)
  * <num-digits-in-exponent> --> \d+
  * <decimal-significand-length> --> \d+
  * <digits-after-decimal-point> --> \d+
- *
- * TODO: use http://people.sc.fsu.edu/~jburkardt/m_src/hb_to_mm/hb_to_mm.m
- * as the implementation example(function s_to_format)
  */
 int sp_parse_fortran_format(const char* string, fortran_io_format* format)
 {
-  int result = 0;
-
+  const char* ptr = sp_skip_whitespaces(string);
+  const char* end;
+  const char* ptr1;
+  memset(format,0,sizeof(fortran_io_format));
+  /* <format> --> \(<format-string>\) */
+  /* find start \( */
+  if (!*ptr || *ptr != '(')
+  {
+    fprintf(stderr, "Incorrect FORTRAN IO format: %s, no '('\n",string);
+    return 0;
+  }
+  /* find end \) */
+  end = ptr;
+  while(*end && *end != ')') ++end;
+  if (!*end  || *end != ')')
+  {
+    fprintf(stderr, "Incorrect FORTRAN IO format: %s, no ')'\n",string);
+    return 0;
+  }
+  ptr++;
+  /* <format-string> --> <count>?<rest> */
+  ptr1 = ptr;
+  /* <count> --> \d+ */
+  while (isdigit(*ptr1) && ptr1 != end) ++ptr1;
+  format->count = ptr1 > ptr ? sp_extract_positional_int(ptr,ptr1-ptr) : 0;
+  /* <rest> --> <fixedid>|<intid>|<fltid>|<doubleid>|<generalid> */
+  ptr = ptr1;
+  if (!is_from(*ptr1,"FIEDG"))
+  {
+    fprintf(stderr, "Incorrect FORTRAN IO format: %s, %c != [FIEDG]\n",
+            string,*ptr1);
+    return 0;
+  }
+  format->type = *ptr;
+  ptr1 = ++ptr;
+  /* [FIEDG]\d+ */
+  while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
+  if (ptr1 == ptr)
+  {
+    fprintf(stderr, "Incorrect FORTRAN IO format: %s, field-width = ''\n",
+            string);
+    return 0;
+  }
+  format->width = sp_extract_positional_int(ptr,ptr1-ptr);
   
-  return result;
+  /* <intid> --> I<field-width>(\.<min-num-digits>)? */
+  if (format->type == 'I')
+  {
+    if (ptr1 == end)
+      return 1;
+    if (*ptr1 != '.')
+    {
+      fprintf(stderr,"Incorrect FORTRAN IO format: %s, type = 'I'\n",
+              string);
+      return 0;
+    }
+    ptr1++;
+    ptr = ptr1;
+    while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
+    if (ptr1 == ptr)
+    {
+      fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = 'I'\n",
+              string);
+      return 0;
+    }
+    format->num1 = sp_extract_positional_int(ptr,ptr1-ptr);
+  }
+  /* <fixedid> --> F<field-width>\.<digits-after-decimal-point> */
+  else if (format->type == 'F')
+  {
+    if (*ptr1 != '.')
+    {
+      fprintf(stderr,"Incorrect FORTRAN IO format: %s, type = 'F'\n",
+              string);
+      return 0;
+    }
+    ptr1++;
+    ptr = ptr1;
+    while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
+    if (ptr1 == ptr)
+    {
+      fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = 'F'\n",
+              string);
+      return 0;
+    }
+    format->num1 = sp_extract_positional_int(ptr,ptr1-ptr);
+  }
+  else                          /* E,D,G */
+  {
+    if (*ptr1 != '.')
+    {
+      fprintf(stderr,"Incorrect FORTRAN IO format: %s, type = '%c'\n",
+              string,format->type);
+      return 0;
+    }
+    ptr1++;
+    ptr = ptr1;
+    while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
+    if (ptr1 == ptr)
+    {
+      fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
+              string,format->type);
+      return 0;
+    }
+    format->num1 = sp_extract_positional_int(ptr,ptr1-ptr);
+    /* (E<num-digits-in-exponent>)? */
+    if (ptr1 != end)
+    {
+      if (*ptr1 != 'E')
+      {
+        fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
+                string,format->type);
+        return 0;
+      }
+      ptr1++;
+      ptr = ptr1;
+      while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
+      if (ptr1 == ptr)
+      {
+        fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
+                string,format->type);
+        return 0;
+      }
+      format->num2 = sp_extract_positional_int(ptr,ptr1-ptr);
+    }
+  }
+  if ( ptr1 != end)
+  {
+    fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
+            string,format->type);
+    return 0;
+  }
+  return 1;
 }
