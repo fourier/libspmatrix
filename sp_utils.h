@@ -35,6 +35,21 @@
 #define FMAX(x,y) ((x) > (y) ? (x) : (y))
 #define EQL(x,y) ((fabs((x)-(y))<= DBL_EPSILON*2) ? 1:0)
 
+typedef struct 
+{
+  char type;
+  int width;
+  int before_point;
+  int after_point;
+} fortran_io_format;
+
+typedef struct
+{
+  int is_integer;
+  int integer;
+  double real;
+} fortan_number;
+
 
 /*
  * Case-insensitive ASCII 7bit string comparison
@@ -68,5 +83,16 @@ const char* sp_skip_alnum(const char* line, const char* chars);
  * Caller shall free the word
  */
 const char* sp_extract_next_word(const char* line, const char** word);
+
+/*
+ * Read the text file and return buffer with the file's contens
+ * returns 0 if unable to read
+ */
+char* sp_read_text_file(const char* filename);
+
+/*
+ * Very simple Parser for FORTRAN IO Format specifiers
+ */
+int sp_parse_fortran_format(const char* string, fortran_io_format* format);
 
 #endif /* _SP_UTILS_H_ */

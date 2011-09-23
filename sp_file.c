@@ -33,6 +33,9 @@ const char* MM_HEADER_STRING = "%%MatrixMarket";
 const char* MM_HEADER_OUTPUT_ABOUT = "% Created by libspmatrix (c) "
   "Alexey Veretennikov, https://github.com/fourier/libspmatrix\n";
 
+/* length of the HB file line */
+#define HB_LINE_SIZE 81
+
 typedef enum
 {
   MM_MATRIX,
@@ -165,12 +168,13 @@ static int mm_validate_header(mm_header* header)
   return 1;
 }
 
+/*
+ * Load matrix in MatrixMarket format
+ */
 static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_type)
 {
   sp_matrix_ptr self = 0;
   mm_header header;
-  FILE* file;
-  const int block_size = 1024;
   const char* ptr;
   const char* line;
   int block_number = 0;
@@ -178,28 +182,11 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
   int element_number = -1;
   int i,j;
   double value;
-  /* contents buffer */
-  char* contents = calloc(block_size+1,1);
-  /* auxulary counters */
-  int read_chunk = 0,read = 0;
-  file = fopen(filename,"rt");
-  if (!file)
-  {
-    fprintf(stderr,"Cannot read file %s\n", filename);
+  /* read the file contents  */
+  char* contents = sp_read_text_file(filename);
+  if (!contents)
     return self;
-  }
-  /* read file contents  */
-  while(!feof(file))
-  {
-    read_chunk = fread(contents+read,1,block_size, file);
-    read += read_chunk;
-    
-    contents = (char*)realloc(contents,read + block_size);
-  }
-  contents[read] = '\0';
-  /* close the file */
-  fclose(file);
-
+  
   /* split by lines */
   line = strtok(contents,"\n");
   while (line)
@@ -290,6 +277,179 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
   return self;
 }
 
+/* Extracts the integer in size bytes of the buffer from */
+static int hb_extract_positional_int(const char* from, int size)
+{
+  int result;
+  char* buf = malloc(size+1);
+  memcpy(buf,from,size);
+  buf[size] = '\0';
+  result = atoi(buf);
+  free(buf);
+  return result;
+}
+
+int hb_extract_positional_format(const char* from, int size,
+                                 fortran_io_format* fmt)
+{
+  int result = 0;
+  char* buf = malloc(size+1);
+  memcpy(buf,from,size);
+  buf[size] = '\0';
+  result = sp_parse_fortran_format(buf,fmt);
+  free(buf);
+  return result;
+}
+
+/*
+ * Load matrix in Harwell Boeing format
+ */
+static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
+                                            int storage_type)
+{
+  sp_matrix_ptr self = 0;
+  int i,j;
+  /* 1 for '\n' */
+
+  /* HB format line limitation 80 chars */
+  char buf[HB_LINE_SIZE+1];               
+  char* ptr;
+  /* constants from HB format */
+  /* for line 2 */
+  int totcrd, ptrcrd, indcrd, valcrd, rhscrd;
+  /* for line 3 */
+  int nrow, ncol,nnzero;
+  /* for line 4 */
+  fortran_io_format ptrfmt, indfmt, valfmt, rhsfmt;
+  FILE* file = fopen(filename,"rt");
+  if (!file)
+  {
+    fprintf(stderr, "Unable to open file %s for reading\n",filename);
+    return self;
+  }
+  
+  /*
+   * Line 1.
+   * TITLE, (72 characters)
+   * KEY, (8 characters)
+   */
+  fgets(buf,HB_LINE_SIZE,file);
+  /* skip them */
+
+  /*
+   * Line 2.
+   * TOTCRD, integer, total number of data lines, (14 characters) 
+   * PTRCRD, integer, number of data lines for pointers, (14 characters) 
+   * INDCRD, integer, number of data lines for row or variable indices,
+   *   (14 characters) 
+   * VALCRD, integer, number of data lines for numerical values of matrix
+   *    entries, (14 characters) 
+   * RHSCRD, integer, number of data lines for right hand side vectors,
+   *    starting guesses, and solutions, (14 characters)
+   */
+  fgets(buf,HB_LINE_SIZE,file);
+  ptr = buf;
+  totcrd = hb_extract_positional_int(ptr,14);
+  ptr += 14;
+  ptrcrd = hb_extract_positional_int(ptr,14);
+  ptr += 14;
+  indcrd = hb_extract_positional_int(ptr,14);
+  ptr += 14;
+  valcrd = hb_extract_positional_int(ptr,14);
+  ptr += 14;
+  rhscrd = hb_extract_positional_int(ptr,14);
+  
+  /*
+   * Line 3.
+   * MXTYPE, matrix type (see table), (3 characters)
+   * blank space, (11 characters)
+   * NROW, integer, number of rows or variables, (14 characters)
+   * NCOL, integer, number of columns or elements, (14 characters)
+   * NNZERO, integer, number of row or variable indices. For "assembled"
+   *   matrices, this is just the number of nonzero entries. (14 characters)
+   * NELTVL, integer, number of elemental matrix entries. For "assembled"
+   *   matrices, this is 0. (14 characters)
+   */
+  fgets(buf,HB_LINE_SIZE,file);
+  /* we support only real matrix */
+  if (buf[0] != 'R')
+  {
+    fprintf(stderr,"Complex or Pattern matrix not supported\n");
+    fclose(file);
+    return self;
+  }
+  if (buf[1] == 'H')
+  {
+    fprintf(stderr,"Complex Hermitian matrix not supported\n");
+    fclose(file);
+    return self;
+  }
+  if (buf[2] == 'E')
+  {
+    fprintf(stderr,"Elemental matrix not supported\n");
+    fclose(file);
+    return self;
+  }
+  ptr = buf + 14;
+  nrow = hb_extract_positional_int(ptr,14);
+  ptr += 14;
+  ncol = hb_extract_positional_int(ptr,14);
+  ptr += 14;
+  nnzero = hb_extract_positional_int(ptr,14);
+  
+  /*
+   * Line 4.
+   * PTRFMT, FORTRAN I/O format for pointers, (16 characters)
+   * INDFMT, FORTRAN I/O format for row or variable indices, (16 characters)
+   * VALFMT, FORTRAN I/O format for matrix entries, (20 characters)
+   * RHSFMT, FORTRAN I/O format for right hand sides, initial guesses, and
+   *   solutions, (20 characters)
+   */
+  fread(buf,HB_LINE_SIZE,1,file);
+  ptr = buf;
+  if (!hb_extract_positional_format(ptr,16,&ptrfmt))
+  {
+    fprintf(stderr,"Unknown format: %s",ptr);
+    fclose(file);
+    return self;
+  }
+  ptr += 16;
+  if (!hb_extract_positional_format(ptr,16,&indfmt))
+  {
+    fprintf(stderr,"Unknown format: %s",ptr);
+    fclose(file);
+    return self;
+  }
+  ptr += 16;
+  if (!hb_extract_positional_format(ptr,20,&valfmt))
+  {
+    fprintf(stderr,"Unknown format: %s",ptr);
+    fclose(file);
+    return self;
+  }
+  ptr += 20;
+  if (!hb_extract_positional_format(ptr,20,&rhsfmt))
+  {
+    fprintf(stderr,"Unknown format: %s",ptr);
+    fclose(file);
+    return self;
+  }
+  
+  /*
+   * Line 5: (only present if 0 < RHSCRD!)
+   * RHSTYP, describes the right hand side information, (3 characters)
+   * blank space, (11 characters)
+   * NRHS, integer, the number of right hand sides, (14 characters)
+   * NRHSIX, integer, number of row indices, (14 characters)
+   */
+  fread(buf,HB_LINE_SIZE,1,file);
+
+
+
+  
+  return self;
+}
+
 sp_matrix_ptr sp_matrix_load_file(const char* filename, int storage_type)
 {
   sp_matrix_ptr self = 0;
@@ -307,6 +467,12 @@ sp_matrix_ptr sp_matrix_load_file(const char* filename, int storage_type)
   }
   if ( !sp_istrcmp(ext,"mtx") )
     return sp_matrix_load_file_mm(filename, storage_type);
+  else if (!sp_istrcmp(ext,"hb") ||
+           !sp_istrcmp(ext,"rua") ||
+           !sp_istrcmp(ext,"rsa") ||
+           !sp_istrcmp(ext,"rza") ||
+           !sp_istrcmp(ext,"rra"))
+    return sp_matrix_load_file_hb(filename, storage_type);
   else
     fprintf(stderr,"File type is not supported: .%s\n", ext);
   

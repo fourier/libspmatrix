@@ -18,6 +18,7 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -120,4 +121,66 @@ const char* sp_extract_next_word(const char* line, const char** word)
   end = sp_skip_alnum(line,"-");
   *word = sp_strndup(line,end - line);
   return end;
+}
+
+
+/*
+ * Read the text file and return buffer with the file's contens
+ * returns 0 if unable to read
+ */
+char* sp_read_text_file(const char* filename)
+{
+  FILE* file;
+  const int block_size = 1024;
+  /* contents buffer */
+  char* contents = calloc(block_size+1,1);
+  /* auxulary counters */
+  int read_chunk = 0,read = 0;
+
+  file = fopen(filename,"rt");
+  if (!file)
+  {
+    fprintf(stderr,"Cannot read file %s\n", filename);
+    free(contents);
+    return 0;
+  }
+  /* read file contents  */
+  while(!feof(file))
+  {
+    read_chunk = fread(contents+read,1,block_size, file);
+    read += read_chunk;
+    
+    contents = (char*)realloc(contents,read + block_size);
+  }
+  contents[read] = '\0';
+  /* close the file */
+  fclose(file);
+  return contents;
+}
+
+
+/*
+ * Very simple Parser for FORTRAN IO Format specifiers
+ * Fortran IO format grammar BNF specification:
+ * <format> --> \(<format-string>\)
+ * <format-string> --> <count>?<rest>
+ * <count> --> \d+
+ * <rest> --> <fixedid>|<intid>|<fltid>|<doubleid>|<generalid>
+ * <fixedid> --> F<field-width>\.<digits-after-decimal-point>
+ * <intid> --> I<field-width>(\.<min-num-digits>)?
+ * <fltid> --> E<field-width>\.<decimal-significand-length>(E<num-digits-in-exponent>)?
+ * <doubleid> --> D<field-width>\.<decimal-significand-length>(E<num-digits-in-exponent>)?
+ * <generalid> --> G<field-width>\.<decimal-significand-length>(E<num-digits-in-exponent>)?
+ * <field-width> --> \d+
+ * <min-num-digits> --> \d+  (defaults to zero)
+ * <num-digits-in-exponent> --> \d+
+ * <decimal-significand-length> --> \d+
+ * <digits-after-decimal-point> --> \d+
+ */
+int sp_parse_fortran_format(const char* string, fortran_io_format* format)
+{
+  int result = 0;
+
+  
+  return result;
 }
