@@ -442,6 +442,8 @@ static int test_istrcmp()
 static int test_load()
 {
   sp_matrix_ptr result = 0;
+  /* BUG with this file */
+  /* result = sp_matrix_load_file("bcsstk09.rsa",CCS); */
   result = sp_matrix_load_file("5by5_rua.hb",CCS);
   if (result)
   {

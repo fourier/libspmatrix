@@ -93,6 +93,13 @@ const char* sp_extract_next_word(const char* line, const char** word);
  */
 char* sp_read_text_file(const char* filename);
 
+/*
+ * Read the line of text (to the limit 'size' or \n or \0 characters)
+ * from the file
+ */
+char* sp_read_text_line(FILE* file, int size);
+  
+  
 
 /* Extracts the integer in size bytes of the buffer from */
 int sp_extract_positional_int(const char* from, int size);

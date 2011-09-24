@@ -158,6 +158,18 @@ char* sp_read_text_file(const char* filename)
   return contents;
 }
 
+/*
+ * Read the line of text (to the limit 'size' or \n or \0 characters)
+ * from the file
+ */
+char* sp_read_text_line(FILE* file, int size)
+{
+  char* result = 0;
+
+
+  return result;
+}
+
 /* Extracts the integer in size bytes of the buffer from */
 int sp_extract_positional_int(const char* from, int size)
 {
@@ -179,7 +191,8 @@ int sp_extract_positional_int(const char* from, int size)
 
 /*
  * Very simple Parser for FORTRAN IO Format specifiers
- * Fortran IO format grammar BNF specification:
+ * Subset of Fortran IO format grammar BNF specification
+ * (taken from http://bebop.cs.berkeley.edu/smc/hb.html)
  * <format> --> \(<format-string>\)
  * <format-string> --> <count>?<rest>
  * <count> --> \d+
@@ -201,6 +214,7 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   const char* end;
   const char* ptr1;
   memset(format,0,sizeof(fortran_io_format));
+  format->count = 1;
   /* <format> --> \(<format-string>\) */
   /* find start \( */
   if (!*ptr || *ptr != '(')
@@ -331,3 +345,5 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   }
   return 1;
 }
+
+

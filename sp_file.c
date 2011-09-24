@@ -429,6 +429,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
     fclose(file);
     return self;
   }
+  printf("So far HB file %s parsed successfully\n",filename);
   
   /*
    * Line 5: (only present if 0 < RHSCRD!)
