@@ -346,6 +346,13 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   return 1;
 }
 
+
+/*
+ * Extract number specified by fortran format
+ * Returns the same string pointer in case of error
+ * See for example
+ * http://cpan.uwinnipeg.ca/htdocs/Fortran-Format/Fortran/Format.pm.html#I_i_w_i
+ */
 const char* sp_extract_fortran_number(const char* string, 
                                       const fortran_io_format* format,
                                       /* output */
