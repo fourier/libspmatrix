@@ -35,6 +35,12 @@
 #define FMAX(x,y) ((x) > (y) ? (x) : (y))
 #define EQL(x,y) ((fabs((x)-(y))<= DBL_EPSILON*2) ? 1:0)
 
+enum
+{
+  FORTRAN_TYPE_INTEGER,
+  FORTRAN_TYPE_DOUBLE
+};
+
 typedef struct 
 {
   char type;
@@ -48,7 +54,7 @@ typedef struct
 
 typedef struct
 {
-  int is_integer;
+  int fortran_type;
   int integer;
   double real;
 } fortan_number;
@@ -108,5 +114,15 @@ int sp_extract_positional_int(const char* from, int size);
  * Very simple Parser for FORTRAN IO Format specifiers
  */
 int sp_parse_fortran_format(const char* string, fortran_io_format* format);
+
+/*
+ * Extract number specified by fortran format
+ * Returns the same string pointer in case of error
+ */
+const char* sp_extract_fortran_number(const char* string, 
+                                      const fortran_io_format* format,
+                                      /* output */
+                                      fortan_number* number);
+                                      
 
 #endif /* _SP_UTILS_H_ */

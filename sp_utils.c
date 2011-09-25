@@ -346,4 +346,13 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   return 1;
 }
 
+const char* sp_extract_fortran_number(const char* string, 
+                                      const fortran_io_format* format,
+                                      /* output */
+                                      fortan_number* number)
+{
+  const char* result = string;
+
+  return result;
+}
 
