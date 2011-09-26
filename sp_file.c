@@ -34,8 +34,12 @@ const char* MM_HEADER_STRING = "%%MatrixMarket";
 const char* MM_HEADER_OUTPUT_ABOUT = "% Created by libspmatrix (c) "
   "Alexey Veretennikov, https://github.com/fourier/libspmatrix\n";
 
-/* length of the HB file line */
-#define HB_LINE_SIZE 81
+/*
+ * length of the HB file line is 80, but sometimes it can be more
+ * possibly because some bugs in export software
+ * Counter-example: bcsstk09.rsa
+ */
+#define HB_LINE_SIZE 100
 
 typedef enum
 {
@@ -319,9 +323,9 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   /* temporary exctracted values */
   fortran_number* fortran_numbers;
   /* data in column-wise triplet form */
-  int* colptr   = 0;                /* location of first entry */
-  int* rowind   = 0;                /* row indicies */
-  double* valus = 0;                /* numerical valus */
+  int* colptr    = 0;                /* location of first entry */
+  int* rowind    = 0;                /* row indicies */
+  double* values = 0;                /* numerical valus */
   /* example: */
   /*
    * 1. -3.  0. -1.  0.
@@ -337,7 +341,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    * rowind     | 1   3   5   1   4   2   5   1   4    2   5
    * values     | 1.  2.  5. -3.  4. -2. -5. -1. -4.   3.  6.
    */
-
+  
   /*
    * temporary variables - counter of extracted by sp_extract_fortran_numbers
    * numbers and  number of column indicies (colptr array)
@@ -356,7 +360,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    * TITLE, (72 characters)
    * KEY, (8 characters)
    */
-  fgets(buf,HB_LINE_SIZE+1,file);
+  fgets(buf,HB_LINE_SIZE,file);
   /* skip them */
 
   /*
@@ -460,12 +464,15 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
     fclose(file);
     return 0;
   }
-  ptr += 20;
-  if (!hb_extract_positional_format(ptr,20,&rhsfmt))
+  if (rhscrd)
   {
-    fprintf(stderr,"Unknown format: %s",ptr);
-    fclose(file);
-    return 0;
+    ptr += 20;
+    if (!hb_extract_positional_format(ptr,20,&rhsfmt))
+    {
+      fprintf(stderr,"Unknown format: %s",ptr);
+      fclose(file);
+      return 0;
+    }
   }
   printf("So far HB file %s parsed successfully\n",filename);
 
@@ -499,19 +506,17 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
       free(colptr);
       return 0;
     }
+    colptr = colptr ? realloc(colptr, (n+extracted)*sizeof(int)) :
+      calloc(n+extracted,sizeof(int));
+    for (i = n; i < n + extracted; ++ i) 
+      colptr[i] = fortran_numbers[i-n].integer;
     n += extracted;
-    colptr = realloc(colptr, n*sizeof(int));
-    for (i = n-extracted; i < extracted; ++ i)
-    {
-      j = i-extracted;
-      colptr[i] = fortran_numbers[i-extracted].integer;
-    }
   }
   free(fortran_numbers);
   num_col_ind = n;
 
   /* Section 2. rowss */
-  fortran_numbers  = calloc(indfmt.repeat, sizeof(fortran_numbers));
+  fortran_numbers  = calloc(indfmt.repeat, sizeof(fortran_number));
   n = 0;
   while (indcrd --)
   {
@@ -529,25 +534,25 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
       free(rowind);
       return 0;
     }
+    
+    rowind = rowind ? realloc(rowind, (n+extracted)*sizeof(int)) :
+      calloc(n+extracted, sizeof(int));
+    for (i = n; i < n + extracted; ++ i) 
+      rowind[i] = fortran_numbers[i-n].integer;
     n += extracted;
-    rowind = realloc(rowind, n*sizeof(int));
-    for (i = n-extracted; i < extracted; ++ i)
-    {
-      j = i-extracted;
-      rowind[i] = fortran_numbers[i-extracted].integer;
-    }
-  }
-  if ( n != nnzero)
-  {
-      fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
-              "%d nonzeros\n", buf);
-      fclose(file);
-      free(fortran_numbers);
-      free(colptr);
-      free(rowind);
-      return 0;
   }
   
+  if ( n != nnzero)
+  {
+    fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
+            "%d nonzeros\n", n, nnzero);
+    fclose(file);
+    free(fortran_numbers);
+    free(colptr);
+    free(rowind);
+    return 0;
+  }
+  printf ("n = %d\n",n);
   return self;
 }
 

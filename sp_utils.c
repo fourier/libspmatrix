@@ -238,13 +238,13 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   format->repeat = ptr1 > ptr ? sp_extract_positional_int(ptr,ptr1-ptr) : 0;
   /* <rest> --> <fixedid>|<intid>|<fltid>|<doubleid>|<generalid> */
   ptr = ptr1;
-  if (!is_from(*ptr1,"FIEDG"))
+  if (!is_from(*ptr1,"FIEDGfiedg"))
   {
     fprintf(stderr, "Incorrect FORTRAN IO format: %s, %c != [FIEDG]\n",
             string,*ptr1);
     return 0;
   }
-  format->type = *ptr;
+  format->type = toupper(*ptr);
   ptr1 = ++ptr;
   /* [FIEDG]\d+ */
   while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
@@ -347,6 +347,80 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
 }
 
 
+static const char* sp_extract_fortran_numbers_I(const char* string, 
+                                                const fortran_io_format* format,
+                                                /* output */
+                                                fortran_number* number,
+                                                int* extracted)
+{
+  const char* result = string;
+  int size = 0;
+  const char* ptr = string, *ptr1;
+  int i;
+  /* width */
+  while (*ptr && *ptr != '\n')
+    size++,ptr++;
+  if (size > format->repeat * format->width)
+    return string;
+  ptr = string;
+  *extracted = 0;
+  for ( i = 0; i < format->repeat; ++ i)
+  {
+    ptr1 = sp_skip_whitespaces(ptr);
+    if (*ptr1 && *ptr != '\n' && ptr1-ptr < format->width)
+    {
+      number[*extracted].integer =
+        sp_extract_positional_int(ptr,format->width);
+      number[*extracted].fortran_type = FORTRAN_TYPE_INTEGER;
+      (*extracted) ++;
+    }
+    else
+      break;
+    ptr += format->width;
+  }
+  result = ptr;
+  return result;
+}
+
+static
+const char* sp_extract_fortran_numbers_ED(const char* string, 
+                                          const fortran_io_format* format,
+                                          /* output */
+                                          fortran_number* number,
+                                          int* extracted)
+{
+  const char* result = string;
+
+  return result;
+}
+
+
+static
+const char* sp_extract_fortran_numbers_F(const char* string, 
+                                         const fortran_io_format* format,
+                                         /* output */
+                                         fortran_number* number,
+                                         int* extracted)
+{
+  const char* result = string;
+
+  return result;
+}
+
+
+static
+const char* sp_extract_fortran_numbers_G(const char* string, 
+                                         const fortran_io_format* format,
+                                         /* output */
+                                         fortran_number* number,
+                                         int* extracted)
+{
+  const char* result = string;
+
+  return result;
+}
+
+
 /*
  * Extract number specified by fortran format
  * Returns the same string pointer in case of error
@@ -360,7 +434,12 @@ const char* sp_extract_fortran_numbers(const char* string,
                                        int* extracted)
 {
   const char* result = string;
-  
+  if (format->type == 'I')
+    result = sp_extract_fortran_numbers_I(string,format,number,extracted);
+  else if (format->type == 'E' || format->type == 'D')
+    result = sp_extract_fortran_numbers_ED(string,format,number,extracted);
+  else if (format->type == 'G')
+    result = sp_extract_fortran_numbers_G(string,format,number,extracted);
   return result;
 }
 

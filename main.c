@@ -443,9 +443,9 @@ static int test_load()
 {
   sp_matrix_ptr result = 0;
   /* BUG with this file */
-  /* result = sp_matrix_load_file("bcsstk09.rsa",CCS); */
-  result = sp_matrix_load_file("5by5_rua.hb",CCS);
-  /* result = sp_matrix_load_file("af23560.rua",CCS); */
+  result = sp_matrix_load_file("bcsstk09.rsa",CCS);
+  /* result = sp_matrix_load_file("5by5_rua.hb",CCS); */
+  /* result = sp_matrix_load_file("kershaw_rua.hb",CCS); */
   if (result)
   {
     sp_matrix_save_file(result,"export.mtx");
