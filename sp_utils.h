@@ -44,7 +44,7 @@ enum
 typedef struct 
 {
   char type;
-  int count;                    /* count field */
+  int repeat;                   /* repeat field */
   int width;                    /* field-width field */
   int num1;                     /* min-num-digits or decimal-significand
                                  * or digits-after-decimal-point
@@ -57,7 +57,7 @@ typedef struct
   int fortran_type;
   int integer;
   double real;
-} fortan_number;
+} fortran_number;
 
 
 /*
@@ -116,13 +116,17 @@ int sp_extract_positional_int(const char* from, int size);
 int sp_parse_fortran_format(const char* string, fortran_io_format* format);
 
 /*
- * Extract number specified by fortran format
+ * Extract numbers specified by fortran format
+ * numbers is a pointer to an array of fortran number(used an output)
+ * number of elements in the array is format->repeat value
+ * extracted = number of extracted values. <= format->repeat
  * Returns the same string pointer in case of error
  */
-const char* sp_extract_fortran_number(const char* string, 
-                                      const fortran_io_format* format,
-                                      /* output */
-                                      fortan_number* number);
+const char* sp_extract_fortran_numbers(const char* string, 
+                                       const fortran_io_format* format,
+                                       /* output */
+                                       fortran_number* numbers,
+                                       int* extracted);
                                       
 
 #endif /* _SP_UTILS_H_ */

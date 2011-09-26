@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /*
   Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
- 
+
   This file is part of libspmatrix.
 
   libspmatrix is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "sp_file.h"
 #include "sp_utils.h"
@@ -186,7 +187,7 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
   char* contents = sp_read_text_file(filename);
   if (!contents)
     return self;
-  
+
   /* split by lines */
   line = strtok(contents,"\n");
   while (line)
@@ -242,7 +243,7 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
             fprintf(stderr, "Unable to parse line %s\n",line);
             break;
           }
-          
+
         }
         sp_matrix_element_add(self,i-1,j-1,value);
         /* handle symmetry property */
@@ -302,26 +303,54 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
                                             int storage_type)
 {
   sp_matrix_ptr self = 0;
-  int i,j;
+  int i,j,n;
   /* 1 for '\n' */
 
   /* HB format line limitation 80 chars */
-  char buf[HB_LINE_SIZE+1];               
+  char buf[HB_LINE_SIZE+1];
   char* ptr;
   /* constants from HB format */
   /* for line 2 */
   int totcrd, ptrcrd, indcrd, valcrd, rhscrd;
   /* for line 3 */
-  int nrow, ncol,nnzero;
+  int nrow, ncol, nnzero;
   /* for line 4 */
   fortran_io_format ptrfmt, indfmt, valfmt, rhsfmt;
+  /* temporary exctracted values */
+  fortran_number* fortran_numbers;
+  /* data in column-wise triplet form */
+  int* colptr   = 0;                /* location of first entry */
+  int* rowind   = 0;                /* row indicies */
+  double* valus = 0;                /* numerical valus */
+  /* example: */
+  /*
+   * 1. -3.  0. -1.  0.
+   * 0.  0. -2.  0.  3.
+   * 2.  0.  0.  0.  0.
+   * 0.  4.  0. -4.  0.
+   * 5.  0. -5.  0.  6.
+   *
+   * array values, for 1-based indicies:
+   * subscripts | 1   2   3   4   5   6   7   8   9   10  11
+   * --------------------------------------------------------
+   * colptr     | 1   4   6   8  10  12
+   * rowind     | 1   3   5   1   4   2   5   1   4    2   5
+   * values     | 1.  2.  5. -3.  4. -2. -5. -1. -4.   3.  6.
+   */
+
+  /*
+   * temporary variables - counter of extracted by sp_extract_fortran_numbers
+   * numbers and  number of column indicies (colptr array)
+   */
+  int extracted, num_col_ind;
+
   FILE* file = fopen(filename,"rt");
   if (!file)
   {
     fprintf(stderr, "Unable to open file %s for reading\n",filename);
-    return self;
+    return 0;
   }
-  
+
   /*
    * Line 1.
    * TITLE, (72 characters)
@@ -332,12 +361,12 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
 
   /*
    * Line 2.
-   * TOTCRD, integer, total number of data lines, (14 characters) 
-   * PTRCRD, integer, number of data lines for pointers, (14 characters) 
+   * TOTCRD, integer, total number of data lines, (14 characters)
+   * PTRCRD, integer, number of data lines for pointers, (14 characters)
    * INDCRD, integer, number of data lines for row or variable indices,
-   *   (14 characters) 
+   *   (14 characters)
    * VALCRD, integer, number of data lines for numerical values of matrix
-   *    entries, (14 characters) 
+   *    entries, (14 characters)
    * RHSCRD, integer, number of data lines for right hand side vectors,
    *    starting guesses, and solutions, (14 characters)
    */
@@ -352,8 +381,17 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   valcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
   rhscrd = sp_extract_positional_int(ptr,14);
-  printf("TOTCRD = %d, PTRCRD = %d, INDCRD = %d, VALCRD = %d, RHSCRD = %d\n",
-         totcrd, ptrcrd, indcrd, valcrd, rhscrd);
+  printf("TOTCRD, integer, total number of data lines: %d\n",totcrd);
+  printf("PTRCRD, integer, number of data lines for pointers: %d\n",ptrcrd);
+  printf("INDCRD, integer, number of data lines for row or variable indices:"
+         " %d\n", indcrd);
+  printf("VALCRD, integer, number of data lines for numerical values of "
+         "matrix entries %d\n",valcrd);
+  printf("RHSCRD, integer, number of data lines for right hand side vectors,"
+         "starting guesses, and solutions: %d\n", rhscrd);
+
+  if (rhscrd)
+    printf("Right-part vector is not supported, ignoring\n");
   /*
    * Line 3.
    * MXTYPE, matrix type (see table), (3 characters)
@@ -371,19 +409,19 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   {
     fprintf(stderr,"Complex or Pattern matrix not supported\n");
     fclose(file);
-    return self;
+    return 0;
   }
   if (buf[1] == 'H')
   {
     fprintf(stderr,"Complex Hermitian matrix not supported\n");
     fclose(file);
-    return self;
+    return 0;
   }
   if (buf[2] == 'E')
   {
     fprintf(stderr,"Elemental matrix not supported\n");
     fclose(file);
-    return self;
+    return 0;
   }
   ptr = buf + 14;
   nrow = sp_extract_positional_int(ptr,14);
@@ -400,46 +438,116 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    * RHSFMT, FORTRAN I/O format for right hand sides, initial guesses, and
    *   solutions, (20 characters)
    */
-  fread(buf,HB_LINE_SIZE,1,file);
+  fgets(buf,HB_LINE_SIZE,file);
   ptr = buf;
   if (!hb_extract_positional_format(ptr,16,&ptrfmt))
   {
     fprintf(stderr,"Unknown format: %s",ptr);
     fclose(file);
-    return self;
+    return 0;
   }
   ptr += 16;
   if (!hb_extract_positional_format(ptr,16,&indfmt))
   {
     fprintf(stderr,"Unknown format: %s",ptr);
     fclose(file);
-    return self;
+    return 0;
   }
   ptr += 16;
   if (!hb_extract_positional_format(ptr,20,&valfmt))
   {
     fprintf(stderr,"Unknown format: %s",ptr);
     fclose(file);
-    return self;
+    return 0;
   }
   ptr += 20;
   if (!hb_extract_positional_format(ptr,20,&rhsfmt))
   {
     fprintf(stderr,"Unknown format: %s",ptr);
     fclose(file);
-    return self;
+    return 0;
   }
   printf("So far HB file %s parsed successfully\n",filename);
-  
+
   /*
-   * Line 5: (only present if 0 < RHSCRD!)
+   * Line 5: (only present if 0 <RHSCRD!)
    * RHSTYP, describes the right hand side information, (3 characters)
    * blank space, (11 characters)
    * NRHS, integer, the number of right hand sides, (14 characters)
    * NRHSIX, integer, number of row indices, (14 characters)
    */
-  fread(buf,HB_LINE_SIZE,1,file);
- 
+  if ( rhscrd )
+    fgets(buf,HB_LINE_SIZE,file);
+
+  /* header parsing done, parsing the data */
+  
+  /* Section 1. pointers */
+  fortran_numbers = calloc(ptrfmt.repeat,sizeof(fortran_number));
+  n = 0;
+  while (ptrcrd --)
+  {
+    fgets(buf,HB_LINE_SIZE,file);
+    ptr = (char*)sp_extract_fortran_numbers(buf,
+                                            &ptrfmt,
+                                            fortran_numbers,
+                                            &extracted);
+    if (ptr == &buf[0])
+    {
+      fprintf(stderr,"Unable to parse pointers: %s\n", buf);
+      fclose(file);
+      free(fortran_numbers);
+      free(colptr);
+      return 0;
+    }
+    n += extracted;
+    colptr = realloc(colptr, n*sizeof(int));
+    for (i = n-extracted; i < extracted; ++ i)
+    {
+      j = i-extracted;
+      colptr[i] = fortran_numbers[i-extracted].integer;
+    }
+  }
+  free(fortran_numbers);
+  num_col_ind = n;
+
+  /* Section 2. rowss */
+  fortran_numbers  = calloc(indfmt.repeat, sizeof(fortran_numbers));
+  n = 0;
+  while (indcrd --)
+  {
+    fgets(buf,HB_LINE_SIZE,file);
+    ptr = (char*)sp_extract_fortran_numbers(buf,
+                                            &indfmt,
+                                            fortran_numbers,
+                                            &extracted);
+    if (ptr == &buf[0])
+    {
+      fprintf(stderr,"Unable to parse row indicies: %s\n", buf);
+      fclose(file);
+      free(fortran_numbers);
+      free(colptr);
+      free(rowind);
+      return 0;
+    }
+    n += extracted;
+    rowind = realloc(rowind, n*sizeof(int));
+    for (i = n-extracted; i < extracted; ++ i)
+    {
+      j = i-extracted;
+      rowind[i] = fortran_numbers[i-extracted].integer;
+    }
+  }
+  if ( n != nnzero)
+  {
+      fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
+              "%d nonzeros\n", buf);
+      fclose(file);
+      free(fortran_numbers);
+      free(colptr);
+      free(rowind);
+      return 0;
+  }
+  
   return self;
 }
 
@@ -468,7 +576,7 @@ sp_matrix_ptr sp_matrix_load_file(const char* filename, int storage_type)
     return sp_matrix_load_file_hb(filename, storage_type);
   else
     fprintf(stderr,"File type is not supported: .%s\n", ext);
-  
+
   return self;
 }
 
@@ -491,7 +599,7 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
   }
   if ( !self->ordered )         /* order matrix */
     sp_matrix_compress(self);
-  
+
   if (sp_matrix_issymmetric(self))
     matrix_type = MM_SYMMETRIC;
   else if (sp_matrix_isskew_symmetric(self))
@@ -551,21 +659,17 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
         if (matrix_type == MM_SKEW_SYMMETRIC)
           value = -value;
         if (matrix_type == MM_GENERAL)
-        {
-        size = sprintf(buf,"%d %d %.16e\n",self->storage[i].indexes[j]+1,
+          size = sprintf(buf,"%d %d %.16e\n",self->storage[i].indexes[j]+1,
                        i+1,
                        value);
-        }
         else                    /* transposed */
-        {
           size = sprintf(buf,"%d %d %.16e\n",i+1,self->storage[i].indexes[j]+1,
                          value);
-        }
       }
       fwrite(buf,1,size,file);
     }
   }
-  
+
   fflush(file);
   fclose(file);
   return result;

@@ -214,7 +214,7 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   const char* end;
   const char* ptr1;
   memset(format,0,sizeof(fortran_io_format));
-  format->count = 1;
+  format->repeat = 1;
   /* <format> --> \(<format-string>\) */
   /* find start \( */
   if (!*ptr || *ptr != '(')
@@ -235,7 +235,7 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   ptr1 = ptr;
   /* <count> --> \d+ */
   while (isdigit(*ptr1) && ptr1 != end) ++ptr1;
-  format->count = ptr1 > ptr ? sp_extract_positional_int(ptr,ptr1-ptr) : 0;
+  format->repeat = ptr1 > ptr ? sp_extract_positional_int(ptr,ptr1-ptr) : 0;
   /* <rest> --> <fixedid>|<intid>|<fltid>|<doubleid>|<generalid> */
   ptr = ptr1;
   if (!is_from(*ptr1,"FIEDG"))
@@ -353,13 +353,14 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
  * See for example
  * http://cpan.uwinnipeg.ca/htdocs/Fortran-Format/Fortran/Format.pm.html#I_i_w_i
  */
-const char* sp_extract_fortran_number(const char* string, 
-                                      const fortran_io_format* format,
-                                      /* output */
-                                      fortan_number* number)
+const char* sp_extract_fortran_numbers(const char* string, 
+                                       const fortran_io_format* format,
+                                       /* output */
+                                       fortran_number* number,
+                                       int* extracted)
 {
   const char* result = string;
-
+  
   return result;
 }
 
