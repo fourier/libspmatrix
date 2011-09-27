@@ -26,8 +26,8 @@
  * Load the sparse martix from the file.
  * storage_type = CRS or CCS
  * Currently supported formats:
- * MM (matrix market), file extension .mtx
- * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
+ * MM (Matrix Market) (*.mtx)
+ * Harwell-Boeing format (*.hb, *.r[su]a)
  */
 int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename);
 
@@ -38,7 +38,7 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename);
  * MM (matrix market), file extension .mtx
  * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
  * Returns 0 if not possible to write(or unknown file format)
- * Side-effect: matrix gets ordered(compressed)
+ * Side-effect: matrix gets ordered
  */
 int sp_matrix_save_file(sp_matrix_ptr self, const char* filename);
 
