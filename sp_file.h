@@ -22,7 +22,6 @@
 
 #include "sp_matrix.h"
 
-
 /*
  * Load the sparse martix from the file.
  * storage_type = CRS or CCS
@@ -30,7 +29,7 @@
  * MM (matrix market), file extension .mtx
  * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
  */
-sp_matrix_ptr sp_matrix_load_file(const char* filename, int storage_type);
+int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename);
 
 /*
  * Save the sparse martix from the file.

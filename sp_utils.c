@@ -158,17 +158,6 @@ char* sp_read_text_file(const char* filename)
   return contents;
 }
 
-/*
- * Read the line of text (to the limit 'size' or \n or \0 characters)
- * from the file
- */
-char* sp_read_text_line(FILE* file, int size)
-{
-  char* result = 0;
-
-
-  return result;
-}
 
 /* Extracts the integer of size bytes from the buffer from */
 int sp_extract_positional_int(const char* from, int size)

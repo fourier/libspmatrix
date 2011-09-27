@@ -176,9 +176,10 @@ static int mm_validate_header(mm_header* header)
 /*
  * Load matrix in MatrixMarket format
  */
-static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_type)
+static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self, const char* filename)
 {
-  sp_matrix_ptr self = 0;
+  int result = 0;
+  sp_matrix mtx;
   mm_header header;
   const char* ptr;
   const char* line;
@@ -190,7 +191,7 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
   /* read the file contents  */
   char* contents = sp_read_text_file(filename);
   if (!contents)
-    return self;
+    return 0;
 
   /* split by lines */
   line = strtok(contents,"\n");
@@ -220,8 +221,7 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
           fprintf(stderr, "Unable to parse sizes\n");
           break;
         }
-        self = calloc(1,sizeof(sp_matrix));
-        sp_matrix_init(self,rows,cols,nonzeros/rows + 1,storage_type);
+        sp_matrix_init(&mtx,rows,cols,nonzeros/rows + 1,CRS);
         element_number = 0;     /* start with first element */
         block_number++;
       }
@@ -249,14 +249,14 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
           }
 
         }
-        sp_matrix_element_add(self,i-1,j-1,value);
+        sp_matrix_element_add(&mtx,i-1,j-1,value);
         /* handle symmetry property */
         if ( i != j )
         {
           if ( header.portrait == MM_SYMMETRIC )
-            sp_matrix_element_add(self,j-1,i-1,value);
+            sp_matrix_element_add(&mtx,j-1,i-1,value);
           else if (header.portrait == MM_SKEW_SYMMETRIC)
-            sp_matrix_element_add(self,j-1,i-1,-value);
+            sp_matrix_element_add(&mtx,j-1,i-1,-value);
         }
         ++ element_number;
       }
@@ -271,15 +271,15 @@ static sp_matrix_ptr sp_matrix_load_file_mm(const char* filename, int storage_ty
   {
     fprintf(stderr,"Error loading matrix, expected %d nonzeros, parsed %d\n",
             nonzeros, element_number);
-    sp_matrix_free(self);
-    free(self);
-    self = 0;
+    sp_matrix_free(&mtx);
   }
   else
   {
-    sp_matrix_compress(self);
+    sp_matrix_yale_init(self,&mtx);
+    sp_matrix_free(&mtx);
+    result = 1;
   }
-  return self;
+  return result;
 }
 
 static int hb_extract_positional_format(const char* from, int size,
@@ -303,11 +303,10 @@ static int hb_extract_positional_format(const char* from, int size,
 /*
  * Load matrix in Harwell Boeing format
  */
-static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
-                                            int storage_type)
+static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
+                                  const char* filename)
 {
-  sp_matrix_ptr self = 0;
-  int i,j,n;
+  int i,n;
   /* 1 for '\n' */
 
   /* HB format line limitation 80 chars */
@@ -577,50 +576,56 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
     n += extracted;
   }
   free(fortran_numbers);
+  fclose(file);
   if ( n != nnzero)
   {
     fprintf(stderr,"Unable to parse values: parsed = %d != "
             "%d nonzeros\n", n, nnzero);
-    fclose(file);
     free(colptr);
     free(rowind);
     free(values);
     return 0;
   }
-  printf("So far HB file %s parsed successfully\n",filename);
+  /* printf("So far HB file %s parsed successfully\n",filename); */
+  self->rows_count = nrow;
+  self->cols_count = ncol;
+  self->nonzeros   = nnzero;
+  self->storage_type = CCS;
+  self->offsets = colptr;
+  self->indicies = rowind;
+  self->values = values;
+
+  /* all indicies are 1 based in HB format */
+  for ( i = 0; i < ncol + 1; ++ i)
+    self->offsets[i]--;
+  for ( i = 0; i < nnzero; ++ i)
+    self->indicies[i]--;
   
-  return self;
+  return 1;
 }
 
-sp_matrix_ptr sp_matrix_load_file(const char* filename, int storage_type)
+int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename)
 {
-  sp_matrix_ptr self = 0;
   /* determine file extension */
   const char* ext = sp_parse_file_extension(filename);
   if (!ext)
   {
     fprintf(stderr,"File type is not supported: %s\n", filename);
-    return self;
-  }
-  if (storage_type != CRS && storage_type != CCS)
-  {
-    fprintf(stderr, "Unknown storage type %d\n", storage_type);
-    return self;
+    return 0;
   }
   if ( !sp_istrcmp(ext,"mtx") )
-    return sp_matrix_load_file_mm(filename, storage_type);
+    return sp_matrix_yale_load_file_mm(self, filename);
   else if (!sp_istrcmp(ext,"hb") ||
            !sp_istrcmp(ext,"rua") ||
            !sp_istrcmp(ext,"rsa") ||
            !sp_istrcmp(ext,"rza") ||
            !sp_istrcmp(ext,"rra"))
-    return sp_matrix_load_file_hb(filename, storage_type);
+    return sp_matrix_yale_load_file_hb(self, filename);
   else
     fprintf(stderr,"File type is not supported: .%s\n", ext);
 
-  return self;
+  return 0;
 }
-
 
 
 static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
@@ -639,7 +644,7 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
     return 0;
   }
   if ( !self->ordered )         /* order matrix */
-    sp_matrix_compress(self);
+    sp_matrix_reorder(self);
 
   if (sp_matrix_issymmetric(self))
     matrix_type = MM_SYMMETRIC;

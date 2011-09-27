@@ -644,6 +644,24 @@ void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y)
   }
 }
 
+void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y)
+{
+  int i,j;
+  memset(y,0,sizeof(double)*self->rows_count);
+  if (self->storage_type == CRS)
+  {
+    for ( i = 0; i < self->rows_count; ++ i)
+      for ( j = self->offsets[i]; j < self->offsets[i+1]; ++ j)
+        y[i] += self->values[j]*x[self->indicies[j]];
+  }
+  else                          /* CCS */
+  {
+    for ( i = 0; i < self->cols_count; ++ i)
+      for ( j = self->offsets[i]; j < self->offsets[i+1]; ++ j)
+        y[self->indicies[j]] += self->values[j]*x[i];
+  }
+}
+
 void sp_matrix_lower_solve(sp_matrix_ptr self,
                            int n,
                            double* b,
@@ -712,12 +730,12 @@ void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
 }
 #endif
 
-void sp_matrix_solve_cg(sp_matrix_ptr self,
-                        double* b,
-                        double* x0,
-                        int* max_iter,
-                        double* tolerance,
-                        double* x)
+void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
+                             double* b,
+                             double* x0,
+                             int* max_iter,
+                             double* tolerance,
+                             double* x)
 {
   /* Conjugate Gradient Algorithm */
   /*
@@ -738,13 +756,6 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
   double* p;              /* search direction */
   double* temp;
 
-  /* check if matrix is reordered */
-  if (!self->ordered)
-    sp_matrix_reorder(self);
-
-  /* CG method works only for only symmetric matrices */
-  assert(sp_matrix_issymmetric(self));
-
   /* allocate memory for vectors */
   r = (double*)malloc(size);
   p = (double*)malloc(size);
@@ -759,7 +770,7 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
     x[i] = x0[i];
 
   /* r_0 = b - A*x_0 */
-  sp_matrix_mv(self,b,r);
+  sp_matrix_yale_mv(self,b,r);
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
 
@@ -770,7 +781,7 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
   for ( j = 0; j < max_iterations; j ++ )
   {
     /* temp = A*p_j */
-    sp_matrix_mv(self,p,temp);
+    sp_matrix_yale_mv(self,p,temp);
     /* compute (r_j,r_j) and (A*p_j,p_j) */
     a1 = 0; a2 = 0;
     for (i = 0; i < msize; ++ i)
@@ -820,13 +831,13 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
   free(temp);
 }
 
-void sp_matrix_solve_pcg_ilu(sp_matrix_ptr self,
-                             sp_matrix_skyline_ilu_ptr ILU,                         
-                             double* b,
-                             double* x0,
-                             int* max_iter,
-                             double* tolerance,
-                             double* x)
+void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
+                                  sp_matrix_skyline_ilu_ptr ILU,                         
+                                  double* b,
+                                  double* x0,
+                                  int* max_iter,
+                                  double* tolerance,
+                                  double* x)
 {
   /* Preconditioned Conjugate Gradient Algorithm */
   /*
@@ -853,10 +864,6 @@ void sp_matrix_solve_pcg_ilu(sp_matrix_ptr self,
   double* z;              /* z = M^{-1}*r */
   double* temp;
 
-  /* PCG method works only for only symmetric matrices */
-  assert(sp_matrix_issymmetric(self));
-
-  
   /* allocate memory for vectors */
   r = (double*)malloc(size);
   r1 = (double*)malloc(size);
@@ -876,7 +883,7 @@ void sp_matrix_solve_pcg_ilu(sp_matrix_ptr self,
     x[i] = x0[i];
 
   /* r_0 = b - A*x_0 */
-  sp_matrix_mv(self,b,r);
+  sp_matrix_yale_mv(self,b,r);
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
   
@@ -901,7 +908,7 @@ void sp_matrix_solve_pcg_ilu(sp_matrix_ptr self,
   {
     /* temp = A*p_j */
     memset(temp,0,size);
-    sp_matrix_mv(self,p,temp);
+    sp_matrix_yale_mv(self,p,temp);
     /* compute (r_j,z_j) and (A*p_j,p_j) */
     a1 = 0; a2 = 0;
     for (i = 0; i < msize; ++ i)

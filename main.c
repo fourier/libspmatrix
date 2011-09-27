@@ -91,6 +91,82 @@ static int test_sp_matrix()
   return result;
 }
 
+static int test_yale()
+{
+  int result = 0;
+  int i;
+  sp_matrix mtx;
+  sp_matrix_yale yale;
+  /* 1. CRS */
+  /* matrix:
+   *
+   * [ 1 2 0 0 ]
+   * [ 0 3 9 0 ]
+   * [ 0 1 4 0 ]
+   */
+  /* expected result for CRS: */
+  int offsets1[] = {0,2,4,6};
+  int indicies1[] = {0,1,1,2,1,2};
+  double values1[] = {1,2,3,9,1,4};
+
+  double x[] = {1,2,3,4};
+  double y[3] = {0};
+  double b[] = {5,33,14};
+  
+  /* expected result for CCS: */
+  int offsets2[] = {0,3,5,7,9,11};
+  int indicies2[] = {0,2,4,0,3,1,4,0,3,1,4};
+  double values2[] = {1,2,5,-3,4,-2,-5,-1,-4,3,6};
+
+  sp_matrix_init(&mtx,3,4,2,CRS);
+  MTX(&mtx,0,0,1);MTX(&mtx,0,1,2);
+  MTX(&mtx,1,1,3);MTX(&mtx,1,2,9);
+  MTX(&mtx,2,1,1);MTX(&mtx,2,2,4);
+  
+  sp_matrix_yale_init(&yale,&mtx);
+  result = memcmp(yale.offsets,offsets1,4*sizeof(int)) == 0;
+  result &= memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0;
+  result &= memcmp(yale.values,values1,6*sizeof(double)) == 0;
+
+  sp_matrix_yale_mv(&yale,x,y);
+  for (i = 0; i < 3; ++ i)
+    result &= EQL(y[i],b[i]);  
+
+  sp_matrix_free(&mtx);
+  sp_matrix_yale_free(&yale);
+  /* 2. CCS */
+  /* matrix: */
+  /*
+   * 1. -3.  0. -1.  0.
+   * 0.  0. -2.  0.  3.
+   * 2.  0.  0.  0.  0.
+   * 0.  4.  0. -4.  0.
+   * 5.  0. -5.  0.  6.
+   */
+  sp_matrix_init(&mtx,5,5,3,CCS);
+  /* 1. -3.  0. -1.  0. */
+  MTX(&mtx,0,0,1);MTX(&mtx,0,1,-3);MTX(&mtx,0,3,-1);
+  /* 0.  0. -2.  0.  3. */
+  MTX(&mtx,1,2,-2);MTX(&mtx,1,4,3);
+  /* 2.  0.  0.  0.  0. */
+  MTX(&mtx,2,0,2);
+  /* 0.  4.  0. -4.  0. */
+  MTX(&mtx,3,1,4);MTX(&mtx,3,3,-4);
+  /* 5.  0. -5.  0.  6. */
+  MTX(&mtx,4,0,5);MTX(&mtx,4,2,-5);MTX(&mtx,4,4,6);
+  
+  sp_matrix_yale_init(&yale,&mtx);
+  result = memcmp(yale.offsets,offsets2,6*sizeof(int)) == 0;
+  result &= memcmp(yale.indicies,indicies2,11*sizeof(int)) == 0;
+  result &= memcmp(yale.values,values2,11*sizeof(double)) == 0;
+  
+  sp_matrix_free(&mtx);
+  sp_matrix_yale_free(&yale);
+  
+  printf("test_yale: *%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
 static int test_triangle_solver()
 {
   int result = 1;
@@ -138,6 +214,7 @@ static int test_cg_solver()
 {
   int result = 1;
   sp_matrix mtx;
+  sp_matrix_yale yale;
   double v[3] = {0}, x[3] = {0}, z[3] = {0};
   int max_iter = 20000;
   const double desired_tolearance = 1e-15;
@@ -162,8 +239,8 @@ static int test_cg_solver()
   MTX(&mtx,2,0,-2);MTX(&mtx,2,2,5);
 
   sp_matrix_reorder(&mtx);
-
-  sp_matrix_solve_cg(&mtx,v,v,&max_iter,&tolerance,x);
+  sp_matrix_yale_init(&yale,&mtx);
+  sp_matrix_yale_solve_cg(&yale,v,v,&max_iter,&tolerance,x);
 
   /* check for convergence */
   sp_matrix_mv(&mtx,x,z);
@@ -172,7 +249,7 @@ static int test_cg_solver()
   result = tolerance < desired_tolearance*10;
   
   sp_matrix_free(&mtx);
-  
+  sp_matrix_yale_free(&yale);
   printf("test_cg_solver result: *%s*\n",result ? "pass" : "fail");
   return result;
 }
@@ -305,6 +382,7 @@ static int test_pcg_ilu_solver()
 {
   int result = 1;
   sp_matrix mtx;
+  sp_matrix_yale yale;
   sp_matrix_skyline_ilu ilu;
   double v[3] = {0}, x[3] = {0}, z[3] = {0};
   int max_iter = 20000;
@@ -331,11 +409,11 @@ static int test_pcg_ilu_solver()
   sp_matrix_reorder(&mtx);
 
 
+  sp_matrix_yale_init(&yale,&mtx);
   sp_matrix_create_ilu(&mtx,&ilu);
+  sp_matrix_yale_solve_pcg_ilu(&yale,&ilu,v,v,&max_iter,&tolerance,x);
 
-  sp_matrix_solve_pcg_ilu(&mtx,&ilu,v,v,&max_iter,&tolerance,x);
-
-    /* check for convergence */
+  /* check for convergence */
   sp_matrix_mv(&mtx,x,z);
 
   tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
@@ -343,7 +421,7 @@ static int test_pcg_ilu_solver()
   
   sp_matrix_skyline_ilu_free(&ilu);
   sp_matrix_free(&mtx);
-  
+  sp_matrix_yale_free(&yale);
   printf("test_pcg_ilu_solver result: *%s*\n",result ? "pass" : "fail");
   return result;
 }
@@ -411,99 +489,33 @@ static int test_cholesky()
 
 static int test_load()
 {
-  sp_matrix_ptr result = 0;
+  int result = 0;
+  sp_matrix_yale mtx;
   /* result = sp_matrix_load_file("bcsstk09.rsa",CCS); */
   /* result = sp_matrix_load_file("af23560.rua",CCS); */
   /* result = sp_matrix_load_file("kershaw_rua.hb",CCS); */
-  result = sp_matrix_load_file("5by5_rua.hb",CCS);
+  result = sp_matrix_yale_load_file(&mtx, "5by5_rua.hb");
   if (result)
   {
-    sp_matrix_save_file(result,"export.mtx");
-    sp_matrix_free(result);
-    free(result);
+    /* sp_matrix_save_file(result,"export.mtx"); */
+    sp_matrix_yale_free(&mtx);
   }
   printf("test_load: *%s*\n",result ? "pass" : "fail");
-  return result ? 1 : 0;
-}
-
-static int test_yale()
-{
-  int result = 0;
-  int i,j;
-  sp_matrix mtx;
-  sp_matrix_yale yale;
-  /* 1. CRS */
-  /* matrix:
-   *
-   * [ 1 2 0 0 ]
-   * [ 0 3 9 0 ]
-   * [ 0 1 4 0 ]
-   */
-  /* expected result for CRS: */
-  int offsets1[] = {0,2,4,6};
-  int indicies1[] = {0,1,1,2,1,2};
-  double values1[] = {1,2,3,9,1,4};
-
-  /* expected result for CCS: */
-  int offsets2[] = {0,3,5,7,9,11};
-  int indicies2[] = {0,2,4,0,3,1,4,0,3,1,4};
-  double values2[] = {1,2,5,-3,4,-2,-5,-1,-4,3,6};
-
-  sp_matrix_init(&mtx,3,4,2,CRS);
-  MTX(&mtx,0,0,1);MTX(&mtx,0,1,2);
-  MTX(&mtx,1,1,3);MTX(&mtx,1,2,9);
-  MTX(&mtx,2,1,1);MTX(&mtx,2,2,4);
-  
-  sp_matrix_yale_init(&yale,&mtx);
-  result = memcmp(yale.offsets,offsets1,4*sizeof(int)) == 0;
-  result &= memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0;
-  result &= memcmp(yale.values,values1,6*sizeof(double)) == 0;
-  
-  sp_matrix_free(&mtx);
-  sp_matrix_yale_free(&yale);
-  /* 2. CCS */
-  /* matrix: */
-  /*
-   * 1. -3.  0. -1.  0.
-   * 0.  0. -2.  0.  3.
-   * 2.  0.  0.  0.  0.
-   * 0.  4.  0. -4.  0.
-   * 5.  0. -5.  0.  6.
-   */
-  sp_matrix_init(&mtx,5,5,3,CCS);
-  /* 1. -3.  0. -1.  0. */
-  MTX(&mtx,0,0,1);MTX(&mtx,0,1,-3);MTX(&mtx,0,3,-1);
-  /* 0.  0. -2.  0.  3. */
-  MTX(&mtx,1,2,-2);MTX(&mtx,1,4,3);
-  /* 2.  0.  0.  0.  0. */
-  MTX(&mtx,2,0,2);
-  /* 0.  4.  0. -4.  0. */
-  MTX(&mtx,3,1,4);MTX(&mtx,3,3,-4);
-  /* 5.  0. -5.  0.  6. */
-  MTX(&mtx,4,0,5);MTX(&mtx,4,2,-5);MTX(&mtx,4,4,6);
-  
-  sp_matrix_yale_init(&yale,&mtx);
-  result = memcmp(yale.offsets,offsets2,6*sizeof(int)) == 0;
-  result &= memcmp(yale.indicies,indicies2,11*sizeof(int)) == 0;
-  result &= memcmp(yale.values,values2,11*sizeof(double)) == 0;
-  
-  sp_matrix_free(&mtx);
-  sp_matrix_yale_free(&yale);
-  
-  printf("test_yale: *%s*\n",result ? "pass" : "fail");
   return result;
 }
+
+
 
 
 int main(/* int argc, char *argv[] */)
 {
   test_sp_matrix();
+  test_yale();
   test_triangle_solver();
   test_cg_solver();
   test_ilu();
   test_pcg_ilu_solver();
   test_cholesky();
   test_load();
-  test_yale();
   return 0;
 }

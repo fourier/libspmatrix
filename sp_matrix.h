@@ -240,6 +240,13 @@ int sp_matrix_nonzeros(sp_matrix_ptr self);
 void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y);
 
 /*
+ * Matrix-vector multiplication for matrix in Yale format
+ * y = A*x
+ */
+void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
+
+
+/*
  * Solves SLAE L*x = b
  * by given L sparse matrix 
  * n - is the size of the x vector, and therefore
@@ -253,7 +260,7 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
 
 /*
  * Conjugate Grade solver
- * self - matrix
+ * self - matrix in Yale format
  * b - right-part vector
  * x0 - first approximation of the solution
  * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
@@ -262,32 +269,32 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
  * will contain norm of the residual at the end of iteration
  * x - output vector
  */
-void sp_matrix_solve_cg(sp_matrix_ptr self,
-                        double* b,
-                        double* x0,
-                        int* max_iter,
-                        double* tolerance,
-                        double* x);
-
-/*
- * Preconditioned Conjugate Grade solver
- * Preconditioner in form of the ILU decomposition
- * self - matrix
- * b - right-part vector
- * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
- * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
- * will contain norm of the residual at the end of iteration
- * x - output vector
- */
-void sp_matrix_solve_pcg_ilu(sp_matrix_ptr self,
-                             sp_matrix_skyline_ilu_ptr ilu,
+void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
                              double* b,
                              double* x0,
                              int* max_iter,
                              double* tolerance,
                              double* x);
+
+/*
+ * Preconditioned Conjugate Grade solver
+ * Preconditioner in form of the ILU decomposition
+ * self - matrix in Yale format
+ * b - right-part vector
+ * x0 - first approximation of the solution
+ * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * will contain a number of iterations passed
+ * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * will contain norm of the residual at the end of iteration
+ * x - output vector
+ */
+void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
+                                  sp_matrix_skyline_ilu_ptr ilu,
+                                  double* b,
+                                  double* x0,
+                                  int* max_iter,
+                                  double* tolerance,
+                                  double* x);
 
 
 /*
