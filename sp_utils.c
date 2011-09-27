@@ -201,6 +201,9 @@ double sp_extract_positional_float(const char* from, int size)
     ++i;
   }
   buf[size] = '\0';
+  ptr = buf;
+  /* try to parse strings like 0.156211824D+02 */
+  while (*ptr) { if(*ptr == 'D') *ptr = 'E'; ++ptr; }
   result = atof(buf);
   free(buf);
   return result;  
@@ -386,7 +389,8 @@ static const char* sp_extract_fortran_numbers_I(const char* string,
   for ( i = 0; i < format->repeat; ++ i)
   {
     ptr1 = sp_skip_whitespaces(ptr);
-    if (*ptr1 && *ptr != '\n' && ptr1-ptr < format->width)
+    if (*ptr1 && *ptr1 != '\n' && ptr1-string < size &&
+        ptr1-ptr < format->width)
     {
       number[*extracted].integer =
         sp_extract_positional_int(ptr,format->width);
@@ -398,17 +402,6 @@ static const char* sp_extract_fortran_numbers_I(const char* string,
     ptr += format->width;
   }
   result = ptr;
-  return result;
-}
-
-static
-const char* sp_extract_fortran_numbers_ED(const char* string, 
-                                          const fortran_io_format* format,
-                                          /* output */
-                                          fortran_number* number,
-                                          int* extracted)
-{
-  const char* result = string;
   return result;
 }
 
@@ -434,7 +427,8 @@ const char* sp_extract_fortran_numbers_F(const char* string,
   for ( i = 0; i < format->repeat; ++ i)
   {
     ptr1 = sp_skip_whitespaces(ptr);
-    if (*ptr1 && *ptr != '\n' && ptr1-ptr < format->width)
+    if (*ptr1 && *ptr1 != '\n' && ptr1-string < size &&
+        ptr1-ptr < format->width)
     {
       number[*extracted].real =
         sp_extract_positional_float(ptr,format->width);
@@ -451,15 +445,25 @@ const char* sp_extract_fortran_numbers_F(const char* string,
 
 
 static
+const char* sp_extract_fortran_numbers_ED(const char* string, 
+                                          const fortran_io_format* format,
+                                          /* output */
+                                          fortran_number* number,
+                                          int* extracted)
+{
+  return sp_extract_fortran_numbers_F(string,format,number,extracted);
+}
+
+
+
+static
 const char* sp_extract_fortran_numbers_G(const char* string, 
                                          const fortran_io_format* format,
                                          /* output */
                                          fortran_number* number,
                                          int* extracted)
 {
-  const char* result = string;
-
-  return result;
+  return sp_extract_fortran_numbers_F(string,format,number,extracted);
 }
 
 

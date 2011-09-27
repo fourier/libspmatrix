@@ -385,17 +385,8 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   valcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
   rhscrd = sp_extract_positional_int(ptr,14);
-  printf("TOTCRD, integer, total number of data lines: %d\n",totcrd);
-  printf("PTRCRD, integer, number of data lines for pointers: %d\n",ptrcrd);
-  printf("INDCRD, integer, number of data lines for row or variable indices:"
-         " %d\n", indcrd);
-  printf("VALCRD, integer, number of data lines for numerical values of "
-         "matrix entries %d\n",valcrd);
-  printf("RHSCRD, integer, number of data lines for right hand side vectors,"
-         "starting guesses, and solutions: %d\n", rhscrd);
-
   if (rhscrd)
-    printf("Right-part vector is not supported, ignoring\n");
+    fprintf(stderr, "Right-part vector is not supported, ignoring\n");
   /*
    * Line 3.
    * MXTYPE, matrix type (see table), (3 characters)
@@ -433,7 +424,6 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   ncol = sp_extract_positional_int(ptr,14);
   ptr += 14;
   nnzero = sp_extract_positional_int(ptr,14);
-  printf("NROW = %d, NCOL = %d, NNZERO = %d\n", nrow, ncol, nnzero);
   /*
    * Line 4.
    * PTRFMT, FORTRAN I/O format for pointers, (16 characters)
@@ -474,8 +464,6 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
       return 0;
     }
   }
-  printf("So far HB file %s parsed successfully\n",filename);
-
   /*
    * Line 5: (only present if 0 <RHSCRD!)
    * RHSTYP, describes the right hand side information, (3 characters)
@@ -590,11 +578,8 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
     free(values);
     return 0;
   }
-  printf("n = %d\n",n);
-  for ( i = 0; i < n; ++ i)
-    printf("%f ",values[i]);
-  printf("\n");
-
+  printf("So far HB file %s parsed successfully\n",filename);
+  
   return self;
 }
 
