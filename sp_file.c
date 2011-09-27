@@ -515,7 +515,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
   free(fortran_numbers);
   num_col_ind = n;
 
-  /* Section 2. rowss */
+  /* Section 2. rows */
   fortran_numbers  = calloc(indfmt.repeat, sizeof(fortran_number));
   n = 0;
   while (indcrd --)
@@ -541,18 +541,60 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
       rowind[i] = fortran_numbers[i-n].integer;
     n += extracted;
   }
-  
+  free(fortran_numbers);
   if ( n != nnzero)
   {
     fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
             "%d nonzeros\n", n, nnzero);
     fclose(file);
-    free(fortran_numbers);
     free(colptr);
     free(rowind);
     return 0;
   }
-  printf ("n = %d\n",n);
+
+  /* Section 3. values */
+  fortran_numbers  = calloc(valfmt.repeat, sizeof(fortran_number));
+  n = 0;
+  while (valcrd --)
+  {
+    fgets(buf,HB_LINE_SIZE,file);
+    ptr = (char*)sp_extract_fortran_numbers(buf,
+                                            &valfmt,
+                                            fortran_numbers,
+                                            &extracted);
+    if (ptr == &buf[0])
+    {
+      fprintf(stderr,"Unable to parse values: %s\n", buf);
+      fclose(file);
+      free(fortran_numbers);
+      free(colptr);
+      free(rowind);
+      free(values);
+      return 0;
+    }
+    
+    values = values ? realloc(values, (n+extracted)*sizeof(double)) :
+      calloc(n+extracted, sizeof(double));
+    for (i = n; i < n + extracted; ++ i) 
+      values[i] = fortran_numbers[i-n].real;
+    n += extracted;
+  }
+  free(fortran_numbers);
+  if ( n != nnzero)
+  {
+    fprintf(stderr,"Unable to parse values: parsed = %d != "
+            "%d nonzeros\n", n, nnzero);
+    fclose(file);
+    free(colptr);
+    free(rowind);
+    free(values);
+    return 0;
+  }
+  printf("n = %d\n",n);
+  for ( i = 0; i < n; ++ i)
+    printf("%f ",values[i]);
+  printf("\n");
+
   return self;
 }
 

@@ -170,7 +170,7 @@ char* sp_read_text_line(FILE* file, int size)
   return result;
 }
 
-/* Extracts the integer in size bytes of the buffer from */
+/* Extracts the integer of size bytes from the buffer from */
 int sp_extract_positional_int(const char* from, int size)
 {
   int result;
@@ -187,6 +187,25 @@ int sp_extract_positional_int(const char* from, int size)
   free(buf);
   return result;
 }
+
+/* Extracts the float of size bytes from the buffer from */
+double sp_extract_positional_float(const char* from, int size)
+{
+  double result;
+  char* buf = malloc(size+1);
+  char* ptr = buf;
+  int i = 0;
+  while (i < size && *from)
+  {
+    *ptr++ = *from++;
+    ++i;
+  }
+  buf[size] = '\0';
+  result = atof(buf);
+  free(buf);
+  return result;  
+}
+
 
 
 /*
@@ -390,7 +409,6 @@ const char* sp_extract_fortran_numbers_ED(const char* string,
                                           int* extracted)
 {
   const char* result = string;
-
   return result;
 }
 
@@ -403,7 +421,31 @@ const char* sp_extract_fortran_numbers_F(const char* string,
                                          int* extracted)
 {
   const char* result = string;
-
+  int size = 0;
+  const char* ptr = string, *ptr1;
+  int i;
+  /* width */
+  while (*ptr && *ptr != '\n')
+    size++,ptr++;
+  if (size > format->repeat * format->width)
+    return string;
+  ptr = string;
+  *extracted = 0;
+  for ( i = 0; i < format->repeat; ++ i)
+  {
+    ptr1 = sp_skip_whitespaces(ptr);
+    if (*ptr1 && *ptr != '\n' && ptr1-ptr < format->width)
+    {
+      number[*extracted].real =
+        sp_extract_positional_float(ptr,format->width);
+      number[*extracted].fortran_type = FORTRAN_TYPE_DOUBLE;
+      (*extracted) ++;
+    }
+    else
+      break;
+    ptr += format->width;
+  }
+  result = ptr;
   return result;
 }
 
@@ -436,6 +478,8 @@ const char* sp_extract_fortran_numbers(const char* string,
   const char* result = string;
   if (format->type == 'I')
     result = sp_extract_fortran_numbers_I(string,format,number,extracted);
+  else if (format->type == 'F')
+    result = sp_extract_fortran_numbers_F(string,format,number,extracted);
   else if (format->type == 'E' || format->type == 'D')
     result = sp_extract_fortran_numbers_ED(string,format,number,extracted);
   else if (format->type == 'G')

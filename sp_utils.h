@@ -107,8 +107,12 @@ char* sp_read_text_line(FILE* file, int size);
   
   
 
-/* Extracts the integer in size bytes of the buffer from */
+/* Extracts the integer of size bytes from the buffer from */
 int sp_extract_positional_int(const char* from, int size);
+
+/* Extracts the float of size bytes from the buffer from */
+double sp_extract_positional_float(const char* from, int size);
+
 
 /*
  * Very simple Parser for FORTRAN IO Format specifiers
