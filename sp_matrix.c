@@ -160,7 +160,7 @@ void sp_matrix_create_ilu(sp_matrix_ptr self,sp_matrix_skyline_ilu_ptr ilu)
   sp_matrix_skyline A;
   /* reorder self if not already reordered */
   if (!self->ordered)
-    sp_matrix_compress(self);
+    sp_matrix_reorder(self);
   /* initialize skyline matrix for ILU decomposition */
   sp_matrix_skyline_init(&A,self);
   /*
@@ -289,7 +289,7 @@ void sp_matrix_yale_init(sp_matrix_yale_ptr self,
   int n = mtx->storage_type == CRS ? mtx->rows_count : mtx->cols_count;
   /* reorder self if not already reordered */
   if (!mtx->ordered)
-    sp_matrix_compress(mtx);
+    sp_matrix_reorder(mtx);
   /* initialize matrix */
   memset(self,sizeof(sp_matrix_yale),0);
   self->storage_type = mtx->storage_type;
@@ -469,7 +469,7 @@ void indexed_array_printf(indexed_array_ptr self)
 }
 
 
-void sp_matrix_compress(sp_matrix_ptr self)
+void sp_matrix_reorder(sp_matrix_ptr self)
 {
   int i,j,n;
   int size,stored;
@@ -658,7 +658,7 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
   memset(x,0,sizeof(double)*n);
   
   if (!self->ordered)
-    sp_matrix_compress(self);
+    sp_matrix_reorder(self);
   if (self->storage_type == CCS)
   {
     for ( j = 0; j < n; ++ j)
@@ -694,7 +694,7 @@ void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
   memset(r,0,self->rows_count*sizeof(double));
   /* reorder columns for to prepare to solve SLAE */
   if (!self->ordered)
-    sp_matrix_compress(self);
+    sp_matrix_reorder(self);
   /* sp_matrix_solve_pcg(self,b,b,&max_iter,&tolerance,x); */
   sp_matrix_solve_cg(self,b,b,&max_iter,&tolerance,x);
   /* Calculare residual r = A*x-b */
@@ -740,7 +740,7 @@ void sp_matrix_solve_cg(sp_matrix_ptr self,
 
   /* check if matrix is reordered */
   if (!self->ordered)
-    sp_matrix_compress(self);
+    sp_matrix_reorder(self);
 
   /* CG method works only for only symmetric matrices */
   assert(sp_matrix_issymmetric(self));

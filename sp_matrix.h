@@ -220,7 +220,7 @@ double sp_matrix_element_add(sp_matrix_ptr self,
 
 
 /* rearrange columns of a matrix to prepare for solving SLAE */
-void sp_matrix_compress(sp_matrix_ptr self);
+void sp_matrix_reorder(sp_matrix_ptr self);
 
 /* returns nonzero value if the matrix is symmetric */
 int sp_matrix_issymmetric(sp_matrix_ptr self);

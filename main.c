@@ -57,7 +57,7 @@ static int test_sp_matrix()
   MTX(&mtx,5,5,8);
   MTX(&mtx,6,0,2);MTX(&mtx,6,1,2);MTX(&mtx,6,4,3);MTX(&mtx,6,6,8);
 
-  sp_matrix_compress(&mtx);
+  sp_matrix_reorder(&mtx);
   
   /* 1st test - matrix-vector multiplication */
   sp_matrix_mv(&mtx,b,x);
@@ -161,7 +161,7 @@ static int test_cg_solver()
   MTX(&mtx,1,1,1);
   MTX(&mtx,2,0,-2);MTX(&mtx,2,2,5);
 
-  sp_matrix_compress(&mtx);
+  sp_matrix_reorder(&mtx);
 
   sp_matrix_solve_cg(&mtx,v,v,&max_iter,&tolerance,x);
 
@@ -243,7 +243,7 @@ static int test_ilu()
   MTX(&mtx,5,5,8);
   MTX(&mtx,6,0,2);MTX(&mtx,6,1,2);MTX(&mtx,6,4,3);MTX(&mtx,6,6,8);
 
-  sp_matrix_compress(&mtx);
+  sp_matrix_reorder(&mtx);
   sp_matrix_skyline_init(&m,&mtx);
   sp_matrix_skyline_ilu_copy_init(&ILU,&m);
 
@@ -328,7 +328,7 @@ static int test_pcg_ilu_solver()
   MTX(&mtx,0,0,1);MTX(&mtx,0,2,-2);
   MTX(&mtx,1,1,1);
   MTX(&mtx,2,0,-2);MTX(&mtx,2,2,5);
-  sp_matrix_compress(&mtx);
+  sp_matrix_reorder(&mtx);
 
 
   sp_matrix_create_ilu(&mtx,&ilu);
@@ -397,7 +397,7 @@ static int test_cholesky()
   MTX(&mtx,6,4,37);MTX(&mtx,6,6,70);
 
   /* prepare initial matrix for conversion to Skyline format */
-  sp_matrix_compress(&mtx);
+  sp_matrix_reorder(&mtx);
   /* initialize skyline format from given CRS format */
   sp_matrix_skyline_init(&m,&mtx);
 
