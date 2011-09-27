@@ -346,7 +346,7 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
    * temporary variables - counter of extracted by sp_extract_fortran_numbers
    * numbers and  number of column indicies (colptr array)
    */
-  int extracted, num_col_ind;
+  int extracted;
 
   FILE* file = fopen(filename,"rt");
   if (!file)
@@ -501,7 +501,16 @@ static sp_matrix_ptr sp_matrix_load_file_hb(const char* filename,
     n += extracted;
   }
   free(fortran_numbers);
-  num_col_ind = n;
+  if ( n != nrow + 1)
+  {
+    fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
+            "%d nonzeros\n", n, nnzero);
+    fclose(file);
+    free(colptr);
+    free(rowind);
+    return 0;
+  }
+
 
   /* Section 2. rows */
   fortran_numbers  = calloc(indfmt.repeat, sizeof(fortran_number));

@@ -99,6 +99,23 @@ typedef struct
 } sp_matrix_skyline_ilu;
 typedef sp_matrix_skyline_ilu* sp_matrix_skyline_ilu_ptr;
 
+/*
+ * Sparse matrix in 3 arrays  (CRS or CCS format):
+ * offsets, column/row indicies, values
+ * This format is most commonly used in various solvers
+ */
+typedef struct
+{
+  sparse_storage_type storage_type;
+  int rows_count;
+  int cols_count;
+  int nonzeros;                 /* number of nonzero elements in matrix */
+  int* offsets;                 
+  int* indicies;
+  double* values;
+} sp_matrix_yale;
+typedef sp_matrix_yale* sp_matrix_yale_ptr;
+
 /*************************************************************/
 /* Sparse matrix operations                                  */
 
@@ -173,6 +190,22 @@ void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,
  */
 void sp_matrix_skyline_free(sp_matrix_skyline_ptr self);
 
+/*
+ * Creates the sparse matrix in Yale format
+ * Acts as a copy-constructor
+ * If matrix was in CCS format, produces CCS, CRS otherwise
+ */
+void sp_matrix_yale_init(sp_matrix_yale_ptr self,
+                         sp_matrix_ptr mtx);
+
+/*
+ * Destructor for a sparse matrix in Yale format
+ * This function doesn't deallocate memory for the matrix itself,
+ * only for its structures.
+ */
+void sp_matrix_yale_free(sp_matrix_yale_ptr self);
+
+
 /* getters/setters for a sparse matrix */
 
 /* returns a pointer to the specific element
@@ -198,7 +231,8 @@ int sp_matrix_issymmetric_portrait(sp_matrix_ptr self);
 /* returns nonzero value if the matrix is skew-symmetric */
 int sp_matrix_isskew_symmetric(sp_matrix_ptr self);
 
-
+/* returns the number of nonzeroes in matrix */
+int sp_matrix_nonzeros(sp_matrix_ptr self);
 
 /* Matrix-vector multiplication
  * y = A*x

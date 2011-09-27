@@ -409,36 +409,6 @@ static int test_cholesky()
   return result;
 }
 
-static int test_istrcmp()
-{
-  int result = 1;
-  const char* str1_1 = "aaA";
-  const char* str1_2 = "aaa";
-
-  const char* str2_1 = "aaA";
-  const char* str2_2 = "aaaa";
-
-  const char* str3_1 = "aaa";
-  const char* str3_2 = "bbb";
-
-  const char* str4_1 = "";
-  const char* str4_2 = "a";
-
-  
-  printf("strcmp(%s,%s) = %d\n",str1_1,str1_2,strcmp(str1_1,str1_2));
-  printf("strcmp(%s,%s) = %d\n",str2_1,str2_2,strcmp(str2_1,str2_2));
-  printf("strcmp(%s,%s) = %d\n",str3_1,str3_2,strcmp(str3_1,str3_2));
-  printf("strcmp(%s,%s) = %d\n",str4_1,str4_2,strcmp(str4_1,str4_2));
-
-  printf("sp_istrcmp(%s,%s) = %d\n",str1_1,str1_2,sp_istrcmp(str1_1,str1_2));
-  printf("sp_istrcmp(%s,%s) = %d\n",str2_1,str2_2,sp_istrcmp(str2_1,str2_2));
-  printf("sp_istrcmp(%s,%s) = %d\n",str3_1,str3_2,sp_istrcmp(str3_1,str3_2));
-  printf("sp_istrcmp(%s,%s) = %d\n",str4_1,str4_2,sp_istrcmp(str4_1,str4_2));
-
-  printf("test_istrcmp result: *%s*\n",result ? "pass" : "fail");
-  return result;
-}
-
 static int test_load()
 {
   sp_matrix_ptr result = 0;
@@ -456,6 +426,74 @@ static int test_load()
   return result ? 1 : 0;
 }
 
+static int test_yale()
+{
+  int result = 0;
+  int i,j;
+  sp_matrix mtx;
+  sp_matrix_yale yale;
+  /* 1. CRS */
+  /* matrix:
+   *
+   * [ 1 2 0 0 ]
+   * [ 0 3 9 0 ]
+   * [ 0 1 4 0 ]
+   */
+  /* expected result for CRS: */
+  int offsets1[] = {0,2,4,6};
+  int indicies1[] = {0,1,1,2,1,2};
+  double values1[] = {1,2,3,9,1,4};
+
+  /* expected result for CCS: */
+  int offsets2[] = {0,3,5,7,9,11};
+  int indicies2[] = {0,2,4,0,3,1,4,0,3,1,4};
+  double values2[] = {1,2,5,-3,4,-2,-5,-1,-4,3,6};
+
+  sp_matrix_init(&mtx,3,4,2,CRS);
+  MTX(&mtx,0,0,1);MTX(&mtx,0,1,2);
+  MTX(&mtx,1,1,3);MTX(&mtx,1,2,9);
+  MTX(&mtx,2,1,1);MTX(&mtx,2,2,4);
+  
+  sp_matrix_yale_init(&yale,&mtx);
+  result = memcmp(yale.offsets,offsets1,4*sizeof(int)) == 0;
+  result &= memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0;
+  result &= memcmp(yale.values,values1,6*sizeof(double)) == 0;
+  
+  sp_matrix_free(&mtx);
+  sp_matrix_yale_free(&yale);
+  /* 2. CCS */
+  /* matrix: */
+  /*
+   * 1. -3.  0. -1.  0.
+   * 0.  0. -2.  0.  3.
+   * 2.  0.  0.  0.  0.
+   * 0.  4.  0. -4.  0.
+   * 5.  0. -5.  0.  6.
+   */
+  sp_matrix_init(&mtx,5,5,3,CCS);
+  /* 1. -3.  0. -1.  0. */
+  MTX(&mtx,0,0,1);MTX(&mtx,0,1,-3);MTX(&mtx,0,3,-1);
+  /* 0.  0. -2.  0.  3. */
+  MTX(&mtx,1,2,-2);MTX(&mtx,1,4,3);
+  /* 2.  0.  0.  0.  0. */
+  MTX(&mtx,2,0,2);
+  /* 0.  4.  0. -4.  0. */
+  MTX(&mtx,3,1,4);MTX(&mtx,3,3,-4);
+  /* 5.  0. -5.  0.  6. */
+  MTX(&mtx,4,0,5);MTX(&mtx,4,2,-5);MTX(&mtx,4,4,6);
+  
+  sp_matrix_yale_init(&yale,&mtx);
+  result = memcmp(yale.offsets,offsets2,6*sizeof(int)) == 0;
+  result &= memcmp(yale.indicies,indicies2,11*sizeof(int)) == 0;
+  result &= memcmp(yale.values,values2,11*sizeof(double)) == 0;
+  
+  sp_matrix_free(&mtx);
+  sp_matrix_yale_free(&yale);
+  
+  printf("test_yale: *%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
 
 int main(/* int argc, char *argv[] */)
 {
@@ -465,7 +503,7 @@ int main(/* int argc, char *argv[] */)
   test_ilu();
   test_pcg_ilu_solver();
   test_cholesky();
-  test_istrcmp();
   test_load();
+  test_yale();
   return 0;
 }

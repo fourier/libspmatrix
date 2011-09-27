@@ -143,7 +143,7 @@ void sp_matrix_convert(sp_matrix_ptr mtx_from,
             mtx_from->storage[i].values[j]);
     }
   }
-  else                          /* CCS -> CRS*/
+  else                          /* CCS -> CRS */
   {
     for (i = 0; i < mtx_from->cols_count; ++ i)
     {
@@ -152,7 +152,6 @@ void sp_matrix_convert(sp_matrix_ptr mtx_from,
             mtx_from->storage[i].values[j]);
     }
   }
-  
 }
 
 
@@ -280,6 +279,49 @@ void sp_matrix_skyline_free(sp_matrix_skyline_ptr self)
     free(self->jptr);
     free(self->iptr);
   }
+}
+
+void sp_matrix_yale_init(sp_matrix_yale_ptr self,
+                         sp_matrix_ptr mtx)
+{
+  int nonzeros = sp_matrix_nonzeros(mtx);
+  int i,j,index;
+  int n = mtx->storage_type == CRS ? mtx->rows_count : mtx->cols_count;
+  /* reorder self if not already reordered */
+  if (!mtx->ordered)
+    sp_matrix_compress(mtx);
+  /* initialize matrix */
+  memset(self,sizeof(sp_matrix_yale),0);
+  self->storage_type = mtx->storage_type;
+  self->rows_count = mtx->rows_count;
+  self->cols_count = mtx->cols_count;
+  self->nonzeros   = nonzeros;
+  /* allocate memory for arrays */
+  self->offsets  = calloc(n+1,      sizeof(int));
+  self->indicies = calloc(nonzeros, sizeof(int));
+  self->values   = calloc(nonzeros, sizeof(double));
+  /* convert */
+  /* loop by nonzero columns in row i */
+  j = 0;
+  for ( i = 0; i < n; ++ i)
+  {
+    self->offsets[i] = j;
+    for (index = 0; index <= mtx->storage[i].last_index; ++ index)
+    {
+      self->indicies[j] = mtx->storage[i].indexes[index];
+      self->values[j]   = mtx->storage[i].values[index];
+      j++;
+    }
+  }
+  self->offsets[i] = nonzeros;
+}
+
+void sp_matrix_yale_free(sp_matrix_yale_ptr self)
+{
+  free(self->offsets);
+  free(self->indicies);
+  free(self->values);
+  memset(self,sizeof(sp_matrix_yale),0);
 }
 
 
@@ -565,6 +607,17 @@ int sp_matrix_isskew_symmetric(sp_matrix_ptr self)
       return FALSE;
   }
   return TRUE;
+}
+
+
+int sp_matrix_nonzeros(sp_matrix_ptr self)
+{
+  int stored = 0;
+  int i;
+  int n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  for ( i = 0; i < n; ++ i)
+    stored += self->storage[i].last_index + 1;
+  return stored;
 }
 
 
