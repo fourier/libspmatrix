@@ -27,6 +27,7 @@
 
 #include "sp_matrix.h"
 #include "sp_utils.h"
+#include "logger.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -492,13 +493,21 @@ void sp_matrix_reorder(sp_matrix_ptr self)
   size = self->rows_count*self->cols_count;
   for ( i = 0; i < n; ++ i)
     stored += self->storage[i].last_index + 1;
-  printf("Sparse matrix compressed:\n");
-  printf("- size: %dx%d\n",self->rows_count,self->cols_count);
-  printf("- nonzeros: %d\n",stored);
-  printf("- fill factor: %.2f %%\n",stored/(size/100.0));
-  printf("- avergare nonzeros per row: %d\n",
-         /* (int)rint(stored/(double)self->rows_count)); */
-         (int)(stored/(double)self->rows_count));
+  /* printf("Sparse matrix compressed:\n"); */
+  /* printf("- size: %dx%d\n",self->rows_count,self->cols_count); */
+  /* printf("- nonzeros: %d\n",stored); */
+  /* printf("- fill factor: %.2f %%\n",stored/(size/100.0)); */
+  /* printf("- avergare nonzeros per row: %d\n", */
+  /*        /\* (int)rint(stored/(double)self->rows_count)); *\/ */
+  /*        (int)(stored/(double)self->rows_count)); */
+  LOGINFO("Sparse matrix compressed:\n");
+  LOGINFO("- size: %dx%d\n",self->rows_count,self->cols_count);
+  LOGINFO("- nonzeros: %d\n",stored);
+  LOGINFO("- fill factor: %.2f %%\n",stored/(size/100.0));
+  LOGINFO("- avergare nonzeros per row: %d\n",
+          /* (int)rint(stored/(double)self->rows_count)); */
+          (int)(stored/(double)self->rows_count));
+
 }
 
 

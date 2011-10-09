@@ -26,6 +26,9 @@
 #include "sp_matrix.h"
 #include "sp_utils.h"
 #include "sp_file.h"
+#include "sp_algo.h"
+
+#include "logger.h"
 
 static int test_sp_matrix()
 {
@@ -504,11 +507,61 @@ static int test_load()
   return result;
 }
 
+static int test_disjoint_union_set()
+{
+  int result = 0;
+  disjoint_set_union_ptr set_union = dsu_alloc(5);
+  dsu_make_set(set_union, 0);
+  dsu_make_set(set_union, 1);
+  dsu_make_set(set_union, 2);  
+  dsu_make_set(set_union, 3);
+  dsu_make_set(set_union, 4);
+
+  do
+  {
+  result = dsu_find(set_union,0) == 0;
+  result &= dsu_find(set_union,1) == 1;
+  result &= dsu_find(set_union,2) == 2;
+  result &= dsu_find(set_union,3) == 3;
+  result &= dsu_find(set_union,4) == 4;
+
+  if (!result)
+    break;
+  
+  dsu_union(set_union,0,3);
+  dsu_union(set_union,2,4);
+
+  result &= dsu_find(set_union,3) == 3;
+  result &= dsu_find(set_union,0) == 3;
+  result &= dsu_find(set_union,1) == 1;
+
+  if (!result)
+    break;
+
+  dsu_union(set_union,4,1);
+  result &= dsu_find(set_union,4) == 1;
+  result &= dsu_find(set_union,2) == 1;
+  
+  
+  } while(0);
+  dsu_free(set_union);
+
+  printf("test_disjoint_union_set: *%s*\n",result ? "pass" : "fail");
+  return result;
+}
 
 
 
 int main(/* int argc, char *argv[] */)
 {
+  /* logger */
+  logger_parameters params;
+  memset(&params,0,sizeof(params));
+  params.log_file_path = "spmatrix.log";
+  params.log_level = LOG_LEVEL_ALL;
+  logger_init_with_params(&params);
+
+  /* tests */
   test_sp_matrix();
   test_yale();
   test_triangle_solver();
@@ -517,5 +570,9 @@ int main(/* int argc, char *argv[] */)
   test_pcg_ilu_solver();
   test_cholesky();
   test_load();
+  test_disjoint_union_set();
+
+  /* finalize logger */
+  logger_fini();
   return 0;
 }

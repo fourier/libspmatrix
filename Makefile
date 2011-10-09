@@ -20,11 +20,11 @@
 
 CC = gcc
 
-CFLAGS = -ggdb -g -ansi -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations
+CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES)
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
-INCLUDES = -I .
-LINKFLAGS = -L. -lspmatrix -lm
+INCLUDES = -I . -I ../liblogger
+LINKFLAGS = -L. -lspmatrix -lm -L../liblogger -llogger
 
 OUTPUT_SRC = main.c
 SOURCES := $(wildcard *.c)
