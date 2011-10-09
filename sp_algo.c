@@ -76,8 +76,8 @@ dsu_value dsu_find(disjoint_set_union_ptr self, dsu_value value)
     return DSU_DEFAULT_VALUE;
   if (self->values[value] == value)
     return value;
-  self->values[value] = dsu_find(self,self->values[value]);
-  return self->values[value];
+  /* path compression heuristic  */
+  return self->values[value] = dsu_find(self,self->values[value]);
 }
 
 disjoint_set_union_ptr dsu_union(disjoint_set_union_ptr self,

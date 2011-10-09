@@ -245,6 +245,14 @@ void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y);
  */
 void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
 
+/*
+ * Constructs the elimination tree from the matrix in Yale format
+ * the matrix shall be in CCS format
+ * return the array of size rows_count in case if all ok
+ * 0 in case of error
+ */
+int* sp_matrix_yale_etree(sp_matrix_yale_ptr self);
+
 
 /*
  * Solves SLAE L*x = b

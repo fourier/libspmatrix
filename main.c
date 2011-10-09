@@ -519,34 +519,101 @@ static int test_disjoint_union_set()
 
   do
   {
-  result = dsu_find(set_union,0) == 0;
-  result &= dsu_find(set_union,1) == 1;
-  result &= dsu_find(set_union,2) == 2;
-  result &= dsu_find(set_union,3) == 3;
-  result &= dsu_find(set_union,4) == 4;
+    result = dsu_find(set_union,0) == 0;
+    result &= dsu_find(set_union,1) == 1;
+    result &= dsu_find(set_union,2) == 2;
+    result &= dsu_find(set_union,3) == 3;
+    result &= dsu_find(set_union,4) == 4;
 
-  if (!result)
-    break;
+    if (!result)
+      break;
   
-  dsu_union(set_union,0,3);
-  dsu_union(set_union,2,4);
+    dsu_union(set_union,0,3);
+    dsu_union(set_union,2,4);
 
-  result &= dsu_find(set_union,3) == 3;
-  result &= dsu_find(set_union,0) == 3;
-  result &= dsu_find(set_union,1) == 1;
+    result &= dsu_find(set_union,3) == 3;
+    result &= dsu_find(set_union,0) == 3;
+    result &= dsu_find(set_union,1) == 1;
 
-  if (!result)
-    break;
+    if (!result)
+      break;
 
-  dsu_union(set_union,4,1);
-  result &= dsu_find(set_union,4) == 1;
-  result &= dsu_find(set_union,2) == 1;
+    dsu_union(set_union,4,1);
+    result &= dsu_find(set_union,4) == 1;
+    result &= dsu_find(set_union,2) == 1;
   
   
   } while(0);
   dsu_free(set_union);
 
   printf("test_disjoint_union_set: *%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
+static int test_etree()
+{
+  int result = 0;
+  int i;
+  sp_matrix mtx;
+  sp_matrix_yale yale;
+  int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
+  int* etree = 0;
+  /* fill initial matrix */
+  sp_matrix_init(&mtx,11,11,5,CCS);
+
+  /* Octave representation:
+    m = [1,0,0,0,0,1,1,0,0,0,0;
+    0,1,1,0,0,0,0,1,0,0,0;
+    0,1,1,0,0,0,0,0,0,1,1;
+    0,0,0,1,0,1,0,0,0,1,0;
+    0,0,0,0,1,0,0,1,0,0,1;
+    1,0,0,1,0,1,0,0,1,1,0;
+    1,0,0,0,0,0,1,0,0,0,1;
+    0,1,0,0,1,0,0,1,0,1,1;
+    0,0,0,0,0,1,0,0,1,0,0;
+    0,0,1,1,0,1,0,1,0,1,1;
+    0,0,1,0,1,0,1,1,0,1,1];
+  */
+  
+  /* 1 row: 1,0,0,0,0,1,1,0,0,0,0; */
+  MTX(&mtx,0,0,1);MTX(&mtx,0,5,1);MTX(&mtx,0,6,1);
+  /* 2 row: 0,1,1,0,0,0,0,1,0,0,0; */
+  MTX(&mtx,1,1,1);MTX(&mtx,1,2,1);MTX(&mtx,1,7,1);
+  /* 3 row: 0,1,1,0,0,0,0,0,0,1,1; */
+  MTX(&mtx,2,1,1);MTX(&mtx,2,2,1);MTX(&mtx,2,9,1);MTX(&mtx,2,10,1);
+  /* 4 row: 0,0,0,1,0,1,0,0,0,1,0; */
+  MTX(&mtx,3,3,1);MTX(&mtx,3,5,1);MTX(&mtx,3,9,1);
+  /* 5 row: 0,0,0,0,1,0,0,1,0,0,1; */
+  MTX(&mtx,4,4,1);MTX(&mtx,4,7,1);MTX(&mtx,4,10,1);
+  /* 6 row: 1,0,0,1,0,1,0,0,1,1,0; */
+  MTX(&mtx,5,0,1);MTX(&mtx,5,3,1);MTX(&mtx,5,5,1);MTX(&mtx,5,8,1);
+  MTX(&mtx,5,9,1);
+  /* 7 row: 1,0,0,0,0,0,1,0,0,0,1; */
+  MTX(&mtx,6,0,1);MTX(&mtx,6,6,1);MTX(&mtx,6,10,1);
+  /* 8 row: 0,1,0,0,1,0,0,1,0,1,1;*/
+  MTX(&mtx,7,1,1);MTX(&mtx,7,4,1);MTX(&mtx,7,7,1);MTX(&mtx,7,9,1);
+  MTX(&mtx,7,10,1);
+  /* 9 row: 0,0,0,0,0,1,0,0,1,0,0; */
+  MTX(&mtx,8,5,1);MTX(&mtx,8,8,1);
+  /* 10 row: 0,0,1,1,0,1,0,1,0,1,1; */
+  MTX(&mtx,9,2,1);MTX(&mtx,9,3,1);MTX(&mtx,9,5,1);MTX(&mtx,9,7,1);
+  MTX(&mtx,9,9,1);MTX(&mtx,9,10,1);
+  /* 11 row: 0,0,1,0,1,0,1,1,0,1,1 */
+  MTX(&mtx,10,2,1);MTX(&mtx,10,4,1);MTX(&mtx,10,6,1);MTX(&mtx,10,7,1);
+  MTX(&mtx,10,9,1);MTX(&mtx,10,10,1);
+
+  sp_matrix_yale_init(&yale,&mtx);
+
+  etree = sp_matrix_yale_etree(&yale);
+  result = etree[0] == etree_expected[0];
+  for ( i = 1; i < 11; ++ i)
+    result &= etree[i] == etree_expected[i];
+  
+
+  free(etree);
+  sp_matrix_yale_free(&yale);
+  sp_matrix_free(&mtx);
+  printf("test_etree: *%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -571,7 +638,8 @@ int main(/* int argc, char *argv[] */)
   test_cholesky();
   test_load();
   test_disjoint_union_set();
-
+  test_etree();
+  
   /* finalize logger */
   logger_fini();
   return 0;

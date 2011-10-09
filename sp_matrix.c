@@ -27,6 +27,8 @@
 
 #include "sp_matrix.h"
 #include "sp_utils.h"
+#include "sp_algo.h"
+
 #include "logger.h"
 
 #define TRUE 1
@@ -669,6 +671,37 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y)
       for ( j = self->offsets[i]; j < self->offsets[i+1]; ++ j)
         y[self->indicies[j]] += self->values[j]*x[i];
   }
+}
+
+
+int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
+{
+  int *result = 0;
+  int k,i,j,p;
+  disjoint_set_union_ptr parents;
+  if ( !self || self->storage_type != CCS)
+    return result;
+
+  result = malloc(sizeof(int)*self->rows_count);
+  parents = dsu_alloc(self->rows_count);
+
+  for ( k = 0; k < self->rows_count; ++ k)
+  {
+    for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
+    {
+      i = self->indicies[p];
+      dsu_make_set(parents,i);
+      for (; i < k; ++ i)
+      {
+        
+    
+      }
+    }
+  }
+  memcpy(result, parents->values,sizeof(int)*self->rows_count);
+  dsu_free(parents);
+  
+  return result;
 }
 
 void sp_matrix_lower_solve(sp_matrix_ptr self,
