@@ -608,8 +608,10 @@ static int test_etree()
   result = etree[0] == etree_expected[0];
   for ( i = 1; i < 11; ++ i)
     result &= etree[i] == etree_expected[i];
+  for ( i = 0; i < 11; ++ i)
+    printf("%d ", etree[i]);
+  printf("\n");
   
-
   free(etree);
   sp_matrix_yale_free(&yale);
   sp_matrix_free(&mtx);

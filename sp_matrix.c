@@ -685,18 +685,26 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
   result = malloc(sizeof(int)*self->rows_count);
   parents = dsu_alloc(self->rows_count);
 
-  for ( k = 0; k < self->rows_count; ++ k)
+  for ( k = 0; k < self->rows_count; ++ k) /* loop by Tk */
   {
+    printf("k = %d\n", k);
+    /* loop by nonzero rows in the column */
     for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
     {
       i = self->indicies[p];
-      dsu_make_set(parents,i);
-      for (; i < k; ++ i)
+      if ( i < k )
       {
-        
-    
+        printf("a(%d,%d) ",k,i);
+        j = dsu_find(parents,i);
+        if ( j == DSU_DEFAULT_VALUE)
+        {
+          dsu_make_set(parents,i);
+          j = i;
+        }
+        /* dsu_union(parents,j,k); */
       }
     }
+    printf("\n");
   }
   memcpy(result, parents->values,sizeof(int)*self->rows_count);
   dsu_free(parents);
