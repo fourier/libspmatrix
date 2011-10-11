@@ -687,7 +687,7 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
 
   for ( k = 0; k < self->rows_count; ++ k) /* loop by Tk */
   {
-    printf("k = %d\n", k);
+    /* printf("k = %d\n", k); */
     /* loop by nonzero rows in the column */
     for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
     {
@@ -696,14 +696,21 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
       {
         printf("a(%d,%d) ",k,i);
         j = dsu_find(parents,i);
-        if ( j == DSU_DEFAULT_VALUE)
+        if (j == DSU_DEFAULT_VALUE)
         {
           dsu_make_set(parents,i);
-          j = i;
         }
-        /* dsu_union(parents,j,k); */
+        /*   j = dsu_find(parents,i); */
+        /* } */
+        /* dsu_union(parents,k,j); */
       }
+      
     }
+    printf("T%d = ",k+1);
+    for ( j = 0; j < k+1; ++ j)
+      printf("%d ",parents->values[j]);
+    /* if ( parents->values[j] != DSU_DEFAULT_VALUE) */
+    /*   printf ("(%d->%d) ",parents->values[j]+1,j+1); */
     printf("\n");
   }
   memcpy(result, parents->values,sizeof(int)*self->rows_count);
@@ -711,6 +718,35 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
   
   return result;
 }
+
+int* cs_etree(sp_matrix_yale_ptr self)
+{
+  int i,k,p,inext;
+  int *parent, *ancestor;
+  parent = malloc(self->rows_count*sizeof(int));
+  ancestor = malloc(self->rows_count*sizeof(int));
+  for (k = 0; k < self->rows_count; k++)
+  {
+    parent[k] = -1;
+    ancestor[k] = -1;
+    for (p = self->offsets[k]; p < self->offsets[k+1]; p++)
+    {
+      i = self->indicies[p];
+      for (; i != -1 && i < k; i = inext)
+      {
+        printf("a(%d,%d) ",k,i);
+        inext = ancestor[i];
+        ancestor[i] = k;
+        if (inext == -1)
+          parent[i] = k;
+      }
+    }
+    printf("\n");
+  }
+  free(ancestor);
+  return parent;
+}
+
 
 void sp_matrix_lower_solve(sp_matrix_ptr self,
                            int n,

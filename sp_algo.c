@@ -92,9 +92,12 @@ disjoint_set_union_ptr dsu_union(disjoint_set_union_ptr self,
       return self;
 
     /* randomly select to which tree append */
-    if (rand() & 1)
-      self->values[x] = y;
-    else
+    /* if (rand() & 1) */
+    /*   self->values[x] = y; */
+    /* else */
+    /*   self->values[y] = x; */
+
+    /* append y to x */
       self->values[y] = x;
   }
   return self;

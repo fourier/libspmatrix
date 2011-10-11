@@ -507,45 +507,104 @@ static int test_load()
   return result;
 }
 
+static void tdsu()
+{
+}
+
 static int test_disjoint_union_set()
 {
   int result = 0;
-  disjoint_set_union_ptr set_union = dsu_alloc(5);
-  dsu_make_set(set_union, 0);
-  dsu_make_set(set_union, 1);
-  dsu_make_set(set_union, 2);  
-  dsu_make_set(set_union, 3);
-  dsu_make_set(set_union, 4);
+  int i;
+  disjoint_set_union_ptr dsu = dsu_alloc(5);
+  dsu_make_set(dsu, 0);
+  dsu_make_set(dsu, 1);
+  dsu_make_set(dsu, 2);  
+  dsu_make_set(dsu, 3);
+  dsu_make_set(dsu, 4);
 
   do
   {
-    result = dsu_find(set_union,0) == 0;
-    result &= dsu_find(set_union,1) == 1;
-    result &= dsu_find(set_union,2) == 2;
-    result &= dsu_find(set_union,3) == 3;
-    result &= dsu_find(set_union,4) == 4;
+    result = dsu_find(dsu,0) == 0;
+    result &= dsu_find(dsu,1) == 1;
+    result &= dsu_find(dsu,2) == 2;
+    result &= dsu_find(dsu,3) == 3;
+    result &= dsu_find(dsu,4) == 4;
 
     if (!result)
       break;
   
-    dsu_union(set_union,0,3);
-    dsu_union(set_union,2,4);
+    dsu_union(dsu,0,3);
+    dsu_union(dsu,2,4);
 
-    result &= dsu_find(set_union,3) == 3;
-    result &= dsu_find(set_union,0) == 3;
-    result &= dsu_find(set_union,1) == 1;
+    result &= dsu_find(dsu,3) == 3;
+    result &= dsu_find(dsu,0) == 3;
+    result &= dsu_find(dsu,1) == 1;
 
     if (!result)
       break;
 
-    dsu_union(set_union,4,1);
-    result &= dsu_find(set_union,4) == 1;
-    result &= dsu_find(set_union,2) == 1;
+    dsu_union(dsu,4,1);
+    result &= dsu_find(dsu,4) == 1;
+    result &= dsu_find(dsu,2) == 1;
   
   
   } while(0);
-  dsu_free(set_union);
+  dsu_free(dsu);
 
+  dsu = dsu_alloc(11);
+  /* 1 */
+  dsu_make_set(dsu,0);
+  /* 2 */
+  dsu_make_set(dsu,1);
+  /* 3 */
+  dsu_make_set(dsu,2);
+  dsu_union(dsu,2,1);
+  /* 4 */
+  dsu_make_set(dsu,3);
+  /* 5 */
+  dsu_make_set(dsu,4);
+  /* 6 */
+  dsu_make_set(dsu,5);
+  dsu_union(dsu,5,0);
+  dsu_union(dsu,5,3);
+  /* 7 */
+  dsu_make_set(dsu,6);
+  dsu_union(dsu,5,0);
+  dsu_union(dsu,6,5);
+  /* 8 */
+  dsu_make_set(dsu,7);
+  dsu_union(dsu,2,1);
+  dsu_union(dsu,7,2);
+  dsu_union(dsu,7,4);
+  /* 9 */
+  dsu_make_set(dsu,8);
+  dsu_union(dsu,6,5);
+  dsu_union(dsu,8,6);
+  /* 10 */
+  dsu_make_set(dsu,9);
+  dsu_union(dsu,7,2);
+  dsu_union(dsu,9,7);
+  dsu_union(dsu,5,3);
+  dsu_union(dsu,6,5);
+  dsu_union(dsu,8,6);
+  dsu_union(dsu,9,8);
+  /* 11 */
+  dsu_make_set(dsu,10);
+  dsu_union(dsu,7,2);
+  dsu_union(dsu,7,4);
+  dsu_union(dsu,8,6);
+  dsu_union(dsu,9,7);
+  dsu_union(dsu,9,8);
+  dsu_union(dsu,10,9);
+
+
+    
+  for (i = 0; i < 11; ++ i)
+    printf("%d ",dsu->values[i]+1);
+  printf("\n");
+  
+  dsu_free(dsu);
+  
   printf("test_disjoint_union_set: *%s*\n",result ? "pass" : "fail");
   return result;
 }
@@ -562,17 +621,17 @@ static int test_etree()
   sp_matrix_init(&mtx,11,11,5,CCS);
 
   /* Octave representation:
-    m = [1,0,0,0,0,1,1,0,0,0,0;
-    0,1,1,0,0,0,0,1,0,0,0;
-    0,1,1,0,0,0,0,0,0,1,1;
-    0,0,0,1,0,1,0,0,0,1,0;
-    0,0,0,0,1,0,0,1,0,0,1;
-    1,0,0,1,0,1,0,0,1,1,0;
-    1,0,0,0,0,0,1,0,0,0,1;
-    0,1,0,0,1,0,0,1,0,1,1;
-    0,0,0,0,0,1,0,0,1,0,0;
-    0,0,1,1,0,1,0,1,0,1,1;
-    0,0,1,0,1,0,1,1,0,1,1];
+     m = [1,0,0,0,0,1,1,0,0,0,0;
+     0,1,1,0,0,0,0,1,0,0,0;
+     0,1,1,0,0,0,0,0,0,1,1;
+     0,0,0,1,0,1,0,0,0,1,0;
+     0,0,0,0,1,0,0,1,0,0,1;
+     1,0,0,1,0,1,0,0,1,1,0;
+     1,0,0,0,0,0,1,0,0,0,1;
+     0,1,0,0,1,0,0,1,0,1,1;
+     0,0,0,0,0,1,0,0,1,0,0;
+     0,0,1,1,0,1,0,1,0,1,1;
+     0,0,1,0,1,0,1,1,0,1,1];
   */
   
   /* 1 row: 1,0,0,0,0,1,1,0,0,0,0; */
@@ -605,11 +664,17 @@ static int test_etree()
   sp_matrix_yale_init(&yale,&mtx);
 
   etree = sp_matrix_yale_etree(&yale);
-  result = etree[0] == etree_expected[0];
+  /* etree = cs_etree(&yale); */
+  result = etree[0] == etree_expected[0] - 1;
   for ( i = 1; i < 11; ++ i)
-    result &= etree[i] == etree_expected[i];
+    result &= etree[i] == etree_expected[i] - 1;
+
+  printf("Expected:\n");
   for ( i = 0; i < 11; ++ i)
-    printf("%d ", etree[i]);
+    printf("%d ", etree_expected[i]);
+  printf("\nCalculated:\n");
+  for ( i = 0; i < 11; ++ i)
+    printf("%d ", etree[i]+1);
   printf("\n");
   
   free(etree);
@@ -639,8 +704,9 @@ int main(/* int argc, char *argv[] */)
   test_pcg_ilu_solver();
   test_cholesky();
   test_load();
-  test_disjoint_union_set();
-  test_etree();
+  tdsu();
+  /* test_disjoint_union_set(); */
+  /* test_etree(); */
   
   /* finalize logger */
   logger_fini();

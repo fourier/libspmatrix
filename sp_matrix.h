@@ -252,6 +252,8 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
  * 0 in case of error
  */
 int* sp_matrix_yale_etree(sp_matrix_yale_ptr self);
+int* cs_etree(sp_matrix_yale_ptr self);
+
 
 
 /*
