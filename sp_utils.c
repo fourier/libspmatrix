@@ -480,3 +480,18 @@ const char* sp_extract_fortran_numbers(const char* string,
   return result;
 }
 
+
+int tree_find(int* tree, int size, int value)
+{
+  int i;
+  int temp;
+  for (i = 0; i < size; ++ i)
+  {
+    temp = tree[value];
+    if ( temp == -1)
+      return value;
+    value = temp;
+  }
+  return value;
+}
+

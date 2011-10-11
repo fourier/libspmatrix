@@ -27,7 +27,6 @@
 
 #include "sp_matrix.h"
 #include "sp_utils.h"
-#include "sp_algo.h"
 
 #include "logger.h"
 
@@ -676,75 +675,47 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y)
 
 int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
 {
-  int *result = 0;
+  int *tree = 0;
   int k,i,j,p;
-  disjoint_set_union_ptr parents;
+  int *parents;
   if ( !self || self->storage_type != CCS)
-    return result;
+    return tree;
 
-  result = malloc(sizeof(int)*self->rows_count);
-  parents = dsu_alloc(self->rows_count);
+  tree = malloc(sizeof(int)*self->rows_count);
+  parents = malloc(sizeof(int)*self->rows_count);
 
+  /* initialize tree */
+  for ( k = 0; k < self->rows_count; ++ k)
+    tree[k] = -1;
+  
   for ( k = 0; k < self->rows_count; ++ k) /* loop by Tk */
   {
-    /* printf("k = %d\n", k); */
     /* loop by nonzero rows in the column */
+    j = 0;
     for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
     {
+      /* store the index to i for simplicity */
       i = self->indicies[p];
-      if ( i < k )
+      if ( i < k )              /* if above the diagonal */
       {
-        printf("a(%d,%d) ",k,i);
-        j = dsu_find(parents,i);
-        if (j == DSU_DEFAULT_VALUE)
-        {
-          dsu_make_set(parents,i);
-        }
-        /*   j = dsu_find(parents,i); */
-        /* } */
-        /* dsu_union(parents,k,j); */
+        /* find the root for the i in the previous elimination tree */
+        parents[j] = tree_find(tree,self->rows_count,i);
+        /* increase the number of roots found (number of nonzeros)
+         * above diagonal*/
+        j++;
       }
-      
     }
-    printf("T%d = ",k+1);
-    for ( j = 0; j < k+1; ++ j)
-      printf("%d ",parents->values[j]);
-    /* if ( parents->values[j] != DSU_DEFAULT_VALUE) */
-    /*   printf ("(%d->%d) ",parents->values[j]+1,j+1); */
-    printf("\n");
+    /* now update - append found roots to the new root k */
+    for (i = 0; i < j; ++ i)
+      tree[parents[i]] = k;
+    /* possibly print partial elimination trees Tk */
+    /* printf("T%d = ",k+1); */
+    /* for ( j = 0; j < k+1; ++ j) */
+    /*   printf("%d ",tree[j]); */
+    /* printf("\n"); */
   }
-  memcpy(result, parents->values,sizeof(int)*self->rows_count);
-  dsu_free(parents);
   
-  return result;
-}
-
-int* cs_etree(sp_matrix_yale_ptr self)
-{
-  int i,k,p,inext;
-  int *parent, *ancestor;
-  parent = malloc(self->rows_count*sizeof(int));
-  ancestor = malloc(self->rows_count*sizeof(int));
-  for (k = 0; k < self->rows_count; k++)
-  {
-    parent[k] = -1;
-    ancestor[k] = -1;
-    for (p = self->offsets[k]; p < self->offsets[k+1]; p++)
-    {
-      i = self->indicies[p];
-      for (; i != -1 && i < k; i = inext)
-      {
-        printf("a(%d,%d) ",k,i);
-        inext = ancestor[i];
-        ancestor[i] = k;
-        if (inext == -1)
-          parent[i] = k;
-      }
-    }
-    printf("\n");
-  }
-  free(ancestor);
-  return parent;
+  return tree;
 }
 
 

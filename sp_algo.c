@@ -98,7 +98,7 @@ disjoint_set_union_ptr dsu_union(disjoint_set_union_ptr self,
     /*   self->values[y] = x; */
 
     /* append y to x */
-      self->values[y] = x;
+    self->values[y] = x;
   }
   return self;
 }
