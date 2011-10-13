@@ -254,6 +254,17 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
 int* sp_matrix_yale_etree(sp_matrix_yale_ptr self);
 
 /*
+ * Constructs the nonzero portrait of the kth row of the
+ * LL^T Cholesky decomposition
+ * out - output array with allocated size self->rows_count
+ * returns the number of first meaningfull elements out array
+ * Example: if the resulting array (out) is
+ * 2 7 9 10 -1 -1 -1 -1 -1 -1 -1
+ * then the return value is 4
+ */
+int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out);
+
+/*
  * Solves SLAE L*x = b
  * by given L sparse matrix 
  * n - is the size of the x vector, and therefore

@@ -514,6 +514,7 @@ static int test_etree()
   sp_matrix_yale yale;
   int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
   int* etree = 0;
+  int* ereach = 0;
   /* fill initial matrix */
   sp_matrix_init(&mtx,11,11,5,CCS);
 
@@ -562,10 +563,28 @@ static int test_etree()
 
   etree = sp_matrix_yale_etree(&yale);
   result = etree[0] == etree_expected[0] - 1;
-  for ( i = 1; i < 11; ++ i)
-    result &= etree[i] == etree_expected[i] - 1;
+  do
+  {
+    for ( i = 1; i < 11; ++ i)
+      result &= etree[i] == etree_expected[i] - 1;
+    if (!result)
+      break;
+
+    ereach = malloc(11*sizeof(int));
+    for ( i = 0; i < 11; ++ i)
+    {
+      printf("L_%d:\t",i);
+      sp_matrix_yale_ereach(&yale,etree,i,ereach);
+      /* TODO: add test here */
+      /* for (j = 0; j < 11; ++ j) */
+      /*   if (ereach[j] != -1) */
+      /*     printf("%d ",ereach[j]); */
+      /* printf("\n"); */
+    }
+  } while(0);
   
   free(etree);
+  free(ereach);
   sp_matrix_yale_free(&yale);
   sp_matrix_free(&mtx);
   printf("test_etree: *%s*\n",result ? "pass" : "fail");

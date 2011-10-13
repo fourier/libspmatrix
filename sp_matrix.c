@@ -708,15 +708,55 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
     /* now update - append found roots to the new root k */
     for (i = 0; i < j; ++ i)
       tree[parents[i]] = k;
-    /* possibly print partial elimination trees Tk */
-    /* printf("T%d = ",k+1); */
-    /* for ( j = 0; j < k+1; ++ j) */
-    /*   printf("%d ",tree[j]); */
-    /* printf("\n"); */
   }
   
   return tree;
 }
+
+int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
+{
+  int i,j,p;
+  int count;
+  
+  /* clear the out */
+  for (j = 0; j < self->rows_count; ++ j)
+    out[j] = -1;
+  /* mark k */
+  out[k] = k;
+  count = 1;
+  /* loop by nonzero rows in the column */
+  for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
+  {
+    /* store the index to i for simplicity */
+    i = self->indicies[p];
+    if ( i < k )              /* if above the diagonal */
+    {
+      /* find the root */
+      for (j = etree[k]; j != -1 && j != etree[j]; j = etree[j])
+      {
+        if ( out[j] != j)
+        {
+          out[j] = j;
+          count ++;
+        }
+      }
+    }
+  }
+  /* compress the output */
+#define SWAP_VALUES(x,y) { i = (x); x = (y); y = i; }
+  k = 0;
+  for ( j = 0; j < self->rows_count; ++ j)
+    if ( out[j] != -1 )
+    {
+      SWAP_VALUES(out[j],out[k]);
+      k++;
+      if  (k >= count)
+        break;
+    }
+#undef SWAP_VALUES
+  return count;
+}
+
 
 
 void sp_matrix_lower_solve(sp_matrix_ptr self,
