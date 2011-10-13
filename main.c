@@ -573,9 +573,9 @@ static int test_etree()
     ereach = malloc(11*sizeof(int));
     for ( i = 0; i < 11; ++ i)
     {
-      printf("L_%d:\t",i);
       sp_matrix_yale_ereach(&yale,etree,i,ereach);
       /* TODO: add test here */
+      /* printf("L_%d:\t",i); */
       /* for (j = 0; j < 11; ++ j) */
       /*   if (ereach[j] != -1) */
       /*     printf("%d ",ereach[j]); */
