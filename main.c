@@ -26,6 +26,7 @@
 #include "sp_matrix.h"
 #include "sp_utils.h"
 #include "sp_file.h"
+#include "sp_tree.h"
 
 #include "logger.h"
 
@@ -591,6 +592,52 @@ static int test_etree()
   return result;
 }
 
+static int test_stack()
+{
+  int result = 0;
+  int i;
+  int_stack_ptr stack;
+  const int count = 10;
+  stack = int_stack_alloc(5,2);
+  do
+  {
+    if (!int_stack_isempty(stack))
+      break;
+    
+    int_stack_push(stack,10);
+    int_stack_push(stack,20);
+  
+    if (int_stack_top(stack) != 20 )
+      break;
+    int_stack_pop(stack);
+    if (int_stack_top(stack) != 10 )
+      break;
+    int_stack_pop(stack);
+
+    if (!int_stack_isempty(stack))
+      break;
+
+    for ( i = 0; i < count; ++ i)
+      int_stack_push(stack,i);
+    for ( i = 0; i < count; ++ i)
+    {
+      if (int_stack_top(stack) != count - 1 - i)
+        break;
+      int_stack_pop(stack);
+    }
+    if ( i != count)
+      break;
+    
+    if (!int_stack_isempty(stack))
+      break;
+    result = 1;
+  } while(0);
+  stack = int_stack_free(stack);
+  
+  printf("test_stack: *%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
 int main(/* int argc, char *argv[] */)
 {
   /* logger */
@@ -610,6 +657,8 @@ int main(/* int argc, char *argv[] */)
   test_cholesky();
   test_load();
   test_etree();
+  test_stack();
+  
   
   /* finalize logger */
   logger_fini();

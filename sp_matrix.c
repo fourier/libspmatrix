@@ -743,7 +743,7 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
     }
   }
   /* compress the output */
-#define SWAP_VALUES(x,y) { i = (x); x = (y); y = i; }
+#define SWAP_VALUES(x,y) { i = (x); x = (y); (y) = i; }
   k = 0;
   for ( j = 0; j < self->rows_count; ++ j)
     if ( out[j] != -1 )
