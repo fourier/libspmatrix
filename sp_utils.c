@@ -181,7 +181,7 @@ int sp_extract_positional_int(const char* from, int size)
 double sp_extract_positional_float(const char* from, int size)
 {
   double result;
-  char* buf = malloc(size+1);
+  char* buf = calloc(size+1,1);
   char* ptr = buf;
   int i = 0;
   while (i < size && *from)

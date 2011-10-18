@@ -18,8 +18,8 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SP_TREE_H_
-#define _SP_TREE_H_
+#ifndef _SP_CONT_H_
+#define _SP_CONT_H_
 
 /*
  * Dynamic array data structure
@@ -48,7 +48,19 @@ typedef int_stack* int_stack_ptr;
 /*
  * Queue data structure
  */
+typedef struct int_queue_element_tag
+{
+  int value;
+  struct int_queue_element_tag* next;
+} int_queue_element;
 
+typedef struct 
+{
+  int size;
+  int_queue_element* first;
+  int_queue_element* last;
+} int_queue;
+typedef int_queue* int_queue_ptr;
 
 /*
  * Dynamic array functions
@@ -62,18 +74,40 @@ void int_array_free(int_array_ptr self);
  * Stack functions
  */
 
+/* allocate stack with specified initial size and increment step */
 int_stack_ptr int_stack_alloc(int initial_size, int step_size);
+/* deallocate stack and all its data */
 int_stack_ptr int_stack_free(int_stack_ptr self);
 
+/* push element to the top of the stack */
 void int_stack_push(int_stack_ptr self, int value);
+/* pop element. Do nothing if the stack is empty */
 void int_stack_pop(int_stack_ptr self);
 
+/* returns nonzero if stack is empty */
 int int_stack_isempty(int_stack_ptr self);
+/* returns value of the element on top of the stack */
 int int_stack_top(int_stack_ptr self);
 
 /*
  * Queue functions
  */
 
+/* allocate queue and all its structures */
+int_queue_ptr int_queue_alloc();
+/* deallocate queue and all its structures */
+int_queue_ptr int_queue_free(int_queue_ptr self);
 
-#endif /* _SP_TREE_H_ */
+/* Returns nonzero if the queue is empty, and 0 otherwise. */
+int int_queue_isempty(int_queue_ptr self);
+
+/* Returns a value at the front of a non-empty queue. */
+int int_queue_front(int_queue_ptr self);
+
+/* Removes the item at the front of a non-empty queue. */
+void int_queue_pop(int_queue_ptr self);
+
+/* Inserts the argument value at the back of the queue. */
+void int_queue_push(int_queue_ptr self, int value);
+
+#endif /* _SP_CONT_H_ */

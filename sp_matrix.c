@@ -709,6 +709,7 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
     for (i = 0; i < j; ++ i)
       tree[parents[i]] = k;
   }
+  free(parents);
   
   return tree;
 }

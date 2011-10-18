@@ -20,9 +20,10 @@
 
 #include <stdlib.h>
 #include <limits.h>
+#include <string.h>
 
 
-#include "sp_tree.h"
+#include "sp_cont.h"
 
 void int_array_init(int_array_ptr self, int initial_size, int step_size)
 {
@@ -93,4 +94,84 @@ int int_stack_top(int_stack_ptr self)
     return self->data.items[self->top];
   return INT_MAX;
 }
+
+
+static
+int_queue_element* int_queue_element_alloc(int value, int_queue_element* next)
+{
+  int_queue_element* element = malloc(sizeof(int_queue_element));
+  element->value = value;
+  element->next  = next;
+  return element;
+}
+
+static
+int_queue_element* int_queue_element_free(int_queue_element* self)
+{
+  free(self);
+  return 0;
+}
+
+int_queue_ptr int_queue_alloc()
+{
+  int_queue_ptr self = malloc(sizeof(int_queue));
+  memset(self,0, sizeof(int_queue));
+  return self;
+}
+
+
+int_queue_ptr int_queue_free(int_queue_ptr self)
+{
+  if (self)
+  {
+    while(!int_queue_isempty(self))
+      int_queue_pop(self);
+    free(self);
+    self = 0;
+  }
+  return self;
+}
+
+
+int int_queue_isempty(int_queue_ptr self)
+{
+  return self->size == 0;
+}
+
+
+int int_queue_front(int_queue_ptr self)
+{
+  return self->size ? self->first->value : INT_MAX;
+}
+
+
+void int_queue_pop(int_queue_ptr self)
+{
+  if ( self->size )
+  {
+    int_queue_element* first = self->first->next;
+    (void)int_queue_element_free(self->first);
+    self->first = first;
+    self->size--;
+    if ( !self->size )
+      self->last = 0;
+  }
+}
+
+
+void int_queue_push(int_queue_ptr self, int value)
+{
+  if (self->size)
+  {
+    self->last->next = int_queue_element_alloc(value,0);
+    self->last = self->last->next;
+  }
+  else
+  {
+    self->first = int_queue_element_alloc(value,0);
+    self->last = self->first;
+  }
+  self->size++;
+}
+
 

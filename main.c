@@ -26,7 +26,7 @@
 #include "sp_matrix.h"
 #include "sp_utils.h"
 #include "sp_file.h"
-#include "sp_tree.h"
+#include "sp_cont.h"
 
 #include "logger.h"
 
@@ -90,7 +90,7 @@ static int test_sp_matrix()
   }
   
   sp_matrix_free(&mtx);
-  printf("test_sp_matrix result: *%s*\n",result ? "pass" : "fail");
+  printf("test_sp_matrix result:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -166,7 +166,7 @@ static int test_yale()
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
   
-  printf("test_yale: *%s*\n",result ? "pass" : "fail");
+  printf("test_yale:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -209,7 +209,7 @@ static int test_triangle_solver()
   
   sp_matrix_free(&mtx);
   
-  printf("test_triangle_solver result: *%s*\n",result ? "pass" : "fail");
+  printf("test_triangle_solver result:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -253,7 +253,7 @@ static int test_cg_solver()
   
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
-  printf("test_cg_solver result: *%s*\n",result ? "pass" : "fail");
+  printf("test_cg_solver result:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -377,7 +377,7 @@ static int test_ilu()
     sp_matrix_skyline_ilu_free(&ILU);
   }
   
-  printf("test_ilu result: *%s*\n",result ? "pass" : "fail");
+  printf("test_ilu result:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -425,7 +425,7 @@ static int test_pcg_ilu_solver()
   sp_matrix_skyline_ilu_free(&ilu);
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
-  printf("test_pcg_ilu_solver result: *%s*\n",result ? "pass" : "fail");
+  printf("test_pcg_ilu_solver result:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -486,7 +486,7 @@ static int test_cholesky()
   sp_matrix_free(&mtx);
   sp_matrix_skyline_free(&m);
   
-  printf("test_cholesky result: *%s*\n",result ? "pass" : "fail");
+  printf("test_cholesky result:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -503,7 +503,7 @@ static int test_load()
     /* sp_matrix_save_file(result,"export.mtx"); */
     sp_matrix_yale_free(&mtx);
   }
-  printf("test_load: *%s*\n",result ? "pass" : "fail");
+  printf("test_load:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -588,7 +588,7 @@ static int test_etree()
   free(ereach);
   sp_matrix_yale_free(&yale);
   sp_matrix_free(&mtx);
-  printf("test_etree: *%s*\n",result ? "pass" : "fail");
+  printf("test_etree:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
 
@@ -634,9 +634,56 @@ static int test_stack()
   } while(0);
   stack = int_stack_free(stack);
   
-  printf("test_stack: *%s*\n",result ? "pass" : "fail");
+  printf("test_stack:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
+
+static int test_queue()
+{
+  int result = 0;
+  int i;
+  int_queue_ptr queue;
+  const int count = 10;
+  queue = int_queue_alloc();
+  do
+  {
+    if (!int_queue_isempty(queue))
+      break;
+    
+    int_queue_push(queue,10);
+    int_queue_push(queue,20);
+  
+    if (int_queue_front(queue) != 10 )
+      break;
+    int_queue_pop(queue);
+    if (int_queue_front(queue) != 20 )
+      break;
+    int_queue_pop(queue);
+
+    if (!int_queue_isempty(queue))
+      break;
+
+    for ( i = 0; i < count; ++ i)
+      int_queue_push(queue,i);
+    for ( i = 0; i < count; ++ i)
+    {
+      if (int_queue_front(queue) != i)
+        break;
+      int_queue_pop(queue);
+    }
+    if ( i != count)
+      break;
+    
+    if (!int_queue_isempty(queue))
+      break;
+    result = 1;
+  } while(0);
+  queue = int_queue_free(queue);
+  
+  printf("test_queue:\t*%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
 
 int main(/* int argc, char *argv[] */)
 {
@@ -658,6 +705,7 @@ int main(/* int argc, char *argv[] */)
   test_load();
   test_etree();
   test_stack();
+  test_queue();
   
   
   /* finalize logger */
