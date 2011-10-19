@@ -23,7 +23,23 @@
 
 typedef int (*traverse_func_t)(int n, void*);
 
+/*
+ * Depth First Search of the tree(or forest), applying the function
+ * func of type traverse_func_t with the argument arg to every
+ * traversed node
+ */
 void tree_dfs(int* tree, int size, traverse_func_t func, void* arg);
+
+/*
+ * Breadth First Search of the tree(or forest), applying the function
+ * func of type traverse_func_t with the argument arg to every
+ * traversed node
+ */
 void tree_bfs(int* tree, int size, traverse_func_t func, void* arg);
+
+/*
+ * Postorder the tree
+ */
+void tree_postorder(int* tree, int size, int* postordered);
 
 #endif /* _SP_TREE_H_ */

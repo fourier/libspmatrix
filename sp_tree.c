@@ -80,3 +80,28 @@ void tree_bfs(int* tree, int size, traverse_func_t func, void* arg)
   }
   int_queue_free(queue);
 }
+
+typedef struct
+{
+  int* postordered;
+  int counter;
+} tree_postorder_data;
+
+static int tree_postorder_helper(int n, void* arg)
+{
+  tree_postorder_data* data = (tree_postorder_data*)arg;
+  printf("node %d, counter %d\n",n+1, data->counter+1);
+  data->postordered[n] = data->counter;
+  data->counter --;
+  return 0;
+}
+
+void tree_postorder(int* tree, int size, int* postordered)
+{
+  int k = 0;
+  int i;
+  tree_postorder_data data;
+  data.postordered = postordered;
+  data.counter = size-1;
+  tree_dfs(tree,size,tree_postorder_helper,&data);
+}

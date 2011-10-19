@@ -733,6 +733,23 @@ static int test_tree_search()
   return result;
 }
 
+static int test_postordering()
+{
+  int result = 0;
+  int i;
+  int tree[] = {5,2,7,5,7,6,8,9,9,10,-1};
+  int postordered[11];
+  for ( i = 0; i < 11; ++ i)
+    postordered[i] = tree[i];
+  tree_postorder(tree,11,postordered);
+  for (i = 0; i < 11; ++ i)
+    printf("%d ", postordered[i] != -1 ? postordered[i] +1 : -1);
+  printf("\n");
+  printf("test_postordering:\t*%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
+
 
 int main(/* int argc, char *argv[] */)
 {
@@ -756,6 +773,7 @@ int main(/* int argc, char *argv[] */)
   test_stack();
   test_queue();
   test_tree_search();  
+  test_postordering();
   
   /* finalize logger */
   logger_fini();
