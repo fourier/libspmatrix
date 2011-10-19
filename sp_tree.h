@@ -21,9 +21,9 @@
 #ifndef _SP_TREE_H_
 #define _SP_TREE_H_
 
-typedef (*traverse_func_t)(int n, void*);
+typedef int (*traverse_func_t)(int n, void*);
 
-void dfs(int* tree, traverse_func_t func);
-void bfs(int* tree, traverse_func_t func);
+void tree_dfs(int* tree, int size, traverse_func_t func, void* arg);
+void tree_bfs(int* tree, int size, traverse_func_t func, void* arg);
 
 #endif /* _SP_TREE_H_ */

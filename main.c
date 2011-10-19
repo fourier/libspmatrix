@@ -27,6 +27,7 @@
 #include "sp_utils.h"
 #include "sp_file.h"
 #include "sp_cont.h"
+#include "sp_tree.h"
 
 #include "logger.h"
 
@@ -684,6 +685,54 @@ static int test_queue()
   return result;
 }
 
+typedef struct
+{
+  int current;
+  int* result;
+} search_result;
+
+static int mark_elt(int n, void* arg)
+{
+  search_result* search = (search_result*)arg;
+  search->result[search->current] = n;
+  search->current++;
+  return 0;
+}
+
+
+static int test_tree_search()
+{
+  int result = 0;
+  int i;
+  int tree[] = {5,2,7,5,7,6,8,9,9,10,-1};
+  int bfs[]  = {10,9,7,8,2,4,6,1,5,0,3};
+  int dfs[]  = {10,9,8,6,5,3,0,7,4,2,1};
+  search_result search;
+
+  search.current = 0;
+  search.result  = malloc(11*sizeof(int));
+  do
+  {
+    /* test Breadth First Search */
+    tree_bfs(tree,11,mark_elt,&search);
+    result = search.result[0] == bfs[0];
+    for ( i = 1; i < 11; ++ i)
+      result &= search.result[i] == bfs[i];
+    if (!result)
+      break;
+
+    /* test Deep First Search */
+    search.current = 0;
+    tree_dfs(tree,11,mark_elt,&search);
+    result = search.result[0] == dfs[0];
+    for ( i = 1; i < 11; ++ i)
+      result &= search.result[i] == dfs[i];
+  } while(0);
+  free(search.result);
+  printf("test_tree_search:\t*%s*\n",result ? "pass" : "fail");
+  return result;
+}
+
 
 int main(/* int argc, char *argv[] */)
 {
@@ -706,7 +755,7 @@ int main(/* int argc, char *argv[] */)
   test_etree();
   test_stack();
   test_queue();
-  
+  test_tree_search();  
   
   /* finalize logger */
   logger_fini();
