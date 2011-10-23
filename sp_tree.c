@@ -18,8 +18,8 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "sp_tree.h"
 #include "sp_cont.h"
@@ -83,16 +83,36 @@ void tree_bfs(int* tree, int size, traverse_func_t func, void* arg)
 
 typedef struct
 {
+  int* tree;
   int* postordered;
+  int_stack_ptr* children;
   int counter;
 } tree_postorder_data;
 
 static int tree_postorder_helper(int n, void* arg)
 {
+  printf("visiting %d\n",n);
   tree_postorder_data* data = (tree_postorder_data*)arg;
-  printf("node %d, counter %d\n",n+1, data->counter+1);
-  data->postordered[n] = data->counter;
-  data->counter --;
+  int_stack_ptr parents_childen;
+  int parent;
+  /* check if current node has no children */
+  if (int_stack_isempty(data->children[n]))
+  {
+    parent = data->tree[n];
+    /* check if current node has parent */
+    if (parent != -1)
+    {
+      /* has parent */
+      parents_childen = data->children[parent];
+      /* remove one child(ourself) from parent's children list */
+      if (!int_stack_isempty(parents_childen))
+        int_stack_pop(parents_childen);
+      /* and finally increase the counter */
+      data->counter ++;
+      printf("node %d: %d\n",n,data->counter);
+      /* data->postordered[n] = data->counter; */
+    }
+  }
   return 0;
 }
 
@@ -101,7 +121,30 @@ void tree_postorder(int* tree, int size, int* postordered)
   int k = 0;
   int i;
   tree_postorder_data data;
+  /* create the data for postoredering */
+  data.tree = tree;
   data.postordered = postordered;
-  data.counter = size-1;
+  data.counter = 0;
+  /* allocate memory for childen
+   * children of every node stored in the stack */
+  data.children = malloc(sizeof(int_stack_ptr)*size);
+  for ( i = 0; i < size; ++ i)
+    data.children[i] = int_stack_alloc(1,2);
+  /* now fill the stacks of children with the actual children */
+  for ( i = 0; i < size; ++ i)
+    if (tree[i] != -1)
+      int_stack_push(data.children[tree[i]],i);
+  
   tree_dfs(tree,size,tree_postorder_helper,&data);
+
+  for ( i = 0; i < size; ++ i)
+  {
+    printf("%d: ",i+1);
+    while(!int_stack_isempty(data.children[i]))
+    {
+      printf("%d ", int_stack_top(data.children[i])+1);
+      int_stack_pop(data.children[i]);
+    }
+    printf("\n");
+  }
 }
