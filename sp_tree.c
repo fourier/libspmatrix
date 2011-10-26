@@ -81,70 +81,81 @@ void tree_bfs(int* tree, int size, traverse_func_t func, void* arg)
   int_queue_free(queue);
 }
 
-typedef struct
+void tree_postorder_perm(int* tree, int size, int* postorder)
 {
-  int* tree;
-  int* postordered;
+  /* Algorithm:
+   * 
+   * function postorder(T)
+   * k = 0
+   * for each root node j in T do
+   *   dfstree j
+   *
+   * function dfstree(j)
+   * for each child i of j do
+   *   dfstree(i)
+   * post[k] = j
+   * k = k + 1
+   */
+  int counter = 0;
+  int i,child,current;
   int_stack_ptr* children;
-  int counter;
-} tree_postorder_data;
-
-static int tree_postorder_helper(int n, void* arg)
-{
-  printf("visiting %d\n",n);
-  tree_postorder_data* data = (tree_postorder_data*)arg;
-  int_stack_ptr parents_childen;
-  int parent;
-  /* check if current node has no children */
-  if (int_stack_isempty(data->children[n]))
-  {
-    parent = data->tree[n];
-    /* check if current node has parent */
-    if (parent != -1)
-    {
-      /* has parent */
-      parents_childen = data->children[parent];
-      /* remove one child(ourself) from parent's children list */
-      if (!int_stack_isempty(parents_childen))
-        int_stack_pop(parents_childen);
-      /* and finally increase the counter */
-      data->counter ++;
-      printf("node %d: %d\n",n,data->counter);
-      /* data->postordered[n] = data->counter; */
-    }
-  }
-  return 0;
-}
-
-void tree_postorder(int* tree, int size, int* postordered)
-{
-  int k = 0;
-  int i;
-  tree_postorder_data data;
-  /* create the data for postoredering */
-  data.tree = tree;
-  data.postordered = postordered;
-  data.counter = 0;
+  /* initialize stack for DFS procedure */
+  int_stack_ptr stack = int_stack_alloc(size,1);
   /* allocate memory for childen
    * children of every node stored in the stack */
-  data.children = malloc(sizeof(int_stack_ptr)*size);
+  children = malloc(sizeof(int_stack_ptr)*size);
   for ( i = 0; i < size; ++ i)
-    data.children[i] = int_stack_alloc(1,2);
-  /* now fill the stacks of children with the actual children */
-  for ( i = 0; i < size; ++ i)
+    children[i] = int_stack_alloc(1,2);
+  /* now fill the stacks of children with the actual children
+   * in reverse order to keep children in the stack in ascending order
+   * i.e. ->[1 2 3] */
+  for ( i = size -1 ; i >= 0; -- i)
     if (tree[i] != -1)
-      int_stack_push(data.children[tree[i]],i);
-  
-  tree_dfs(tree,size,tree_postorder_helper,&data);
+      int_stack_push(children[tree[i]],i);
 
+  /* loop by all roots in the forest */
   for ( i = 0; i < size; ++ i)
   {
-    printf("%d: ",i+1);
-    while(!int_stack_isempty(data.children[i]))
+    /* root node in the forest. if forest is the 1 tree, only one
+     * root will exist */
+    if (tree[i] == -1)
     {
-      printf("%d ", int_stack_top(data.children[i])+1);
-      int_stack_pop(data.children[i]);
+      int_stack_push(stack,i);
+      /* start to walk through the tree starting with roots */
+      while (!int_stack_isempty(stack))
+      {
+        current = int_stack_top(stack);
+        /* if exist not visited children */
+        if (!int_stack_isempty(children[current]))
+        {
+          /* take the not visited child */
+          child = int_stack_top(children[current]);
+          /* and put it to the stack */
+          int_stack_push(stack,child);
+          /* remove child from the list of not visited */
+          int_stack_pop(children[current]);
+        }
+        else                    /* no more not visited children */
+        {
+          /* remove current from the stack to traverse up by the tree  */
+          int_stack_pop(stack);
+          /* write the last visited node to the place
+           * specified by the counter  */
+          postorder[counter] = current;
+          /* increase the counter for postordering */
+          counter++;
+        }
+      }
     }
-    printf("\n");
+  }
+  int_stack_free(stack);
+}
+
+void tree_postorder(int* tree, int size, int* postorder, int* result)
+{
+  int i;
+  for ( i = 0; i < size; ++ i)
+  {
+    result[i] = tree[postorder[i]];
   }
 }
