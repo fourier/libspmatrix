@@ -150,12 +150,3 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   }
   int_stack_free(stack);
 }
-
-void tree_postorder(int* tree, int size, int* postorder, int* result)
-{
-  int i;
-  for ( i = 0; i < size; ++ i)
-  {
-    result[i] = tree[postorder[i]];
-  }
-}
