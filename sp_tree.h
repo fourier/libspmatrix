@@ -68,4 +68,27 @@ void tree_bfs(int* tree, int size, traverse_func_t func, void* arg);
  */
 void tree_postorder_perm(int* tree, int size, int* postorder);
 
+/*
+ * Calculates the level of every node and store it in appropriate position
+ * in the level array
+ * Example: given the tree
+ *    4
+ *   / \
+ *  1   3
+ *      |
+ *      2
+ *
+ * Levels arrays shall look like: [1;2;1;0]
+ */
+void tree_node_levels(int* tree, int size, int* level);
+
+/*
+ * Calculates first descendant nodes for every node in array first
+ * First descendant of the node j is the smallest postordered node
+ * of any descendants of j.
+ * See T.A.Davis, Direct Methods for Sparse Linear Systems(2006) p.47
+ */
+void tree_first_descendant(int* tree, int size, int* postorder, int* first);
+
+
 #endif /* _SP_TREE_H_ */

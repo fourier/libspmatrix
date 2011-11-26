@@ -515,8 +515,13 @@ static int test_etree()
   sp_matrix mtx;
   sp_matrix_yale yale;
   int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
+  int postorder_expected[] = {1,2,4,7,0,3,5,6,8,9,10};
   int* etree = 0;
   int* ereach = 0;
+  int* postorder = 0;
+  int* first = 0;
+  int* level = 0;
+  
   /* fill initial matrix */
   sp_matrix_init(&mtx,11,11,5,CCS);
 
@@ -583,10 +588,36 @@ static int test_etree()
       /*     printf("%d ",ereach[j]); */
       /* printf("\n"); */
     }
+    postorder = malloc(sizeof(int)*11);
+    tree_postorder_perm(etree,11,postorder);
+    for ( i = 0; i < 11; ++ i)
+      result &= postorder[i] == postorder_expected[i];
+    if (!result)
+      break;
+ /*    for ( i = 0; i < 11; ++ i) */
+ /*      printf("post[%d] = %d,\tnode %d in source tree\ */
+ /* is node %d in postordered \n", */
+ /*             i+1, postorder[i]+1, postorder[i]+1,i+1 ); */
+    first = malloc(sizeof(int)*11);
+    level = malloc(sizeof(int)*11);
+    tree_node_levels(etree,11,level);
+    /* for ( i = 0; i < 11; ++ i) */
+    /*   printf("%d ",level[i]); */
+    /* printf("\n"); */
+
+    tree_first_descendant(etree,11,postorder,first);
+    /* for ( i = 0; i < 11; ++ i) */
+    /*   printf("%d ",first[i]+1); */
+    /* printf("\n"); */
+    
+
   } while(0);
   
   free(etree);
   free(ereach);
+  free(postorder);
+  free(first);
+  free(level);
   sp_matrix_yale_free(&yale);
   sp_matrix_free(&mtx);
   printf("test_etree:\t*%s*\n",result ? "pass" : "fail");

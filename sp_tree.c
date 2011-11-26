@@ -150,3 +150,42 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   }
   int_stack_free(stack);
 }
+
+void tree_node_levels(int* tree, int size, int* level)
+{
+  int i,j;
+  for ( i = 0; i < size; ++ i)
+  {
+    level[i] = 0;
+    /* calculate level of i-th node */
+    j = tree[i];
+    for ( ; j != -1; j = tree[j])
+      level[i] ++;
+  }
+}
+
+void tree_first_descendant(int* tree, int size, int* postorder, int* first)
+{
+  /* Algorithm:
+   * in postordered tree every node k has proper descendants numbered
+   * from k-d to k-1.
+   * Therefore we take every 'postordered' node and traverse up the tree
+   * marking setting all nodes in first array(ancestors) to have the
+   * first descendant value as the node
+   */
+  int i,j,k;
+
+  for ( i = 0; i < size; ++ i)
+    first[i] = -1;
+  for ( i = 0; i < size; ++ i)
+  {
+    k = postorder[i];
+    /* printf("node %d, postordered: %d\n",k+1,i+1); */
+    /* traverse up the tree */
+    for ( j = k; j != -1 && first[j] == -1; j = tree[j]) 
+    {
+      first[j] = i;
+      /* printf("traverse up to node %d\n",j+1); */
+    }
+  }
+}
