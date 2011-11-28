@@ -508,20 +508,12 @@ static int test_load()
   return result;
 }
 
-static int test_etree()
+
+sp_matrix mtx;
+sp_matrix_yale yale;
+
+static void test_suite_init()
 {
-  int result = 0;
-  int i;
-  sp_matrix mtx;
-  sp_matrix_yale yale;
-  int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
-  int postorder_expected[] = {1,2,4,7,0,3,5,6,8,9,10};
-  int* etree = 0;
-  int* ereach = 0;
-  int* postorder = 0;
-  int* first = 0;
-  int* level = 0;
-  
   /* fill initial matrix */
   sp_matrix_init(&mtx,11,11,5,CCS);
 
@@ -567,6 +559,25 @@ static int test_etree()
   MTX(&mtx,10,9,1);MTX(&mtx,10,10,1);
 
   sp_matrix_yale_init(&yale,&mtx);
+}
+
+static void test_suite_fini()
+{
+  sp_matrix_yale_free(&yale);
+  sp_matrix_free(&mtx);
+}
+
+static int test_etree()
+{
+  int result = 0;
+  int i;
+  int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
+  int postorder_expected[] = {1,2,4,7,0,3,5,6,8,9,10};
+  int* etree = 0;
+  int* ereach = 0;
+  int* postorder = 0;
+  int* first = 0;
+  int* level = 0;
 
   etree = sp_matrix_yale_etree(&yale);
   result = etree[0] == etree_expected[0] - 1;
@@ -618,8 +629,6 @@ static int test_etree()
   free(postorder);
   free(first);
   free(level);
-  sp_matrix_yale_free(&yale);
-  sp_matrix_free(&mtx);
   printf("test_etree:\t*%s*\n",result ? "pass" : "fail");
   return result;
 }
@@ -783,7 +792,9 @@ int main(/* int argc, char *argv[] */)
   test_pcg_ilu_solver();
   test_cholesky();
   test_load();
+  test_suite_init();
   test_etree();
+  test_suite_fini();
   test_stack();
   test_queue();
   test_tree_search();  
