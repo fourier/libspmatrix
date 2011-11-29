@@ -31,9 +31,8 @@
 #include "sp_test.h"
 #include "logger.h"
 
-static int test_sp_matrix()
+static void sp_matrix_create_convert_mv()
 {
-  int result = 1;
   sp_matrix mtx,mtx2,mtx3;
   double b[] = {1, 2, 3, 4, 3, 2, 1};
   double expected[] = {25, 34, 40, 45, 42, 16, 23};
@@ -66,38 +65,26 @@ static int test_sp_matrix()
   /* 1st test - matrix-vector multiplication */
   sp_matrix_mv(&mtx,b,x);
   for (i = 0; i < size; ++ i)
-    result &= EQL(x[i],expected[i]);
+    ASSERT_TRUE(EQL(x[i],expected[i]));
   
   /* 2nd test - conversion btw different storage types */
-  if (result)
-  {
-    sp_matrix_convert(&mtx,&mtx2,CCS);
-    sp_matrix_mv(&mtx2,b,x);
-    for (i = 0; i < size; ++ i)
-    {
-      result &= EQL(x[i],expected[i]);
-    }
-  }
-  if (result)
-  {
-    sp_matrix_convert(&mtx2,&mtx3,CRS);
-    sp_matrix_mv(&mtx3,b,x);
-    for (i = 0; i < size; ++ i)
-    {
-      result &= EQL(x[i],expected[i]);
-    }
-    sp_matrix_free(&mtx2);
-    sp_matrix_free(&mtx3);
-  }
+  sp_matrix_convert(&mtx,&mtx2,CCS);
+  sp_matrix_mv(&mtx2,b,x);
+  for (i = 0; i < size; ++ i)
+    ASSERT_TRUE(EQL(x[i],expected[i]));
+    
+  sp_matrix_convert(&mtx2,&mtx3,CRS);
+  sp_matrix_mv(&mtx3,b,x);
+  for (i = 0; i < size; ++ i)
+    ASSERT_TRUE(EQL(x[i],expected[i]));
+  sp_matrix_free(&mtx2);
+  sp_matrix_free(&mtx3);
   
   sp_matrix_free(&mtx);
-  printf("test_sp_matrix result:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_yale()
+static void yale_format()
 {
-  int result = 0;
   int i;
   sp_matrix mtx;
   sp_matrix_yale yale;
@@ -128,14 +115,14 @@ static int test_yale()
   MTX(&mtx,2,1,1);MTX(&mtx,2,2,4);
   
   sp_matrix_yale_init(&yale,&mtx);
-  result = memcmp(yale.offsets,offsets1,4*sizeof(int)) == 0;
-  result &= memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0;
-  result &= memcmp(yale.values,values1,6*sizeof(double)) == 0;
+  ASSERT_TRUE(memcmp(yale.offsets,offsets1,4*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,values1,6*sizeof(double)) == 0);
 
   sp_matrix_yale_mv(&yale,x,y);
   for (i = 0; i < 3; ++ i)
-    result &= EQL(y[i],b[i]);  
-
+    ASSERT_TRUE(EQL(y[i],b[i]));
+  
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
   /* 2. CCS */
@@ -160,20 +147,17 @@ static int test_yale()
   MTX(&mtx,4,0,5);MTX(&mtx,4,2,-5);MTX(&mtx,4,4,6);
   
   sp_matrix_yale_init(&yale,&mtx);
-  result = memcmp(yale.offsets,offsets2,6*sizeof(int)) == 0;
-  result &= memcmp(yale.indicies,indicies2,11*sizeof(int)) == 0;
-  result &= memcmp(yale.values,values2,11*sizeof(double)) == 0;
+  ASSERT_TRUE(memcmp(yale.offsets,offsets2,6*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,indicies2,11*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,values2,11*sizeof(double)) == 0);
   
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
-  
-  printf("test_yale:\t*%s*\n",result ? "pass" : "fail");
-  return result;
+
 }
 
-static int test_triangle_solver()
+static void triangle_solver()
 {
-  int result = 1;
   int i;
   sp_matrix mtx,mtx2;
   double x[5] = {0};
@@ -196,27 +180,20 @@ static int test_triangle_solver()
 
   sp_matrix_lower_solve(&mtx,5,b,x);
   for (i = 0; i < 5; ++ i)
-    result &= EQL(x_expected[i],x[i]);
+    ASSERT_TRUE(EQL(x_expected[i],x[i]));
   
-  if (result)
-  {
-    sp_matrix_convert(&mtx,&mtx2,CCS);
-    memset(x,0,sizeof(double)*5);
-    sp_matrix_lower_solve(&mtx,5,b,x);
-    for (i = 0; i < 5; ++ i)
-      result &= EQL(x_expected[i],x[i]);
-    sp_matrix_free(&mtx2);
-  }
-  
+  sp_matrix_convert(&mtx,&mtx2,CCS);
+  memset(x,0,sizeof(double)*5);
+  sp_matrix_lower_solve(&mtx,5,b,x);
+  for (i = 0; i < 5; ++ i)
+    ASSERT_TRUE(EQL(x_expected[i],x[i]));
+
+  sp_matrix_free(&mtx2);
   sp_matrix_free(&mtx);
-  
-  printf("test_triangle_solver result:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_cg_solver()
+static void cg_solver()
 {
-  int result = 1;
   sp_matrix mtx;
   sp_matrix_yale yale;
   double v[3] = {0}, x[3] = {0}, z[3] = {0};
@@ -250,17 +227,14 @@ static int test_cg_solver()
   sp_matrix_mv(&mtx,x,z);
   
   tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
-  result = tolerance < desired_tolearance*10;
+  ASSERT_TRUE(tolerance < desired_tolearance*10);
   
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
-  printf("test_cg_solver result:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_ilu()
+static void ilu_and_skyline()
 {
-  int result = 1;
   sp_matrix mtx;
   sp_matrix_skyline m;
   sp_matrix_skyline_ilu ILU;
@@ -329,62 +303,47 @@ static int test_ilu()
   sp_matrix_skyline_ilu_copy_init(&ILU,&m);
 
   for (i = 0; i <  m.rows_count; ++ i)
-    result &= fabs(ILU.ilu_diag[i] - lu_diag_expected[i]) < 1e-5;
+    ASSERT_TRUE(fabs(ILU.ilu_diag[i] - lu_diag_expected[i]) < 1e-5);
   
-  if (result)
-  {
-    for (i = 0; i <  m.tr_nonzeros; ++ i)
-      result &= fabs(ILU.ilu_lowertr[i] - lu_lowertr_expected[i]) < 1e-5;
-  }
-  
-  if (result)
-  {       
-    for (i = 0; i <  m.tr_nonzeros; ++ i)
-      result &= fabs(ILU.ilu_uppertr[i] - lu_uppertr_expected[i]) < 1e-5;
-  }
+  for (i = 0; i <  m.tr_nonzeros; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_lowertr[i] - lu_lowertr_expected[i]) < 1e-5);
 
+  for (i = 0; i <  m.tr_nonzeros; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_uppertr[i] - lu_uppertr_expected[i]) < 1e-5);
+  
   /*
    * test for solving Lx=b
    */
-  if (result)
-  {
-    /* prepare a right-part vector */
-    sp_matrix_skyline_ilu_lower_mv(&ILU,x_exact,b);
+  /* prepare a right-part vector */
+  sp_matrix_skyline_ilu_lower_mv(&ILU,x_exact,b);
     
-    /* solve for x */
-    sp_matrix_skyline_ilu_lower_solve(&ILU,b,x);
-    /* test result */
-    for ( i = 0; i < m.rows_count; ++ i)
-      result &= EQL(x[i],x_exact[i]);
-  }
+  /* solve for x */
+  sp_matrix_skyline_ilu_lower_solve(&ILU,b,x);
+  /* test result */
+  for ( i = 0; i < m.rows_count; ++ i)
+    ASSERT_TRUE(EQL(x[i],x_exact[i]));
+    
   
   /*
    * test for solving Ux=b
    */
-  if (result)
-  {
-    memset(b,0,sizeof(b));
-    memset(x,0,sizeof(x));
-    /* prepare a right-part vector */
-    sp_matrix_skyline_ilu_upper_mv(&ILU,x_exact,b);
+  memset(b,0,sizeof(b));
+  memset(x,0,sizeof(x));
+  /* prepare a right-part vector */
+  sp_matrix_skyline_ilu_upper_mv(&ILU,x_exact,b);
     
-    /* solve for x */
-    sp_matrix_skyline_ilu_upper_solve(&ILU,b,x);
-    /* test result */
-    for ( i = 0; i < m.rows_count; ++ i)
-      result &= EQL(x[i],x_exact[i]);
-
-    sp_matrix_free(&mtx);
-    sp_matrix_skyline_ilu_free(&ILU);
-  }
+  /* solve for x */
+  sp_matrix_skyline_ilu_upper_solve(&ILU,b,x);
+  /* test result */
+  for ( i = 0; i < m.rows_count; ++ i)
+    ASSERT_TRUE(EQL(x[i],x_exact[i]));
   
-  printf("test_ilu result:\t*%s*\n",result ? "pass" : "fail");
-  return result;
+  sp_matrix_free(&mtx);
+  sp_matrix_skyline_ilu_free(&ILU);
 }
 
-static int test_pcg_ilu_solver()
+static void pcg_ilu_solver()
 {
-  int result = 1;
   sp_matrix mtx;
   sp_matrix_yale yale;
   sp_matrix_skyline_ilu ilu;
@@ -421,18 +380,15 @@ static int test_pcg_ilu_solver()
   sp_matrix_mv(&mtx,x,z);
 
   tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
-  result = tolerance < desired_tolearance*10;
+  ASSERT_TRUE(tolerance < desired_tolearance*10);
   
   sp_matrix_skyline_ilu_free(&ilu);
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
-  printf("test_pcg_ilu_solver result:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_cholesky()
+static void cholesky()
 {
-  int result = 0;
   /* initial matrix */
   /* {90, 6, 4, 46, 29, 0, 26}, */
   /* {6, 127, 34, 22, 7, 0, 38}, */
@@ -486,33 +442,25 @@ static int test_cholesky()
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_skyline_free(&m);
-  
-  printf("test_cholesky result:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_load()
+static void load_from_files()
 {
-  int result = 0;
   sp_matrix_yale mtx;
-  /* result = sp_matrix_load_file("bcsstk09.rsa",CCS); */
-  /* result = sp_matrix_load_file("af23560.rua",CCS); */
-  /* result = sp_matrix_load_file("kershaw_rua.hb",CCS); */
-  result = sp_matrix_yale_load_file(&mtx, "5by5_rua.hb");
-  if (result)
-  {
-    /* sp_matrix_save_file(result,"export.mtx"); */
-    sp_matrix_yale_free(&mtx);
-  }
-  printf("test_load:\t*%s*\n",result ? "pass" : "fail");
-  return result;
+  /* ASSERT_TRUE(sp_matrix_load_file("bcsstk09.rsa",CCS)); */
+  /* ASSERT_TRUE(sp_matrix_load_file("af23560.rua",CCS)); */
+  /* ASSERT_TRUE(sp_matrix_load_file("kershaw_rua.hb",CCS)); */
+  ASSERT_TRUE(sp_matrix_yale_load_file(&mtx, "5by5_rua.hb"));
+
+  /* sp_matrix_save_file(result,"export.mtx"); */
+  sp_matrix_yale_free(&mtx);
 }
 
 
 sp_matrix mtx;
 sp_matrix_yale yale;
 
-static void test_suite_init()
+static void test_etree_init()
 {
   /* fill initial matrix */
   sp_matrix_init(&mtx,11,11,5,CCS);
@@ -561,15 +509,14 @@ static void test_suite_init()
   sp_matrix_yale_init(&yale,&mtx);
 }
 
-static void test_suite_fini()
+static void test_etree_fini()
 {
   sp_matrix_yale_free(&yale);
   sp_matrix_free(&mtx);
 }
 
-static int test_etree()
+static void etree_ereach()
 {
-  int result = 0;
   int i;
   int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
   int postorder_expected[] = {1,2,4,7,0,3,5,6,8,9,10};
@@ -580,149 +527,113 @@ static int test_etree()
   int* level = 0;
 
   etree = sp_matrix_yale_etree(&yale);
-  result = etree[0] == etree_expected[0] - 1;
-  do
+  ASSERT_TRUE(etree[0] == etree_expected[0] - 1);
+
+  for ( i = 1; i < 11; ++ i)
+    ASSERT_TRUE(etree[i] == etree_expected[i] - 1);
+  
+  ereach = malloc(11*sizeof(int));
+  for ( i = 0; i < 11; ++ i)
   {
-    for ( i = 1; i < 11; ++ i)
-      result &= etree[i] == etree_expected[i] - 1;
-    if (!result)
-      break;
-
-    ereach = malloc(11*sizeof(int));
-    for ( i = 0; i < 11; ++ i)
-    {
-      sp_matrix_yale_ereach(&yale,etree,i,ereach);
-      /* TODO: add test here */
-      /* printf("L_%d:\t",i); */
-      /* for (j = 0; j < 11; ++ j) */
-      /*   if (ereach[j] != -1) */
-      /*     printf("%d ",ereach[j]); */
-      /* printf("\n"); */
-    }
-    postorder = malloc(sizeof(int)*11);
-    tree_postorder_perm(etree,11,postorder);
-    for ( i = 0; i < 11; ++ i)
-      result &= postorder[i] == postorder_expected[i];
-    if (!result)
-      break;
- /*    for ( i = 0; i < 11; ++ i) */
- /*      printf("post[%d] = %d,\tnode %d in source tree\ */
- /* is node %d in postordered \n", */
- /*             i+1, postorder[i]+1, postorder[i]+1,i+1 ); */
-    first = malloc(sizeof(int)*11);
-    level = malloc(sizeof(int)*11);
-    tree_node_levels(etree,11,level);
-    /* for ( i = 0; i < 11; ++ i) */
-    /*   printf("%d ",level[i]); */
+    sp_matrix_yale_ereach(&yale,etree,i,ereach);
+    /* TODO: add test here */
+    /* printf("L_%d:\t",i); */
+    /* for (j = 0; j < 11; ++ j) */
+    /*   if (ereach[j] != -1) */
+    /*     printf("%d ",ereach[j]); */
     /* printf("\n"); */
+  }
+  postorder = malloc(sizeof(int)*11);
+  tree_postorder_perm(etree,11,postorder);
+  for ( i = 0; i < 11; ++ i)
+    ASSERT_TRUE(postorder[i] == postorder_expected[i]);
 
-    tree_first_descendant(etree,11,postorder,first);
-    /* for ( i = 0; i < 11; ++ i) */
-    /*   printf("%d ",first[i]+1); */
-    /* printf("\n"); */
-    
-
-  } while(0);
+  /*    for ( i = 0; i < 11; ++ i) */
+  /*      printf("post[%d] = %d,\tnode %d in source tree\ */
+  /* is node %d in postordered \n", */
+  /*             i+1, postorder[i]+1, postorder[i]+1,i+1 ); */
+  first = malloc(sizeof(int)*11);
+  level = malloc(sizeof(int)*11);
+  tree_node_levels(etree,11,level);
+  /* for ( i = 0; i < 11; ++ i) */
+  /*   printf("%d ",level[i]); */
+  /* printf("\n"); */
+  
+  tree_first_descendant(etree,11,postorder,first);
+  /* for ( i = 0; i < 11; ++ i) */
+  /*   printf("%d ",first[i]+1); */
+  /* printf("\n"); */
   
   free(etree);
   free(ereach);
   free(postorder);
   free(first);
   free(level);
-  printf("test_etree:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_stack()
+static void stack_container()
 {
-  int result = 0;
   int i;
   int_stack_ptr stack;
   const int count = 10;
   stack = int_stack_alloc(5,2);
-  do
+  ASSERT_TRUE(int_stack_isempty(stack));
+
+  int_stack_push(stack,10);
+  int_stack_push(stack,20);
+  ASSERT_TRUE(int_stack_top(stack) == 20 );
+
+  int_stack_pop(stack);
+  ASSERT_TRUE(int_stack_top(stack) == 10 );
+
+  int_stack_pop(stack);
+
+  ASSERT_TRUE(int_stack_isempty(stack));
+
+  for ( i = 0; i < count; ++ i)
+    int_stack_push(stack,i);
+  for ( i = 0; i < count; ++ i)
   {
-    if (!int_stack_isempty(stack))
-      break;
-    
-    int_stack_push(stack,10);
-    int_stack_push(stack,20);
-  
-    if (int_stack_top(stack) != 20 )
-      break;
+    ASSERT_TRUE(int_stack_top(stack) == count - 1 - i);
     int_stack_pop(stack);
-    if (int_stack_top(stack) != 10 )
-      break;
-    int_stack_pop(stack);
-
-    if (!int_stack_isempty(stack))
-      break;
-
-    for ( i = 0; i < count; ++ i)
-      int_stack_push(stack,i);
-    for ( i = 0; i < count; ++ i)
-    {
-      if (int_stack_top(stack) != count - 1 - i)
-        break;
-      int_stack_pop(stack);
-    }
-    if ( i != count)
-      break;
+  }
+  ASSERT_TRUE(i == count);
     
-    if (!int_stack_isempty(stack))
-      break;
-    result = 1;
-  } while(0);
+  ASSERT_TRUE(int_stack_isempty(stack));
   stack = int_stack_free(stack);
-  
-  printf("test_stack:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static int test_queue()
+static void queue_container()
 {
-  int result = 0;
   int i;
   int_queue_ptr queue;
   const int count = 10;
   queue = int_queue_alloc();
-  do
+
+  ASSERT_TRUE(int_queue_isempty(queue));
+    
+  int_queue_push(queue,10);
+  int_queue_push(queue,20);
+  
+  ASSERT_TRUE(int_queue_front(queue) == 10 );
+
+  int_queue_pop(queue);
+  ASSERT_TRUE(int_queue_front(queue) == 20 );
+
+  int_queue_pop(queue);
+  ASSERT_TRUE(int_queue_isempty(queue));
+
+  for ( i = 0; i < count; ++ i)
+    int_queue_push(queue,i);
+  for ( i = 0; i < count; ++ i)
   {
-    if (!int_queue_isempty(queue))
-      break;
-    
-    int_queue_push(queue,10);
-    int_queue_push(queue,20);
-  
-    if (int_queue_front(queue) != 10 )
-      break;
+    ASSERT_TRUE(int_queue_front(queue) == i);
     int_queue_pop(queue);
-    if (int_queue_front(queue) != 20 )
-      break;
-    int_queue_pop(queue);
+  }
+  ASSERT_TRUE( i == count);
+  ASSERT_TRUE(int_queue_isempty(queue));
 
-    if (!int_queue_isempty(queue))
-      break;
-
-    for ( i = 0; i < count; ++ i)
-      int_queue_push(queue,i);
-    for ( i = 0; i < count; ++ i)
-    {
-      if (int_queue_front(queue) != i)
-        break;
-      int_queue_pop(queue);
-    }
-    if ( i != count)
-      break;
-    
-    if (!int_queue_isempty(queue))
-      break;
-    result = 1;
-  } while(0);
   queue = int_queue_free(queue);
-  
-  printf("test_queue:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
 typedef struct
@@ -740,9 +651,8 @@ static int mark_elt(int n, void* arg)
 }
 
 
-static int test_tree_search()
+static void tree_search()
 {
-  int result = 0;
   int i;
   int tree[] = {5,2,7,5,7,6,8,9,9,10,-1};
   int bfs[]  = {10,9,7,8,2,4,6,1,5,0,3};
@@ -751,48 +661,40 @@ static int test_tree_search()
 
   search.current = 0;
   search.result  = malloc(11*sizeof(int));
-  do
-  {
-    /* test Breadth First Search */
-    tree_bfs(tree,11,mark_elt,&search);
-    result = search.result[0] == bfs[0];
-    for ( i = 1; i < 11; ++ i)
-      result &= search.result[i] == bfs[i];
-    if (!result)
-      break;
 
-    /* test Deep First Search */
-    search.current = 0;
-    tree_dfs(tree,11,mark_elt,&search);
-    result = search.result[0] == dfs[0];
-    for ( i = 1; i < 11; ++ i)
-      result &= search.result[i] == dfs[i];
-  } while(0);
+  /* test Breadth First Search */
+  tree_bfs(tree,11,mark_elt,&search);
+  ASSERT_TRUE(search.result[0] == bfs[0]);
+    
+  for ( i = 1; i < 11; ++ i)
+    ASSERT_TRUE(search.result[i] == bfs[i]);
+
+  /* test Deep First Search */
+  search.current = 0;
+  tree_dfs(tree,11,mark_elt,&search);
+  ASSERT_TRUE(search.result[0] == dfs[0]);
+  for ( i = 1; i < 11; ++ i)
+    ASSERT_TRUE(search.result[i] == dfs[i]);
+
   free(search.result);
-  printf("test_tree_search:\t*%s*\n",result ? "pass" : "fail");
-  return result;
 }
 
-static void test1()
-{
-  printf("test1\n");
-}
+/* #define DEF_TEST(name) static void name() { printf( #name "\n"); } */
 
-static void test2()
-{
-  printf("test2 begin\n");
-  ASSERT_TRUE(1 != 2);
-  ASSERT_TRUE(1 == 2);
-  printf("test2 end\n");
-}
+/* DEF_TEST(init1) */
+/* DEF_TEST(fini1) */
+/* DEF_TEST(test1_1) */
+/* DEF_TEST(test1_2) */
 
-static void test3()
-{
-  printf("test3\n");
-}
+/* DEF_TEST(init2) */
+/* DEF_TEST(fini2) */
+/* DEF_TEST(test2_1) */
+/* DEF_TEST(test2_2) */
+
 
 int main(/* int argc, char *argv[] */)
 {
+  sp_test_suite *suite1;
   /* logger */
   logger_parameters params;
   memset(&params,0,sizeof(params));
@@ -800,32 +702,27 @@ int main(/* int argc, char *argv[] */)
   params.log_level = LOG_LEVEL_ALL;
   logger_init_with_params(&params);
 
+
   /* tests */
-  test_sp_matrix();
-  test_yale();
-  test_triangle_solver();
-  test_cg_solver();
-  test_ilu();
-  test_pcg_ilu_solver();
-  test_cholesky();
-  test_load();
+  SP_ADD_TEST(sp_matrix_create_convert_mv);
+  SP_ADD_TEST(yale_format);
+  SP_ADD_TEST(triangle_solver);
+  SP_ADD_TEST(cg_solver);
+  SP_ADD_TEST(ilu_and_skyline);
+  SP_ADD_TEST(pcg_ilu_solver);
+  SP_ADD_TEST(cholesky);
+  SP_ADD_TEST(load_from_files);
+  SP_ADD_TEST(stack_container);
+  SP_ADD_TEST(queue_container);
+  SP_ADD_TEST(tree_search);
+  
+  suite1 = sp_add_suite("etree",test_etree_init,test_etree_fini);
+  SP_ADD_SUITE_TEST(suite1,etree_ereach);
 
-  test_suite_init();
-  test_etree();
-  test_suite_fini();
+  sp_run_tests();
 
-  test_stack();
-  test_queue();
-  test_tree_search();  
- 
   /* finalize logger */
   logger_fini();
 
-  /* test tests */
-  SP_ADD_TEST(test1);
-  SP_ADD_TEST(test2);
-  SP_ADD_TEST(test3);
-  
-  sp_run_tests();
   return 0;
 }
