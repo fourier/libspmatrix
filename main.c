@@ -28,7 +28,7 @@
 #include "sp_file.h"
 #include "sp_cont.h"
 #include "sp_tree.h"
-
+#include "sp_test.h"
 #include "logger.h"
 
 static int test_sp_matrix()
@@ -773,6 +773,23 @@ static int test_tree_search()
   return result;
 }
 
+static void test1()
+{
+  printf("test1\n");
+}
+
+static void test2()
+{
+  printf("test2 begin\n");
+  ASSERT_TRUE(1 != 2);
+  ASSERT_TRUE(1 == 2);
+  printf("test2 end\n");
+}
+
+static void test3()
+{
+  printf("test3\n");
+}
 
 int main(/* int argc, char *argv[] */)
 {
@@ -792,14 +809,23 @@ int main(/* int argc, char *argv[] */)
   test_pcg_ilu_solver();
   test_cholesky();
   test_load();
+
   test_suite_init();
   test_etree();
   test_suite_fini();
+
   test_stack();
   test_queue();
   test_tree_search();  
  
   /* finalize logger */
   logger_fini();
+
+  /* test tests */
+  SP_ADD_TEST(test1);
+  SP_ADD_TEST(test2);
+  SP_ADD_TEST(test3);
+  
+  sp_run_tests();
   return 0;
 }
