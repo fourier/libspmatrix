@@ -188,17 +188,27 @@ void sp_run_tests()
 {
   sp_test_suite_list_ptr suite;
   if (g_test_queue)
+  {
+    printf("Running individual tests...\n");
     sp_perform_tests(g_test_queue);
-  g_test_queue = sp_test_queue_free(g_test_queue);
+    g_test_queue = sp_test_queue_free(g_test_queue);
+  }
   while(g_test_suite)
   {
+    printf("Running suites...\n");
     suite = g_test_suite->next;
-    if (g_test_suite->suite->test_suite_init)
-      g_test_suite->suite->test_suite_init();
-    sp_perform_tests(g_test_suite->tests);
-    if (g_test_suite->suite->test_suite_fini)
-      g_test_suite->suite->test_suite_fini();
-    
+    if (!sp_test_queue_isempty(g_test_suite->tests))
+    {
+      printf("Suite %s start:\n",g_test_suite->suite->test_suite_name);
+      if (g_test_suite->suite->test_suite_init)
+        g_test_suite->suite->test_suite_init();
+      sp_perform_tests(g_test_suite->tests);
+      if (g_test_suite->suite->test_suite_fini)
+        g_test_suite->suite->test_suite_fini();
+      printf("Suite %s end\n",g_test_suite->suite->test_suite_name);
+    }
+    sp_test_queue_free(g_test_suite->tests);
+    free(g_test_suite->suite);
     free(g_test_suite);
     g_test_suite = suite;
   }

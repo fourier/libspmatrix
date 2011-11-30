@@ -447,13 +447,17 @@ static void cholesky()
 static void load_from_files()
 {
   sp_matrix_yale mtx;
-  /* ASSERT_TRUE(sp_matrix_load_file("bcsstk09.rsa",CCS)); */
-  /* ASSERT_TRUE(sp_matrix_load_file("af23560.rua",CCS)); */
-  /* ASSERT_TRUE(sp_matrix_load_file("kershaw_rua.hb",CCS)); */
-  ASSERT_TRUE(sp_matrix_yale_load_file(&mtx, "5by5_rua.hb"));
+  int result;
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"bcsstk09.rsa")));
+  if (result) sp_matrix_yale_free(&mtx);
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"af23560.rua")));
+  if (result) sp_matrix_yale_free(&mtx);  
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"kershaw_rua.hb")));
+  if (result) sp_matrix_yale_free(&mtx);
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx, "5by5_rua.hb")));
 
   /* sp_matrix_save_file(result,"export.mtx"); */
-  sp_matrix_yale_free(&mtx);
+  if (result) sp_matrix_yale_free(&mtx);  
 }
 
 

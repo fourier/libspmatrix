@@ -148,7 +148,10 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
       }
     }
   }
-  int_stack_free(stack);
+  for ( i = 0; i < size; ++ i)
+    int_stack_free(children[i]);
+  stack = int_stack_free(stack);
+  free(children);
 }
 
 void tree_node_levels(int* tree, int size, int* level)
