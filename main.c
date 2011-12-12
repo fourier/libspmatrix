@@ -519,22 +519,76 @@ static void test_etree_fini()
   sp_matrix_free(&mtx);
 }
 
-static void etree_ereach()
+static void etree_postorder()
 {
-  int i;
+  int i,j,k,l;
+  /*
+   * octave representation of the expected result:
+   * etree(sparse(m))
+   */
   int etree_expected[] = {6,3,8,6,8,7,9,10,10,11,0};
+  /*
+   * octave representation of the expected result:
+   * p = [2, 3, 5, 8, 1, 4, 6, 7, 9, 10, 11];
+   */
   int postorder_expected[] = {1,2,4,7,0,3,5,6,8,9,10};
-  int* etree = 0;
-  int* ereach = 0;
-  int* postorder = 0;
-  int* first = 0;
-  int* level = 0;
+  int etree[11];
+  int postorder[11];
+  /*
+   * octave representation of the postordered matrix:
+   * m(p,p)
+   */
+  int postordered_matrix[][11] = {{1,1,0,1,0,0,0,0,0,0,0},
+                                  {1,1,0,0,0,0,0,0,0,1,1},
+                                  {0,0,1,1,0,0,0,0,0,0,1},
+                                  {1,0,1,1,0,0,0,0,0,1,1},
+                                  {0,0,0,0,1,0,1,1,0,0,0},
+                                  {0,0,0,0,0,1,1,0,0,1,0},
+                                  {0,0,0,0,1,1,1,0,1,1,0},
+                                  {0,0,0,0,1,0,0,1,0,0,1},
+                                  {0,0,0,0,0,0,1,0,1,0,0},
+                                  {0,1,0,1,0,1,1,0,0,1,1},
+                                  {0,1,1,1,0,0,0,1,0,1,1}};
 
-  etree = sp_matrix_yale_etree(&yale);
+  ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
   ASSERT_TRUE(etree[0] == etree_expected[0] - 1);
 
   for ( i = 1; i < 11; ++ i)
     ASSERT_TRUE(etree[i] == etree_expected[i] - 1);
+  
+  tree_postorder_perm(etree,11,postorder);
+  for ( i = 0; i < 11; ++ i)
+    ASSERT_TRUE(postorder[i] == postorder_expected[i]);
+  
+  /* for ( i = 0; i < 11; ++ i) */
+  /*   printf("post[%d] = %d,\tnode %d in source tree\ */
+  /* is node %d in postordered \n", */
+  /*          i+1, postorder[i]+1, postorder[i]+1,i+1 ); */
+
+  for ( i = 0; i < 11; ++ i)
+  {
+    k = postorder[i];
+    for ( j = 0; j < 11; ++ j)
+    {
+      l = postorder[j];
+      if (sp_matrix_element_ptr(&mtx,k,l))
+        ASSERT_TRUE(postordered_matrix[i][j]);
+      if (postordered_matrix[i][j])
+        ASSERT_TRUE(sp_matrix_element_ptr(&mtx,k,l));
+    }
+  }
+}
+
+static void etree_ereach()
+{
+  int i;
+  int etree[11];
+  int postorder[11];
+  int* ereach = 0;
+  int* first = 0;
+  int* level = 0;
+
+  ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
   
   ereach = malloc(11*sizeof(int));
   for ( i = 0; i < 11; ++ i)
@@ -547,15 +601,8 @@ static void etree_ereach()
     /*     printf("%d ",ereach[j]); */
     /* printf("\n"); */
   }
-  postorder = malloc(sizeof(int)*11);
   tree_postorder_perm(etree,11,postorder);
-  for ( i = 0; i < 11; ++ i)
-    ASSERT_TRUE(postorder[i] == postorder_expected[i]);
 
-  /*    for ( i = 0; i < 11; ++ i) */
-  /*      printf("post[%d] = %d,\tnode %d in source tree\ */
-  /* is node %d in postordered \n", */
-  /*             i+1, postorder[i]+1, postorder[i]+1,i+1 ); */
   first = malloc(sizeof(int)*11);
   level = malloc(sizeof(int)*11);
   tree_node_levels(etree,11,level);
@@ -568,12 +615,11 @@ static void etree_ereach()
   /*   printf("%d ",first[i]+1); */
   /* printf("\n"); */
   
-  free(etree);
   free(ereach);
-  free(postorder);
   free(first);
   free(level);
 }
+
 
 static void stack_container()
 {
@@ -721,6 +767,7 @@ int main(/* int argc, char *argv[] */)
   SP_ADD_TEST(tree_search);
   
   suite1 = sp_add_suite("etree",test_etree_init,test_etree_fini);
+  SP_ADD_SUITE_TEST(suite1,etree_postorder);
   SP_ADD_SUITE_TEST(suite1,etree_ereach);
 
   sp_run_tests();

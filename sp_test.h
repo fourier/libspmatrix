@@ -20,18 +20,20 @@
 
 #ifndef _SP_TEST_H_
 #define _SP_TEST_H_
+
 #define SP_ADD_TEST(name) sp_add_test(name,#name);
 #define SP_ADD_SUITE_TEST(suite,name) sp_add_suite_test(suite,name,#name);
 
-#define ASSERT_TRUE(condition) {if (!(condition))           \
+#define ASSERT_TRUE(condition) {if (!(condition))         \
       sp_assertion_failed(__FILE__,__LINE__, #condition);}
-#define ASSERT_FALSE(condition) {if ((condition))           \
+#define ASSERT_FALSE(condition) {if ((condition))          \
       sp_assertion_failed(__FILE__,__LINE__, #condition);}
 
 #define EXPECT_TRUE(condition) {if (!(condition))             \
       sp_expectation_failed(__FILE__,__LINE__, #condition);}
 #define EXPECT_FALSE(condition) {if ((condition))             \
       sp_expectation_failed(__FILE__,__LINE__, #condition);}
+
 typedef struct
 {
   const char* test_suite_name;

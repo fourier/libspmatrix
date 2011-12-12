@@ -673,15 +673,13 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y)
 }
 
 
-int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
+int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
 {
-  int *tree = 0;
   int k,i,j,p;
   int *parents;
   if ( !self || self->storage_type != CCS)
-    return tree;
+    return 0;
 
-  tree = malloc(sizeof(int)*self->rows_count);
   parents = malloc(sizeof(int)*self->rows_count);
 
   /* initialize tree */
@@ -711,7 +709,7 @@ int* sp_matrix_yale_etree(sp_matrix_yale_ptr self)
   }
   free(parents);
   
-  return tree;
+  return 1;
 }
 
 int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
