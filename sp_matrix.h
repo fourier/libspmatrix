@@ -256,10 +256,10 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
 int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* etree);
 
 /*
- * Constructs the nonzero portrait of the kth row of the
+ * Constructs the nonzero portrait of the kth row of the L matrix in
  * LL^T Cholesky decomposition
  * out - output array with allocated size self->rows_count
- * returns the number of first meaningfull elements out array
+ * returns the number of first meaningfull elements in out array
  * Example: if the resulting array (out) is
  * 2 7 9 10 -1 -1 -1 -1 -1 -1 -1
  * then the return value is 4

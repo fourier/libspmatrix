@@ -715,14 +715,14 @@ int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
 int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
 {
   int i,j,p;
-  int count;
+  int count = 0;
   
   /* clear the out */
   for (j = 0; j < self->rows_count; ++ j)
     out[j] = -1;
+#define OUT_MARK(i) {out[(i)] = i, ++count; }
   /* mark k */
-  out[k] = k;
-  count = 1;
+  OUT_MARK(k);
   /* loop by nonzero rows in the column */
   for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
   {
@@ -730,17 +730,23 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
     i = self->indicies[p];
     if ( i < k )              /* if above the diagonal */
     {
+      /* mark i */
+      if (out[i] != i)
+        OUT_MARK(i);
       /* find the root */
-      for (j = etree[k]; j != -1 && j != etree[j]; j = etree[j])
+      for (j = etree[i]; j != -1 && j != etree[j]; j = etree[j])
       {
         if ( out[j] != j)
         {
-          out[j] = j;
-          count ++;
+          /* mark j */
+          OUT_MARK(j);
         }
+        else                    /* marked reached */
+          break;
       }
     }
   }
+#undef OUT_MARK
   /* compress the output */
 #define SWAP_VALUES(x,y) { i = (x); x = (y); (y) = i; }
   k = 0;

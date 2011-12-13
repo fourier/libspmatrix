@@ -389,14 +389,15 @@ static void pcg_ilu_solver()
 
 static void cholesky()
 {
-  /* initial matrix */
-  /* {90, 6, 4, 46, 29, 0, 26}, */
-  /* {6, 127, 34, 22, 7, 0, 38}, */
-  /* {4, 34, 108, 40, 2, 0, 4}, */
-  /* {46, 22, 40, 96, 24, 0, 6}, */
-  /* {29, 7, 2, 24, 155, 0, 37}, */
-  /* {0, 0, 0, 0, 0, 64, 0}, */
-  /* {26, 38, 4, 6, 37, 0, 70} */
+  /* initial matrix(octave representation):
+     m = [90, 6, 4, 46, 29, 0, 26;
+     6, 127, 34, 22, 7, 0, 38;
+     4, 34, 108, 40, 2, 0, 4;
+     46, 22, 40, 96, 24, 0, 6;
+     29, 7, 2, 24, 155, 0, 37;
+     0, 0, 0, 0, 0, 64, 0;
+     26, 38, 4, 6, 37, 0, 70];
+  */
   sp_matrix mtx;
   sp_matrix_skyline m;
 
@@ -581,25 +582,38 @@ static void etree_postorder()
 
 static void etree_ereach()
 {
-  int i;
+  int i,j,k,count;
   int etree[11];
   int postorder[11];
+  /* Cholesky factor L of M */
+  int chol_portrait[][11] =
+    {{1,0,0,0,0,0,0,0,0,0,0},
+     {0,1,0,0,0,0,0,0,0,0,0},
+     {0,1,1,0,0,0,0,0,0,0,0},
+     {0,0,0,1,0,0,0,0,0,0,0},
+     {0,0,0,0,1,0,0,0,0,0,0},
+     {1,0,0,1,0,1,0,0,0,0,0},
+     {1,0,0,0,0,1,1,0,0,0,0},
+     {0,1,1,0,1,0,0,1,0,0,0},
+     {0,0,0,0,0,1,1,0,1,0,0},
+     {0,0,1,1,0,1,1,1,1,1,0},
+     {0,0,1,0,1,0,1,1,1,1,1}};
+    
   int* ereach = 0;
   int* first = 0;
   int* level = 0;
 
   ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
-  
   ereach = malloc(11*sizeof(int));
   for ( i = 0; i < 11; ++ i)
   {
-    sp_matrix_yale_ereach(&yale,etree,i,ereach);
-    /* TODO: add test here */
-    /* printf("L_%d:\t",i); */
-    /* for (j = 0; j < 11; ++ j) */
-    /*   if (ereach[j] != -1) */
-    /*     printf("%d ",ereach[j]); */
-    /* printf("\n"); */
+    ASSERT_TRUE((count = sp_matrix_yale_ereach(&yale,etree,i,ereach)) > 0);
+    for (j = 0; j < count; ++ j)
+      ASSERT_TRUE(chol_portrait[i][ereach[j]]);
+    k = 0;
+    for (j = 0; j < 11; ++ j)
+      if (chol_portrait[i][j]) k++;
+    ASSERT_TRUE(k == count);
   }
   tree_postorder_perm(etree,11,postorder);
 
