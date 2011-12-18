@@ -716,6 +716,8 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
 {
   int i,j,p;
   int count = 0;
+  if ( self->storage_type != CCS)
+    return -1;
   
   /* clear the out */
   for (j = 0; j < self->rows_count; ++ j)
@@ -761,6 +763,45 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
 #undef SWAP_VALUES
   return count;
 }
+
+static
+void sp_matrix_yale_empty_copy_init(sp_matrix_yale_ptr mtx,
+                                    sp_matrix_yale_ptr to)
+{
+  int n = mtx->storage_type == CRS ? mtx->rows_count : mtx->cols_count;
+  /* initialize matrix */
+  memset(to,sizeof(sp_matrix_yale),0);
+  to->storage_type = mtx->storage_type;
+  to->rows_count = mtx->rows_count;
+  to->cols_count = mtx->cols_count;
+  to->nonzeros   = mtx->nonzeros;
+  /* allocate memory for arrays */
+  to->offsets  = calloc(n+1,      sizeof(int));
+  to->indicies = calloc(mtx->nonzeros, sizeof(int));
+  to->values   = calloc(mtx->nonzeros, sizeof(double));
+  
+  to->offsets[n] = mtx->nonzeros;
+}
+
+sp_matrix_yale_ptr sp_matrix_yale_permute(sp_matrix_yale_ptr self,
+                                          int* pinv,
+                                          int* q)
+{
+  sp_matrix_yale_ptr permuted;
+  int i,j,k;
+
+  sp_matrix_yale_empty_copy_init(self,permuted);
+  if ( self->storage_type == CRS )
+  {
+  }
+  else                          /* CCS */
+  {
+    
+  }
+  
+  return permuted;
+}
+
 
 
 
