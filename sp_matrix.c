@@ -720,7 +720,7 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
   /* clear the out */
   for (j = 0; j < self->rows_count; ++ j)
     out[j] = -1;
-#define OUT_MARK(i) {out[(i)] = i, ++count; }
+#define OUT_MARK(i) {out[(i)] = (i); ++count; }
   /* mark k */
   OUT_MARK(k);
   /* loop by nonzero rows in the column */
@@ -888,7 +888,7 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
     a1 = 0; a2 = 0;
     for (i = 0; i < msize; ++ i)
     {
-      a1 += r[i]*r[i]; /* (r_j,r_j) */
+      a1 += r[i]*r[i];         /* (r_j,r_j) */
       a2 += p[i]*temp[i];      /* (A*p_j,p_j) */
     }
 

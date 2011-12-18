@@ -182,7 +182,7 @@ void tree_first_descendant(int* tree, int size, int* postorder, int* first)
     first[i] = -1;
   for ( i = 0; i < size; ++ i)
   {
-    k = postorder[i];
+    k = postorder[i];        /* k is the node i in postordered tree */
     /* printf("node %d, postordered: %d\n",k+1,i+1); */
     /* traverse up the tree */
     for ( j = k; j != -1 && first[j] == -1; j = tree[j]) 
