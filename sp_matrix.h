@@ -267,6 +267,16 @@ int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* etree);
 int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out);
 
 /*
+ * Calculates the permuted matrix C = P*A*Q
+ * by given vector of inverse row permutation pinv:
+ * row i becomes row k if pinv[k] = i
+ * and vector of column permutation q
+ */
+sp_matrix_yale_ptr sp_matrix_yale_permute(sp_matrix_yale_ptr self,
+                                          int* pinv,
+                                          int* q);
+
+/*
  * Solves SLAE L*x = b
  * by given L sparse matrix 
  * n - is the size of the x vector, and therefore
