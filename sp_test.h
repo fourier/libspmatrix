@@ -44,7 +44,11 @@ typedef sp_test_suite* sp_test_suite_ptr;
 
 typedef void (*test_func_t)();
 
-void sp_run_tests();
+/*
+ * In command line arguments can be specified particular test
+ * to run. No arguments (argc = 1) leads to execution of all tests
+ */
+void sp_run_tests(int argc, const char* argv[]);
 
 
 void sp_add_test(test_func_t func, const char* name);

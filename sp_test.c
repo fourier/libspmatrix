@@ -163,54 +163,97 @@ void sp_add_test(test_func_t func, const char* name)
   sp_test_queue_push(g_test_queue, test);
 }
 
-static void sp_perform_tests(sp_test_queue_ptr test_queue)
+static int sp_is_test(sp_test_object test, const char* name)
+{
+  return strcmp(test.test_name,name) == 0;
+}
+
+static int sp_test_exist(sp_test_queue_ptr test_queue, const char* name)
+{
+  sp_test_queue_element* first = test_queue->first;
+  sp_test_queue_element* last  = test_queue->last;
+  for ( ; first != last; first = first->next)
+    if (sp_is_test(first->value,name) )
+      return 1;
+  return sp_is_test(first->value,name);
+}
+
+
+static void sp_perform_tests(sp_test_queue_ptr test_queue,
+                             int argc,
+                             const char* argv[])
 {
   sp_test_object current_test;
+  const char* test_name = 0;
+  if (argc > 1)
+    test_name = argv[1];
   while(!sp_test_queue_isempty(test_queue))
   {
     current_test = sp_test_queue_front(test_queue);
-    if (!setjmp(g_test_restart_jmp_point))
+    if (!test_name || (test_name && sp_is_test(current_test,test_name)))
     {
-      current_test.test_func();
-      printf("test %s [PASSED]\n",
-             current_test.test_name);
-    }
-    else
-    {
-      printf("test %s [FAILED]\n",
-             current_test.test_name);
+      if (!setjmp(g_test_restart_jmp_point))
+      {
+        current_test.test_func();
+        printf("test %s [PASSED]\n",
+               current_test.test_name);
+      }
+      else
+      {
+        printf("test %s [FAILED]\n",
+               current_test.test_name);
+      }
     }
     sp_test_queue_pop(test_queue);
   }
 }
 
-void sp_run_tests()
+static void sp_perform_suites(sp_test_suite_list_ptr suite_head,
+                              int argc,
+                              const char* argv[])
 {
   sp_test_suite_list_ptr suite;
+  const char* test_name = 0;
+  if (argc > 1)
+    test_name = argv[1];
+
+  while(suite_head)
+  {
+    suite = suite_head->next;
+    if (!sp_test_queue_isempty(suite_head->tests))
+    {
+      if (!test_name ||
+          (test_name && sp_test_exist(suite_head->tests, test_name)))
+      {
+        printf("Suite %s start:\n",suite_head->suite->test_suite_name);
+        if (suite_head->suite->test_suite_init)
+          suite_head->suite->test_suite_init();
+        sp_perform_tests(suite_head->tests,argc,argv);
+        if (suite_head->suite->test_suite_fini)
+          suite_head->suite->test_suite_fini();
+        printf("Suite %s end\n",suite_head->suite->test_suite_name);
+      }
+    }
+    sp_test_queue_free(suite_head->tests);
+    free(suite_head->suite);
+    free(suite_head);
+    suite_head = suite;
+  }
+}
+
+void sp_run_tests(int argc, const char* argv[])
+{
   if (g_test_queue)
   {
     printf("Running individual tests...\n");
-    sp_perform_tests(g_test_queue);
+    sp_perform_tests(g_test_queue, argc, argv);
     g_test_queue = sp_test_queue_free(g_test_queue);
   }
-  while(g_test_suite)
+  if (g_test_suite)
   {
     printf("Running suites...\n");
-    suite = g_test_suite->next;
-    if (!sp_test_queue_isempty(g_test_suite->tests))
-    {
-      printf("Suite %s start:\n",g_test_suite->suite->test_suite_name);
-      if (g_test_suite->suite->test_suite_init)
-        g_test_suite->suite->test_suite_init();
-      sp_perform_tests(g_test_suite->tests);
-      if (g_test_suite->suite->test_suite_fini)
-        g_test_suite->suite->test_suite_fini();
-      printf("Suite %s end\n",g_test_suite->suite->test_suite_name);
-    }
-    sp_test_queue_free(g_test_suite->tests);
-    free(g_test_suite->suite);
-    free(g_test_suite);
-    g_test_suite = suite;
+    sp_perform_suites(g_test_suite, argc, argv);
+    g_test_suite = 0;
   }
 }
 

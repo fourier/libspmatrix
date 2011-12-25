@@ -271,10 +271,12 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out);
  * by given vector of inverse row permutation pinv:
  * row i becomes row k if pinv[k] = i
  * and vector of column permutation q
+ * returns 0 in case of error, nonzero otherwise
  */
-sp_matrix_yale_ptr sp_matrix_yale_permute(sp_matrix_yale_ptr self,
-                                          int* pinv,
-                                          int* q);
+int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
+                           sp_matrix_yale_ptr permuted,
+                           int* pinv,
+                           int* q);
 
 /*
  * Solves SLAE L*x = b

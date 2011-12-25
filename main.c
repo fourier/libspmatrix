@@ -156,6 +156,71 @@ static void yale_format()
 
 }
 
+static void sparse_permutations()
+{
+  /* Matrix(octave format)
+     m = [1,2,0,-1;
+          0,-2,0,0;
+          2,1,0,-5;
+          0,0,2,3]
+  */
+  /*
+     Permutations:
+     row permutation
+     p = [1,3,4,2]
+     column permutation
+     q = [2,1,3,4]
+     inverse row permutation
+     p = [1,4,2,3]
+  */
+  int p[4] =    {1,3,4,2};
+  int pinv[4] = {1,4,2,3};
+  int q[4] =    {2,1,3,4};
+  /*
+   * Expected result: m(p,q)
+   */
+  double expected[][4] = {{2,  1,  0, -1},
+                          {1,  2,  0, -5},
+                          {0,  0,  2,  3},
+                          {-2, 0,  0,  0}};
+  sp_matrix mtx_crs, mtx_ccs;
+  sp_matrix_yale yale_crs, yale_ccs;
+  sp_matrix_yale permuted_crs, permuted_ccs;
+  int i,j;
+  sp_matrix_init(&mtx_crs,4,4,2,CRS);
+  MTX(&mtx_crs,0,0,1);MTX(&mtx_crs,0,1,2);MTX(&mtx_crs,0,3,-1);
+  MTX(&mtx_crs,1,1,-2);
+  MTX(&mtx_crs,2,0,2);MTX(&mtx_crs,2,1,1);MTX(&mtx_crs,2,3,-5);
+  MTX(&mtx_crs,3,2,2);MTX(&mtx_crs,3,3,3);
+
+  sp_matrix_yale_init(&yale_crs,&mtx_crs);
+  sp_matrix_convert(&mtx_crs,&mtx_ccs,CCS);
+  sp_matrix_yale_init(&yale_ccs,&mtx_ccs);
+  
+  printf("offsets: [ ");
+  for ( i = 0; i < yale_crs.rows_count+1; ++ i)
+    printf("%d ", yale_crs.offsets[i]+1);
+  printf("]\n");
+  printf("indicies: [ ");
+  for ( i = 0; i < yale_crs.nonzeros; ++ i)
+    printf("%d ", yale_crs.indicies[i]+1);
+  printf("]\n");
+  printf("values: [ ");
+  for ( i = 0; i < yale_crs.nonzeros; ++ i)
+    printf("%.1f ", yale_crs.values[i]);
+  printf("]\n");
+
+  ASSERT_TRUE(sp_matrix_yale_permute(&yale_crs,&permuted_crs,pinv,q));
+  
+  sp_matrix_yale_free(&permuted_crs);
+  sp_matrix_free(&mtx_crs);
+  sp_matrix_yale_free(&yale_crs);
+  sp_matrix_yale_free(&permuted_ccs);
+  sp_matrix_free(&mtx_ccs);
+  sp_matrix_yale_free(&yale_ccs);
+
+}
+
 static void triangle_solver()
 {
   int i;
@@ -710,7 +775,7 @@ static void etree_rowcount()
     }
     printf("\n");
   }
-      
+  
 }
 
 
@@ -836,7 +901,7 @@ static void tree_search()
 /* DEF_TEST(test2_2) */
 
 
-int main(/* int argc, char *argv[] */)
+int main(int argc, const char *argv[])
 {
   sp_test_suite *suite1;
   /* logger */
@@ -846,10 +911,10 @@ int main(/* int argc, char *argv[] */)
   params.log_level = LOG_LEVEL_ALL;
   logger_init_with_params(&params);
 
-
   /* tests */
   SP_ADD_TEST(sp_matrix_create_convert_mv);
   SP_ADD_TEST(yale_format);
+  SP_ADD_TEST(sparse_permutations);
   SP_ADD_TEST(triangle_solver);
   SP_ADD_TEST(cg_solver);
   SP_ADD_TEST(ilu_and_skyline);
@@ -865,7 +930,7 @@ int main(/* int argc, char *argv[] */)
   SP_ADD_SUITE_TEST(suite1,etree_postorder);
   SP_ADD_SUITE_TEST(suite1,etree_ereach);
   SP_ADD_SUITE_TEST(suite1,etree_rowcount);
-  sp_run_tests();
+  sp_run_tests(argc,argv);
 
   /* finalize logger */
   logger_fini();

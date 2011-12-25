@@ -783,23 +783,24 @@ void sp_matrix_yale_empty_copy_init(sp_matrix_yale_ptr mtx,
   to->offsets[n] = mtx->nonzeros;
 }
 
-sp_matrix_yale_ptr sp_matrix_yale_permute(sp_matrix_yale_ptr self,
-                                          int* pinv,
-                                          int* q)
+int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
+                           sp_matrix_yale_ptr permuted,
+                           int* pinv,
+                           int* q)
 {
-  sp_matrix_yale_ptr permuted;
   int i,j,k;
-
+  int result = 0;
   sp_matrix_yale_empty_copy_init(self,permuted);
   if ( self->storage_type == CRS )
   {
+    
   }
   else                          /* CCS */
   {
     
   }
   
-  return permuted;
+  return result;
 }
 
 
