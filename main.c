@@ -196,20 +196,12 @@ static void sparse_permutations()
   sp_matrix_yale_init(&yale_crs,&mtx_crs);
   sp_matrix_convert(&mtx_crs,&mtx_ccs,CCS);
   sp_matrix_yale_init(&yale_ccs,&mtx_ccs);
-  
-  printf("offsets: [ ");
-  for ( i = 0; i < yale_crs.rows_count+1; ++ i)
-    printf("%d ", yale_crs.offsets[i]+1);
-  printf("]\n");
-  printf("indicies: [ ");
-  for ( i = 0; i < yale_crs.nonzeros; ++ i)
-    printf("%d ", yale_crs.indicies[i]+1);
-  printf("]\n");
-  printf("values: [ ");
-  for ( i = 0; i < yale_crs.nonzeros; ++ i)
-    printf("%.1f ", yale_crs.values[i]);
-  printf("]\n");
 
+  printf("CRS:\n");
+  sp_matrix_yale_printf(&yale_crs);
+  printf("CCS:\n");
+  sp_matrix_yale_printf(&yale_ccs);
+  
   ASSERT_TRUE(sp_matrix_yale_permute(&yale_crs,&permuted_crs,pinv,q));
   
   sp_matrix_yale_free(&permuted_crs);

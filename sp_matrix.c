@@ -1267,6 +1267,24 @@ void sp_matrix_printf(sp_matrix_ptr self)
     indexed_array_printf(&self->storage[i]);
 }
 
+void sp_matrix_yale_printf(sp_matrix_yale_ptr self)
+{
+  int i;
+  int n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  printf("offsets: [ ");
+  for ( i = 0; i < n; ++ i)
+    printf("%d ", self->offsets[i]+1);
+  printf("%d ]\n", self->offsets[i]);
+  printf("indicies: [ ");
+  for ( i = 0; i < self->nonzeros; ++ i)
+    printf("%d ", self->indicies[i]+1);
+  printf("]\n");
+  printf("values: [ ");
+  for ( i = 0; i < self->nonzeros; ++ i)
+    printf("%.1f ", self->values[i]);
+  printf("]\n");
+}
+
 void sp_matrix_dump(sp_matrix_ptr self, const char* filename)
 {
   FILE* f;

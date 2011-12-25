@@ -243,6 +243,13 @@ static void sp_perform_suites(sp_test_suite_list_ptr suite_head,
 
 void sp_run_tests(int argc, const char* argv[])
 {
+  /*
+   * TODO:
+   * 1) fix memory leaks
+   * 2) possibility to list available tests with --list cmdline option
+   * 3) remove 'Running..' lines when no tests/suites available(or found)
+   * 4) add tests results backend - log file, html report etc.
+   */
   if (g_test_queue)
   {
     printf("Running individual tests...\n");
