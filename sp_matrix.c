@@ -27,7 +27,7 @@
 
 #include "sp_matrix.h"
 #include "sp_utils.h"
-
+#include "sp_tree.h"
 #include "logger.h"
 
 #define TRUE 1
@@ -764,42 +764,55 @@ int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out)
   return count;
 }
 
-static
-void sp_matrix_yale_empty_copy_init(sp_matrix_yale_ptr mtx,
-                                    sp_matrix_yale_ptr to)
+void sp_matrix_printf2(sp_matrix_ptr self)
 {
-  int n = mtx->storage_type == CRS ? mtx->rows_count : mtx->cols_count;
-  /* initialize matrix */
-  memset(to,sizeof(sp_matrix_yale),0);
-  to->storage_type = mtx->storage_type;
-  to->rows_count = mtx->rows_count;
-  to->cols_count = mtx->cols_count;
-  to->nonzeros   = mtx->nonzeros;
-  /* allocate memory for arrays */
-  to->offsets  = calloc(n+1,      sizeof(int));
-  to->indicies = calloc(mtx->nonzeros, sizeof(int));
-  to->values   = calloc(mtx->nonzeros, sizeof(double));
-  
-  to->offsets[n] = mtx->nonzeros;
+  double *p;
+  int i,j;
+  if (self)
+  {
+    for (i = 0; i < self->rows_count; ++ i)
+    {
+      for (j = 0; j < self->cols_count; ++ j)
+      {
+        p = sp_matrix_element_ptr(self,i,j);
+        printf("%.2f ", p ? *p : 0);
+      }
+      printf("\n");
+    }
+  }
 }
 
 int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
                            sp_matrix_yale_ptr permuted,
-                           int* pinv,
+                           int* p,
                            int* q)
 {
-  int i,j,k;
-  int result = 0;
-  sp_matrix_yale_empty_copy_init(self,permuted);
-  if ( self->storage_type == CRS )
-  {
-    
-  }
-  else                          /* CCS */
-  {
-    
-  }
+  int i,j,n;
+  int result = 1;
+  sp_matrix mtx;
+  /* init matrix with average bandwidth */
+  n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  sp_matrix_init(&mtx,
+                 self->rows_count,self->cols_count,
+                 (int)(n/(double)self->nonzeros),
+                 self->storage_type);
   
+  for (i = 0; i < n; ++ i)
+  {
+    for (j = self->offsets[i]; j < self->offsets[i+1]; ++ j)
+    {
+      if ( self->storage_type == CRS )
+      {
+        MTX(&mtx,p[i],q[self->indicies[j]],self->values[j]);
+      }
+      else
+      {
+        MTX(&mtx,p[self->indicies[j]],q[i],self->values[j]);
+      }
+    }
+  }
+  sp_matrix_yale_init(permuted,&mtx);
+  sp_matrix_free(&mtx);
   return result;
 }
 

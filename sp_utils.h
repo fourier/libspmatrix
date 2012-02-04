@@ -126,19 +126,4 @@ const char* sp_extract_fortran_numbers(const char* string,
                                        int* extracted);
                                       
 
-/*
- * Find the root of the node 'value' in the tree
- * represented by array 'tree' of size 'size'
- * there the position number is the tree node, and
- * the value is the parent value. 
- * -1 means that the node has no parents
- * Example: tree = [5,2,-1,5,-1,6,-1,-1]
- * tree_fine shall return 6 for 0,4,5; 2 for 1, and
- * the same values for others (like 2 for 2 etc.)
- * This algorithm is used for calculation of the
- * Elimination tree
- * */
-int tree_find(int* tree, int size, int value);
-
-
 #endif /* _SP_UTILS_H_ */

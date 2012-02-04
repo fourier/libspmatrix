@@ -376,6 +376,8 @@ void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
 
 /* Print contens of the matrix in index form to the stdout */
 void sp_matrix_printf(sp_matrix_ptr self);
+/* Print contents of the matrix in dense form to the stdout */
+void sp_matrix_printf2(sp_matrix_ptr self);
 void sp_matrix_dump(sp_matrix_ptr self, const char* filename);
 void sp_matrix_yale_printf(sp_matrix_yale_ptr self);
 void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self, const char* filename);

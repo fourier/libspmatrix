@@ -192,3 +192,18 @@ void tree_first_descendant(int* tree, int size, int* postorder, int* first)
     }
   }
 }
+
+
+int tree_find(int* tree, int size, int value)
+{
+  int i;
+  int temp;
+  for (i = 0; i < size; ++ i)
+  {
+    temp = tree[value];
+    if ( temp == -1)
+      return value;
+    value = temp;
+  }
+  return value;
+}

@@ -28,6 +28,7 @@
 #include "sp_file.h"
 #include "sp_cont.h"
 #include "sp_tree.h"
+#include "sp_perm.h"
 #include "sp_test.h"
 #include "logger.h"
 
@@ -156,6 +157,17 @@ static void yale_format()
 
 }
 
+static void permutations()
+{
+  int i;
+  int p[] = {0,2,3,1};
+  int pinv[] = {0,3,1,2};
+  int result[4];
+  sp_perm_inverse(p,4,result);
+  for ( i = 0; i < 4; ++ i)
+    ASSERT_TRUE(pinv[i] == result[i]);
+}
+
 static void sparse_permutations()
 {
   /* Matrix(octave format)
@@ -173,16 +185,35 @@ static void sparse_permutations()
      inverse row permutation
      p = [1,4,2,3]
   */
-  int p[4] =    {1,3,4,2};
-  int pinv[4] = {1,4,2,3};
-  int q[4] =    {2,1,3,4};
+  int p[4] =    {0,2,3,1};
+  int pinv[4] = {0,3,1,2};
+  int q[4] =    {1,0,2,3};
   /*
-   * Expected result: m(p,q)
+   * Expected result: m(p,q):
+   * 
+   *   2   1   0  -1
+   *   1   2   0  -5
+   *   0   0   2   3
+   *  -2   0   0   0
+   *
+   *  Expected result in CRS form:
+   *  offsets  = [1        4        7     9 9]
+   *  indicies = [1  2  4  1  2  4  3  4  1]
+   *  values   = [2  1 -1  1  2 -5  2  3 -2]
+   *  
+   *  Expected result in CCS form:
+   *  offsets  = [1        4     6  7       9]
+   *  indicies = [1  2  4  1  2  3  1  2  3]
+   *  values   = [2  1 -2  1  2  2 -1 -5  3]
    */
-  double expected[][4] = {{2,  1,  0, -1},
-                          {1,  2,  0, -5},
-                          {0,  0,  2,  3},
-                          {-2, 0,  0,  0}};
+  int offsets_expected_crs[]  = {1, 4, 7, 9, 9};
+  int indicies_expected_crs[] = {1, 2, 4, 1, 2, 4, 3, 4, 1};
+  int values_expected_crs[]   = {2, 1,-1, 1, 2,-5, 2, 3,-2};
+
+  int offsets_expected_ccs[]  = {1, 4, 6, 7, 9};
+  int indicies_expected_ccs[] = {1, 2, 4, 1, 2, 3, 1, 2, 3};
+  int values_expected_ccs[]   = {2, 1,-2, 1, 2, 2,-1,-5, 3};
+  
   sp_matrix mtx_crs, mtx_ccs;
   sp_matrix_yale yale_crs, yale_ccs;
   sp_matrix_yale permuted_crs, permuted_ccs;
@@ -196,13 +227,26 @@ static void sparse_permutations()
   sp_matrix_yale_init(&yale_crs,&mtx_crs);
   sp_matrix_convert(&mtx_crs,&mtx_ccs,CCS);
   sp_matrix_yale_init(&yale_ccs,&mtx_ccs);
-
-  printf("CRS:\n");
-  sp_matrix_yale_printf(&yale_crs);
-  printf("CCS:\n");
-  sp_matrix_yale_printf(&yale_ccs);
   
   ASSERT_TRUE(sp_matrix_yale_permute(&yale_crs,&permuted_crs,pinv,q));
+
+  for (i = 0; i < 4; ++ i)
+    ASSERT_TRUE(EQL(permuted_crs.offsets[i]+1,offsets_expected_crs[i]));
+  ASSERT_TRUE(EQL(permuted_crs.offsets[i],offsets_expected_crs[i]));  
+  for (i = 0; i < 9; ++ i)
+    ASSERT_TRUE(EQL(permuted_crs.indicies[i]+1,indicies_expected_crs[i]));
+  for (i = 0; i < 9; ++ i)
+    ASSERT_TRUE(EQL(permuted_crs.values[i],values_expected_crs[i]));
+
+  ASSERT_TRUE(sp_matrix_yale_permute(&yale_ccs,&permuted_ccs,pinv,q));
+  for (i = 0; i < 4; ++ i)
+    ASSERT_TRUE(EQL(permuted_ccs.offsets[i]+1,offsets_expected_ccs[i]));
+  ASSERT_TRUE(EQL(permuted_ccs.offsets[i],offsets_expected_ccs[i]));
+  for (i = 0; i < 9; ++ i)
+    ASSERT_TRUE(EQL(permuted_ccs.indicies[i]+1,indicies_expected_ccs[i]));
+  for (i = 0; i < 9; ++ i)
+    ASSERT_TRUE(EQL(permuted_ccs.values[i],values_expected_ccs[i]));
+  
   
   sp_matrix_yale_free(&permuted_crs);
   sp_matrix_free(&mtx_crs);
@@ -906,6 +950,7 @@ int main(int argc, const char *argv[])
   /* tests */
   SP_ADD_TEST(sp_matrix_create_convert_mv);
   SP_ADD_TEST(yale_format);
+  SP_ADD_TEST(permutations);
   SP_ADD_TEST(sparse_permutations);
   SP_ADD_TEST(triangle_solver);
   SP_ADD_TEST(cg_solver);
