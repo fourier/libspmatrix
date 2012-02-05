@@ -816,9 +816,6 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
   return result;
 }
 
-
-
-
 void sp_matrix_lower_solve(sp_matrix_ptr self,
                            int n,
                            double* b,
