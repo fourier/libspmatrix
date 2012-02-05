@@ -541,10 +541,12 @@ static void cholesky()
   /* initialize skyline format from given CRS format */
   sp_matrix_skyline_init(&m,&mtx);
 
+  
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_skyline_free(&m);
 }
+
 
 static void load_from_files()
 {
@@ -653,6 +655,7 @@ static void etree_create_etree()
 static void etree_postorder()
 {
   int i,j,k,l;
+  sp_matrix_yale yale_post;
   /*
    * octave representation of the expected result of postordering:
    * p = [2, 3, 5, 8, 1, 4, 6, 7, 9, 10, 11];
@@ -674,6 +677,7 @@ static void etree_postorder()
   int postorder_expected[] = {2, 3, 5, 8, 1, 4, 6, 7, 9, 10, 11};
   int etree[11];
   int postorder[11];
+  int postinv[11];
   /*
    * octave representation of the postordered matrix:
    * m(p,p)
@@ -689,13 +693,13 @@ static void etree_postorder()
                                   {0,0,0,0,0,0,1,0,1,0,0},
                                   {0,1,0,1,0,1,1,0,0,1,1},
                                   {0,1,1,1,0,0,0,1,0,1,1}};
-  for ( j = 0; j < 11; ++ j)
-  {
-    for ( i = 0; i < 11; ++ i)
-      if ( postordered_matrix[j][i] )
-        printf("A_%d,%d ",j+1,i+1);
-    printf("\n");
-  }
+  /* for ( j = 0; j < 11; ++ j) */
+  /* { */
+  /*   for ( i = 0; i < 11; ++ i) */
+  /*     if ( postordered_matrix[j][i] ) */
+  /*       printf("A_%d,%d ",j+1,i+1); */
+  /*   printf("\n"); */
+  /* } */
 
   ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
   
@@ -720,6 +724,27 @@ static void etree_postorder()
         ASSERT_TRUE(sp_matrix_element_ptr(&mtx,k,l));
     }
   }
+
+  sp_perm_inverse(postorder,11,postinv);
+  sp_matrix_yale_permute(&yale,&yale_post,postinv,postinv);
+  for ( i = 0; i < 11; ++ i)
+  {
+    for ( j = yale_post.offsets[i]; j < yale_post.offsets[i+1]; ++ j)
+    {
+      if (yale_post.storage_type == CRS)
+      {
+        k = i;
+        l = yale_post.indicies[j];
+      }
+      else
+      {
+        k = yale_post.indicies[j];
+        l = i;
+      }
+      ASSERT_TRUE(postordered_matrix[k][l]);
+    }
+  }
+      
 }
 
 static void etree_ereach()
