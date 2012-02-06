@@ -1,6 +1,6 @@
 # -*- Mode: makefile; -*-
 
-# Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+# Copyright (C) 2011,2012 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
 # 
 #	This file is part of libspmatrix.
 #
@@ -27,34 +27,43 @@ INCLUDES = -I . -I ../liblogger
 LINKFLAGS = -L. -lspmatrix -lm -L../liblogger -llogger
 
 OUTPUT_SRC = main.c
+FEM2D_SRC = main_fem2d.c
 SOURCES := $(wildcard *.c)
 HEADERS := $(wildcard *.h)
 OBJECTS := $(patsubst %.c,%.o,$(SOURCES))
 OBJECTS_LIB := $(filter-out $(patsubst %.c,%.o,$(OUTPUT_SRC)),$(OBJECTS))
-OUTPUT = spmatrixtest
+OUTPUT_TEST = spmatrixtest
 OUTPUT_LIB = libspmatrix.a
+FEM2D_DEMO = demo_fem2d
+OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO)
+
+all: $(OUTPUT)
+	@echo "Done"
 
 %.o : %.c %.h
 	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) $< -o $@
 
-$(OUTPUT): $(OUTPUT_LIB) 
-	$(CC) $(patsubst %.c,%.o,$(OUTPUT_SRC)) -o $(OUTPUT) $(LINKFLAGS)
+
+$(OUTPUT_TEST): $(OUTPUT_LIB) 
+	$(CC) $(patsubst %.c,%.o,$(OUTPUT_SRC)) -o $(OUTPUT_TEST) $(LINKFLAGS)
+
+
+$(FEM2D_DEMO): $(OUTPUT_LIB) 
+	$(CC) $(patsubst %.c,%.o,$(FEM2D_SRC)) -o $(FEM2D_DEMO) $(LINKFLAGS)
+
 
 $(OUTPUT_LIB): $(OBJECTS)
 	$(RM) -f $(OUTPUT_LIB)
 	$(AR) cr $(OUTPUT_LIB) $(OBJECTS_LIB)
 	ranlib $(OUTPUT_LIB)
 
-
-
-all: $(OUTPUT)
-
 lint:
 	splint *.c
 
+
 .PHONY : clean
 clean :
-	rm $(OBJECTS) $(OUTPUT) $(OUTPUT_LIB)
+	rm $(OBJECTS) $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB)
 
 check-syntax: 
 	gcc -o nul -S ${CHK_SOURCES} 

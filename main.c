@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /*
-  Copyright (C) 2011 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+  Copyright (C) 2011,2012 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
  
   This file is part of libspmatrix.
 
