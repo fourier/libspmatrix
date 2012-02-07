@@ -63,6 +63,7 @@ void generate_brick_mesh(int N,int M,
   g->points = calloc(g->points_count,sizeof(point_2d));
   g->triangles = calloc(g->triangles_count, sizeof(triangle_3p));
 
+  /* create points */
   k = 0;
   for (i = 0; i < N+1; ++ i)
   {
@@ -73,6 +74,7 @@ void generate_brick_mesh(int N,int M,
       k++;
     }
   }
+  /* create triangels */
   k = 0;
   for (i = 0; i < N; ++ i)
   {
@@ -89,4 +91,26 @@ void generate_brick_mesh(int N,int M,
       k++;
     }
   }
+  /* create boundary conditions in form of prescribed
+   * displacements 
+   * considering offset = 1% of the length, it is normal for
+   * small deformations */
+
+  /* leftmost points - fixed, rightmost - with prescribed offset */
+  b->prescribed_count = (M+1)*2; 
+  b->points = calloc(b->prescribed_count, sizeof(prescribed_point));
+  for ( i = 0; i < M+1; ++ i)
+  {
+    k = i*(N+1);
+    b->points[i].type = FIXED_XY;
+    b->points[i].point_index = k;
+    b->points[i].point.x = 0;
+    b->points[i].point.y = 0;
+
+    b->points[i+M+1].type = FIXED_X;
+    b->points[i+M+1].point_index = N+k;
+    b->points[i+M+1].point.x = (dx*N-x)/100.0;
+    b->points[i+M+1].point.y = 0;
+  }
+  
 }

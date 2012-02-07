@@ -22,11 +22,11 @@
 #include <stdlib.h>
 #include "demo_fem2d.h"
 
-int main(int argc, char *argv[])
+int main()
 {
   const int N = 4;           /* number of vertical blocks */
   const int M = 3;           /* number of horizontal blocks */
-  int i,j;
+  int i;
   const double x = 1.0, y=1.0;                 /* upper-left point */
   const double dx = 1.0,dy = 1.0;              /* size of the block */
   geometry_2d g;
@@ -51,8 +51,16 @@ int main(int argc, char *argv[])
            g.triangles[i].p1+1,
            g.triangles[i].p2+1,
            g.triangles[i].p3+1);
-    
+  printf("boundary:\n");
+  for (i = 0; i < b.prescribed_count; ++ i)
+    printf("node %d, type %s, dx = %.2f, dy = %.2f\n",
+           b.points[i].point_index + 1,
+           b.points[i].type == FIXED_XY ? "XY" :
+           (b.points[i].type == FIXED_X ? "X" : "Y"),
+           b.points[i].point.x,
+           b.points[i].point.y);
 
+       
   return 0;
 }
 
