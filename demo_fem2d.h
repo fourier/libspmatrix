@@ -70,5 +70,7 @@ void generate_brick_mesh(int N,int M,
                          geometry_2d* g,
                          prescr_boundary_2d* b);
 
+double element_size(geometry_2d* g, int element_no);
+
 
 #endif /* _DEMO_FEM2D_H_ */

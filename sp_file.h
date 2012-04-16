@@ -37,6 +37,8 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename);
  * Currently supported formats:
  * MM (matrix market), file extension .mtx
  * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
+ * txt, 0-based triplet format, each line is 0-based tripet:
+ * row, col, value
  * Returns 0 if not possible to write(or unknown file format)
  * Side-effect: matrix gets ordered
  */

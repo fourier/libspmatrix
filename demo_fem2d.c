@@ -114,3 +114,24 @@ void generate_brick_mesh(int N,int M,
   }
   
 }
+
+static
+double det3x3(double (*m)[3])
+{
+  double result;
+  result = m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) - 
+    m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) + 
+    m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+  return result;  
+}
+  
+
+double element_size(geometry_2d* g, int element_no)
+{
+  double el[3][3];
+  el[0][0] = 1;
+  el[0][1] = 1;
+  el[0][2] = 1;
+
+  
+}

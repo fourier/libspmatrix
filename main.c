@@ -185,7 +185,7 @@ static void sparse_permutations()
      inverse row permutation
      p = [1,4,2,3]
   */
-  int p[4] =    {0,2,3,1};
+  /* int p[4] =    {0,2,3,1}; */
   int pinv[4] = {0,3,1,2};
   int q[4] =    {1,0,2,3};
   /*
@@ -217,7 +217,7 @@ static void sparse_permutations()
   sp_matrix mtx_crs, mtx_ccs;
   sp_matrix_yale yale_crs, yale_ccs;
   sp_matrix_yale permuted_crs, permuted_ccs;
-  int i,j;
+  int i;
   sp_matrix_init(&mtx_crs,4,4,2,CRS);
   MTX(&mtx_crs,0,0,1);MTX(&mtx_crs,0,1,2);MTX(&mtx_crs,0,3,-1);
   MTX(&mtx_crs,1,1,-2);
@@ -615,6 +615,7 @@ static void test_etree_init()
   MTX(&mtx,10,9,1);MTX(&mtx,10,10,1);
 
   sp_matrix_yale_init(&yale,&mtx);
+  sp_matrix_save_file(&mtx, "davis.txt");
 }
 
 static void test_etree_fini()
@@ -647,9 +648,10 @@ static void etree_create_etree()
   int etree[11];
   ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
   ASSERT_TRUE(etree[0] == etree_expected[0] - 1);
-
+  
   for ( i = 1; i < 11; ++ i)
     ASSERT_TRUE(etree[i] == etree_expected[i] - 1);
+  tree_dot_printf(etree,11);
 }
 
 static void etree_postorder()
@@ -783,6 +785,9 @@ static void etree_rowcount()
 {
   /* values received from the T.A.Davis's firstdesc function, but 1-based */
   int first_expected[] = {5,1,1,6,3,5,5,1,5,1,1};
+  /* values calculated by calculation of the maxfirst with
+   * forcefully postordered matrix, 1-based */
+  int maxfirst_expected[] = {-1, 1, -1, 3, -1, -1, 6, 5, 5, 6, 5};
   int i,j,p,k;
   int etree[11];
   int postorder[11];
@@ -790,6 +795,7 @@ static void etree_rowcount()
   int first[11];
   int level[11];
   int maxfirst[11];
+  int maxfirst1[11];
   int skeleton[11][11] = {
     {1,0,0,0,0,0,0,0,0,0,0},
     {0,1,0,0,0,0,0,0,0,0,0},
@@ -832,18 +838,19 @@ static void etree_rowcount()
   sp_matrix_yale_permute(&yale,&yale_post,postinv,postinv);
    
   for (j = 0; j < 11; ++ j)
-    maxfirst[j] = -1;
+    maxfirst[j] = -1, maxfirst1[j] = -1;
 
   for (j = 0; j < 11; ++ j)
   {
     /* j is k in postordered tree */
+    k = postorder[j]; /* we didn't permute the 'first' array,
+                         so it's time to do it here */
+
     for ( p = yale_post.offsets[j]; p < yale_post.offsets[j+1]; ++p )
     {
       i = yale_post.indicies[p];
       if ( i > j)
       {
-        k = postorder[j]; /* we didn't permute the 'first' array,
-                             so it's time to do it here */
         printf("A_%d,%d ",i+1,j+1);
         if (first[k] > maxfirst[i])
         {
@@ -861,8 +868,46 @@ static void etree_rowcount()
       printf("%d ",skeleton[i][j]);
     printf("\n");
   }
+  printf("maxfirst = [");
+  for (i = 0; i < 10; ++ i)
+    printf("%d, ", maxfirst[i] == -1 ? -1 : maxfirst[i] + 1);
+  printf("%d]\n", maxfirst[i] == -1 ? -1 : maxfirst[i] + 1);
+  
   /* the next step is to calculate skeleton matrix w/o construction
      of the temporary yale_post - postordered matrix */
+
+  for (j = 0; j < 11; ++ j)
+    maxfirst1[j] = -1;
+  int r,s;
+  for (j = 0; j < 11; ++ j)
+  {
+    /* j - column number */
+    /* j is k in postordered tree */
+    k = postorder[j];
+    s = postinv[j];           /* new col number */
+    printf("j = %d, postorder[j] = %d, postinv[j] = %d\n",
+           j,postorder[j],postinv[j]);
+    for ( p = yale.offsets[k]; p < yale.offsets[k+1]; ++p )
+    {
+      i = yale.indicies[p];
+      /* i - row number */
+      r = postinv[i];           /* new row number */
+      if (r > s)
+      {
+        printf("A_%d,%d ",r+1,s+1);
+        if (first[k] > maxfirst1[r])
+          maxfirst1[r] = first[k];
+      }
+    }
+    printf("\n");
+  }
+  printf("maxfirst1 = [");
+  for (i = 0; i < 10; ++ i)
+    printf("%d, ", maxfirst1[i] == -1 ? -1 : maxfirst1[i] + 1);
+  printf("%d]\n", maxfirst1[i] == -1 ? -1 : maxfirst1[i] + 1);
+  for (i = 0; i < 11; ++ i)
+    ASSERT_TRUE(maxfirst[i] == maxfirst1[i]);
+  
 }
 
 

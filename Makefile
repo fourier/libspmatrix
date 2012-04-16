@@ -60,6 +60,8 @@ $(OUTPUT_LIB): $(OBJECTS)
 lint:
 	splint *.c
 
+test: $(OUTPUT_TEST)
+	./$(OUTPUT_TEST)
 
 .PHONY : clean
 clean :

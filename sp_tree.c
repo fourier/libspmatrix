@@ -18,6 +18,7 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -206,4 +207,17 @@ int tree_find(int* tree, int size, int value)
     value = temp;
   }
   return value;
+}
+
+void tree_dot_printf(int* tree, int size)
+{
+  int i = 0;
+  if (tree)
+  {
+    printf("digraph etree {\n  rankdir = BT;\n");
+    for (; i < size; ++ i)
+      if (tree[i] != -1)
+        printf("  %d->%d\n",i+1,tree[i]+1);
+    printf("}\n");
+  }
 }

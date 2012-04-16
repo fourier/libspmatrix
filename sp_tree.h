@@ -104,4 +104,9 @@ void tree_first_descendant(int* tree, int size, int* postorder, int* first);
  * */
 int tree_find(int* tree, int size, int value);
 
+/*
+ * Prints the tree of the specified size to the STDOUT in DOT format.
+ */
+void tree_dot_printf(int* tree, int size);
+
 #endif /* _SP_TREE_H_ */

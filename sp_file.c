@@ -628,21 +628,56 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename)
 }
 
 
-static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
+static int sp_matrix_save_file_triplet(sp_matrix_ptr self,
+                                       FILE* file,
+                                       int matrix_type,
+                                       int base)
 {
   int result = 1;
-  FILE* file = fopen(filename,"wt+");
-  int matrix_type;
-  int i,j,n,nonzeros;
-  int size;
+  int i,j,n,size;
   double value;
-  /* MM format limitation for the line is 1024 characters */
-  char buf[1024+1];
-  if (!file)
+  char buf[64];
+
+  n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  
+  /* write elements */
+  for ( i = 0; i < n; ++ i)
   {
-    fprintf(stderr,"Error opening file %s for writing",filename);
-    return 0;
+    for ( j = 0; j <= self->storage[i].last_index; ++ j)
+    {
+      if (matrix_type != MM_GENERAL && self->storage[i].indexes[j] > i)
+      {
+        result = 0;
+        break;
+      }
+      if (self->storage_type == CRS)
+        size = sprintf(buf,"%d %d %.16e\n",i+base,
+                       self->storage[i].indexes[j]+base,
+                       self->storage[i].values[j]);
+      else                      /* CCS */
+      {
+        value = self->storage[i].values[j];
+        /* lower triangle = -upper triangle for skew symmetic matix */
+        if (matrix_type == MM_SKEW_SYMMETRIC)
+          value = -value;
+        if (matrix_type == MM_GENERAL)
+          size = sprintf(buf,"%d %d %.16e\n",self->storage[i].indexes[j]+base,
+                       i+base,
+                       value);
+        else                    /* transposed */
+          size = sprintf(buf,"%d %d %.16e\n",i+base,
+                         self->storage[i].indexes[j]+base,
+                         value);
+      }
+      fwrite(buf,1,size,file);
+    }
   }
+  return result;
+}
+
+static int sp_matrix_type_mm(sp_matrix_ptr self)
+{
+  int matrix_type = MM_GENERAL;
   if ( !self->ordered )         /* order matrix */
     sp_matrix_reorder(self);
 
@@ -650,9 +685,25 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
     matrix_type = MM_SYMMETRIC;
   else if (sp_matrix_isskew_symmetric(self))
     matrix_type = MM_SKEW_SYMMETRIC;
-  else
-    matrix_type = MM_GENERAL;
+  return matrix_type;
+}
 
+static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
+{
+  int result = 1;
+  FILE* file = fopen(filename,"wt+");
+  int matrix_type;
+  int i,j,n,nonzeros;
+  int size;
+  /* MM format limitation for the line is 1024 characters */
+  char buf[1024+1];
+  if (!file)
+  {
+    fprintf(stderr,"Error opening file %s for writing",filename);
+    return 0;
+  }
+  matrix_type = sp_matrix_type_mm(self);
+  
   size = sprintf(buf,"%s matrix coordinate real %s\n",
                  MM_HEADER_STRING,
                  matrix_type == MM_GENERAL ? "general" :
@@ -688,34 +739,34 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
   size = sprintf(buf,"%d %d %d\n",self->rows_count,self->cols_count,nonzeros);
   fwrite(buf,1,size,file);
 
-  /* write elements */
-  for ( i = 0; i < n; ++ i)
+  if (!sp_matrix_save_file_triplet(self,file,matrix_type,1))
   {
-    for ( j = 0; j <= self->storage[i].last_index; ++ j)
-    {
-      if (matrix_type != MM_GENERAL && self->storage[i].indexes[j] > i)
-        break;
-      if (self->storage_type == CRS)
-        size = sprintf(buf,"%d %d %.16e\n",i+1,self->storage[i].indexes[j]+1,
-                       self->storage[i].values[j]);
-      else                      /* CCS */
-      {
-        value = self->storage[i].values[j];
-        /* lower triangle = -upper triangle for skew symmetic matix */
-        if (matrix_type == MM_SKEW_SYMMETRIC)
-          value = -value;
-        if (matrix_type == MM_GENERAL)
-          size = sprintf(buf,"%d %d %.16e\n",self->storage[i].indexes[j]+1,
-                       i+1,
-                       value);
-        else                    /* transposed */
-          size = sprintf(buf,"%d %d %.16e\n",i+1,self->storage[i].indexes[j]+1,
-                         value);
-      }
-      fwrite(buf,1,size,file);
-    }
+    fprintf(stderr, "Cannot save file!");
+    result = 0;
   }
+  
+  fflush(file);
+  fclose(file);
+  return result;
+}
 
+
+static int sp_matrix_save_file_txt(sp_matrix_ptr self, const char* filename)
+{
+  int result = 1;
+  int matrix_type;
+  FILE* file = fopen(filename,"wt+");
+  if (!file)
+  {
+    fprintf(stderr,"Error opening file %s for writing",filename);
+    return 0;
+  }
+  matrix_type = MM_GENERAL; /* sp_matrix_type_mm(self); */
+  if (!sp_matrix_save_file_triplet(self,file,matrix_type,0))
+  {
+    fprintf(stderr, "Cannot save file!");
+    result = 0;
+  }
   fflush(file);
   fclose(file);
   return result;
@@ -740,5 +791,8 @@ int sp_matrix_save_file(sp_matrix_ptr self, const char* filename)
   }
   if ( !sp_istrcmp(ext,"mtx") )
     return sp_matrix_save_file_mm(self,filename);
+  else if ( !sp_istrcmp(ext,"txt") )
+    return sp_matrix_save_file_txt(self,filename);
+
   return 0;
 }
