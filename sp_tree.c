@@ -215,6 +215,7 @@ void tree_dot_printf(int* tree, int size)
   if (tree)
   {
     printf("digraph etree {\n  rankdir = BT;\n");
+    printf("  d2tgraphstyle=\"scale=0.4\"\n  node [shape=circle];\n");
     for (; i < size; ++ i)
       if (tree[i] != -1)
         printf("  %d->%d\n",i+1,tree[i]+1);

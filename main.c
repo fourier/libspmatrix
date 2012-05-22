@@ -615,7 +615,7 @@ static void test_etree_init()
   MTX(&mtx,10,9,1);MTX(&mtx,10,10,1);
 
   sp_matrix_yale_init(&yale,&mtx);
-  sp_matrix_save_file(&mtx, "davis.txt");
+  /* sp_matrix_save_file(&mtx, "davis.txt"); */
 }
 
 static void test_etree_fini()
@@ -651,7 +651,7 @@ static void etree_create_etree()
   
   for ( i = 1; i < 11; ++ i)
     ASSERT_TRUE(etree[i] == etree_expected[i] - 1);
-  tree_dot_printf(etree,11);
+  /* tree_dot_printf(etree,11); */
 }
 
 static void etree_postorder()
@@ -778,6 +778,24 @@ static void etree_ereach()
     for (j = 0; j < 11; ++ j)
       if (chol_portrait[i][j]) k++;
     ASSERT_TRUE(k == count);
+  }
+}
+
+static void etree_rowcolcounts()
+{
+  int i,j,k,count;
+  int etree[11];
+  int rowcounts[11];
+  int colcounts[11];
+  int rowcounts_expected[11] = {1,1,2,1,1,3,3,4,3,7,7};
+  int colcounts_expected[11] = {3,3,4,3,3,4,4,3,3,2,1};
+  
+  ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
+  ASSERT_TRUE(sp_matrix_yale_chol_counts(&yale,etree,rowcounts,colcounts));
+  for ( i = 0; i < 11; ++ i)
+  {
+    ASSERT_TRUE(rowcounts[i] == rowcounts_expected[i]);
+    ASSERT_TRUE(colcounts[i] == colcounts_expected[i]);
   }
 }
 
@@ -1062,7 +1080,9 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_create_etree);
   SP_ADD_SUITE_TEST(suite1,etree_postorder);
   SP_ADD_SUITE_TEST(suite1,etree_ereach);
-  SP_ADD_SUITE_TEST(suite1,etree_rowcount);
+  SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
+  /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
+  
   sp_run_tests(argc,argv);
 
   /* finalize logger */

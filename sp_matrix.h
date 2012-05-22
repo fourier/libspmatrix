@@ -279,6 +279,18 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
                            int* q);
 
 /*
+ * Calculates row and column counts for the Cholesky decomposition
+ * row counts - number of nonzero elements in rows
+ * col counts - number of nonzero elements in columns
+ * by given sparse matrix self and elimination tree etree
+ * returns 0 in case of error, nonzero otherwise
+ */
+int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
+                               int* etree,
+                               int* rowcounts,
+                               int* colcounts);
+
+/*
  * Solves SLAE L*x = b
  * by given L sparse matrix 
  * n - is the size of the x vector, and therefore

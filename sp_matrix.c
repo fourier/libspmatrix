@@ -816,6 +816,51 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
   return result;
 }
 
+int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
+                               int* etree,
+                               int* rowcounts,
+                               int* colcounts)
+{
+  int result = 1;
+  int n = self->rows_count;
+  int i,j,k,p;
+  /* array to store marked nodes. nonzero means node is marked */
+  char *marked = (char*)malloc(n);
+  memset(rowcounts,0,n*sizeof(int));
+  memset(colcounts,0,n*sizeof(int));
+#define _TREE_MARK(i) {marked[(i)] = 1; ++rowcounts[k]; }
+  for (k = 0; k < n; ++ k)      /* loop by rows */
+  {
+    memset(marked,0,n);          /* clear all marks */
+    i = 0;                       /* initialize number of row subtrees
+                                  * containing k to zero */
+    /* loop by nonzero rows in the column, or nonzero cols in
+     * the row, depending on storage schema */
+    for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
+    {
+      /* store the index to i for simplicity */
+      j = self->indicies[p];    /* a_kj != 0 */
+      if ( j <= k )             /* if above the diagonal */
+      {
+        while(!marked[j]) /* marked encountered, goto next nonzero */
+        {
+          ++colcounts[j];
+          _TREE_MARK(j);
+          if (j == k)           /* root encountered, goto next nonzero */
+            break;
+          /* else climb up by the tree */
+          j = etree[j];
+        }
+      }
+      else                      /* assuming indicies are sorted */
+        break;
+    }
+  }
+#undef _TREE_MARK
+  return result;
+}
+
+
 void sp_matrix_lower_solve(sp_matrix_ptr self,
                            int n,
                            double* b,
