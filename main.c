@@ -783,7 +783,7 @@ static void etree_ereach()
 
 static void etree_rowcolcounts()
 {
-  int i,j,k,count;
+  int i;
   int etree[11];
   int rowcounts[11];
   int colcounts[11];
@@ -799,14 +799,16 @@ static void etree_rowcolcounts()
   }
 }
 
+#if 0
 static void etree_rowcount()
 {
   /* values received from the T.A.Davis's firstdesc function, but 1-based */
   int first_expected[] = {5,1,1,6,3,5,5,1,5,1,1};
   /* values calculated by calculation of the maxfirst with
    * forcefully postordered matrix, 1-based */
-  int maxfirst_expected[] = {-1, 1, -1, 3, -1, -1, 6, 5, 5, 6, 5};
+  /* int maxfirst_expected[] = {-1, 1, -1, 3, -1, -1, 6, 5, 5, 6, 5}; */
   int i,j,p,k;
+  int r,s;
   int etree[11];
   int postorder[11];
   int postinv[11];
@@ -896,7 +898,6 @@ static void etree_rowcount()
 
   for (j = 0; j < 11; ++ j)
     maxfirst1[j] = -1;
-  int r,s;
   for (j = 0; j < 11; ++ j)
   {
     /* j - column number */
@@ -927,7 +928,7 @@ static void etree_rowcount()
     ASSERT_TRUE(maxfirst[i] == maxfirst1[i]);
   
 }
-
+#endif
 
 
 static void stack_container()
