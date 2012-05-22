@@ -176,7 +176,9 @@ static int mm_validate_header(mm_header* header)
 /*
  * Load matrix in MatrixMarket format
  */
-static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self, const char* filename)
+static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
+                                       const char* filename,
+                                       sparse_storage_type type)
 {
   int result = 0;
   sp_matrix mtx;
@@ -221,7 +223,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self, const char* file
           fprintf(stderr, "Unable to parse sizes\n");
           break;
         }
-        sp_matrix_init(&mtx,rows,cols,nonzeros/rows + 1,CRS);
+        sp_matrix_init(&mtx,rows,cols,nonzeros/rows + 1,type);
         element_number = 0;     /* start with first element */
         block_number++;
       }
@@ -304,7 +306,7 @@ static int hb_extract_positional_format(const char* from, int size,
  * Load matrix in Harwell Boeing format
  */
 static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
-                                  const char* filename)
+                                       const char* filename)
 {
   int i,n;
   /* 1 for '\n' */
@@ -604,7 +606,9 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   return 1;
 }
 
-int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename)
+int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
+                             const char* filename,
+                             sparse_storage_type type)
 {
   /* determine file extension */
   const char* ext = sp_parse_file_extension(filename);
@@ -614,7 +618,7 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename)
     return 0;
   }
   if ( !sp_istrcmp(ext,"mtx") )
-    return sp_matrix_yale_load_file_mm(self, filename);
+    return sp_matrix_yale_load_file_mm(self, filename,type);
   else if (!sp_istrcmp(ext,"hb") ||
            !sp_istrcmp(ext,"rua") ||
            !sp_istrcmp(ext,"rsa") ||

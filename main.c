@@ -552,13 +552,13 @@ static void load_from_files()
 {
   sp_matrix_yale mtx;
   int result;
-  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"bcsstk09.rsa")));
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"bcsstk09.rsa",CRS)));
   if (result) sp_matrix_yale_free(&mtx);
-  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"af23560.rua")));
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"af23560.rua",CRS)));
   if (result) sp_matrix_yale_free(&mtx);  
-  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"kershaw_rua.hb")));
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx,"kershaw_rua.hb",CRS)));
   if (result) sp_matrix_yale_free(&mtx);
-  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx, "5by5_rua.hb")));
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&mtx, "5by5_rua.hb",CRS)));
 
   /* sp_matrix_save_file(result,"export.mtx"); */
   if (result) sp_matrix_yale_free(&mtx);  
@@ -1038,6 +1038,80 @@ static void tree_search()
   free(search.result);
 }
 
+static void save_vector(int* v, int size, const char* fname)
+{
+  int i = 0;
+  FILE *f = fopen(fname,"wt+");
+  if (f)
+  {
+    for (; i < size; ++ i)
+      fprintf(f,"%d\n", v[i]);
+    fclose(f);
+  }
+}
+
+static void big_matrix()
+{
+  int result;
+  sp_matrix_yale yale;
+  int *etree, *rowcounts, *colcounts;
+  int i,j;
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale,"bcsstk11.mtx",CCS)));
+  if (result)
+  {
+    /* in order to test one need to have bcsstk11.mtx
+     * 1. download mmread.m from matrixmarket site and put it into the
+     *    ../octave-mm directory
+     * 2. start octave in ../octave-mm directory
+     * 3. copy bcsstk11.mtx to ../octave-mm directory
+     * 4. run this test
+     * 5. Perform in octave:
+     * ------------------------------
+     *    A = mmread("bcsstk11.mtx");
+     *    e = etree(A);
+     *    for i = 1:rows
+     *      if e(i) == 0
+     *        j = j+1;
+     *      end
+     *    end
+     * ------------------------------
+     *  j shall be equal to 9
+     * ------------------------------
+     * [COUNT, H, PARENT, POST, R] = symbfact(A);
+     * e1 = load("-ascii","etree.txt");
+     * max(abs(e-e1'))
+     * cols = load("-ascii","cols.txt");
+     * max(abs(COUNT-cols))
+     * ------------------------------
+     * last to operations(max and max) shall give 0
+     */
+    sp_matrix_yale_printf2(&yale);
+    etree = (int*)malloc(yale.rows_count*sizeof(int));
+    rowcounts = (int*)malloc(yale.rows_count*sizeof(int));
+    colcounts = (int*)malloc(yale.rows_count*sizeof(int));
+
+    ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
+    j = 0;
+    for (i = 0; i < yale.rows_count; ++ i)
+      if (etree[i] == -1)
+        j++;
+    
+    printf("Number of roots in the Elimination tree = %d\n",j);
+    ASSERT_TRUE(sp_matrix_yale_chol_counts(&yale,etree,rowcounts,colcounts));
+    for (i = 0; i < yale.rows_count; ++ i)
+      etree[i]++;
+    save_vector(etree,yale.rows_count,"../octave-mm/etree.txt");
+    save_vector(rowcounts,yale.rows_count,"../octave-mm/rows.txt");
+    save_vector(colcounts,yale.rows_count,"../octave-mm/cols.txt");
+    
+    free(etree);
+    free(rowcounts);
+    free(colcounts);
+    
+    sp_matrix_yale_free(&yale);
+  }
+}
+
 /* #define DEF_TEST(name) static void name() { printf( #name "\n"); } */
 
 /* DEF_TEST(init1) */
@@ -1082,6 +1156,7 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_ereach);
   SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
   /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
+  SP_ADD_TEST(big_matrix);
   
   sp_run_tests(argc,argv);
 

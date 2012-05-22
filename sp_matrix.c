@@ -1340,6 +1340,14 @@ void sp_matrix_yale_printf(sp_matrix_yale_ptr self)
   printf("]\n");
 }
 
+void sp_matrix_yale_printf2(sp_matrix_yale_ptr self)
+{
+  printf("Storage type: %s\n", self->storage_type == CRS ? "CRS" : "CCS");
+  printf("Size: %dx%d\n", self->rows_count,self->cols_count);
+  printf("Nonzeros: %d\n", self->nonzeros);
+}
+
+
 void sp_matrix_dump(sp_matrix_ptr self, const char* filename)
 {
   FILE* f;

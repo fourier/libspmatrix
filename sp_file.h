@@ -24,12 +24,15 @@
 
 /*
  * Load the sparse martix from the file.
- * storage_type = CRS or CCS
+ * type = CRS or CCS - preferred storage type
  * Currently supported formats:
  * MM (Matrix Market) (*.mtx)
  * Harwell-Boeing format (*.hb, *.r[su]a)
+ * if file is in Harwell-Boeing format, storage type is ignored
  */
-int sp_matrix_yale_load_file(sp_matrix_yale_ptr self, const char* filename);
+int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
+                             const char* filename,
+                             sparse_storage_type type);
 
 /*
  * Save the sparse martix from the file.
