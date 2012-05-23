@@ -17,14 +17,25 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 
+# Set this variable if want to use liblogger
+LOGGER := 
+
+ifdef LOGGER
+ LOGGERINC = -I ../liblogger
+ LOGGERLINK = -L../liblogger -llogger
+ LOGGERCFLAGS = -DUSE_LOGGER
+endif
+
 
 CC = gcc
 
-CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES)
+CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS)
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
-INCLUDES = -I . -I ../liblogger
-LINKFLAGS = -L. -lspmatrix -lm -L../liblogger -llogger
+
+
+INCLUDES = -I . $(LOGGERINC)
+LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK)
 
 OUTPUT_SRC = main.c
 FEM2D_SRC = main_fem2d.c

@@ -86,18 +86,6 @@ typedef struct
 } sp_matrix_skyline;
 typedef sp_matrix_skyline* sp_matrix_skyline_ptr;
 
-/*
- * ILU decomposition of the sparse matrix in Skyline (CSLR) format
- * ILU decomposition keeps the symmetric portrait of the sparse matrix
- */
-typedef struct
-{
-  sp_matrix_skyline parent;
-  double *ilu_diag;              /* U matrix diagonal */
-  double *ilu_lowertr;           /* nonzero elements of the lower(L) matrix */
-  double *ilu_uppertr;           /* nonzero elements of the upper(U) matrix */
-} sp_matrix_skyline_ilu;
-typedef sp_matrix_skyline_ilu* sp_matrix_skyline_ilu_ptr;
 
 /*
  * Sparse matrix in 3 arrays  (CRS or CCS format):
@@ -172,11 +160,6 @@ void sp_matrix_convert(sp_matrix_ptr mtx_from,
 
 
 /*
- * Creates ILU decomposition of the sparse matrix 
- */
-void sp_matrix_create_ilu(sp_matrix_ptr self,sp_matrix_skyline_ilu_ptr ilu);
-
-/*
  * Construct CSLR sparse matrix based on sp_matrix format
  * mtx - is the (reordered) sparse matrix to take data from
  * Acts as a copy-constructor
@@ -245,26 +228,6 @@ void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y);
  */
 void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
 
-/*
- * Constructs the elimination tree from the matrix in Yale format
- * the matrix shall be in CCS format
- * etree is the pointer to the array with rows_count elements
- * to store the elimination tree
- * returns the nonzero value if all ok
- * 0 in case of error
- */
-int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* etree);
-
-/*
- * Constructs the nonzero portrait of the kth row of the L matrix in
- * LL^T Cholesky decomposition
- * out - output array with allocated size self->rows_count
- * returns the number of first meaningfull elements in out array
- * Example: if the resulting array (out) is
- * 2 7 9 10 -1 -1 -1 -1 -1 -1 -1
- * then the return value is 4
- */
-int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out);
 
 /*
  * Calculates the permuted matrix C = P*A*Q
@@ -278,113 +241,6 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
                            int* pinv,
                            int* q);
 
-/*
- * Calculates row and column counts for the Cholesky decomposition
- * row counts - number of nonzero elements in rows
- * col counts - number of nonzero elements in columns
- * by given sparse matrix self and elimination tree etree
- * returns 0 in case of error, nonzero otherwise
- */
-int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
-                               int* etree,
-                               int* rowcounts,
-                               int* colcounts);
-
-/*
- * Solves SLAE L*x = b
- * by given L sparse matrix 
- * n - is the size of the x vector, and therefore
- * the matrix L will be used up to nth row & column.
- */
-void sp_matrix_lower_solve(sp_matrix_ptr self,
-                           int n,
-                           double* b,
-                           double* x);
-
-
-/*
- * Conjugate Grade solver
- * self - matrix in Yale format
- * b - right-part vector
- * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
- * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
- * will contain norm of the residual at the end of iteration
- * x - output vector
- */
-void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
-                             double* b,
-                             double* x0,
-                             int* max_iter,
-                             double* tolerance,
-                             double* x);
-
-/*
- * Preconditioned Conjugate Grade solver
- * Preconditioner in form of the ILU decomposition
- * self - matrix in Yale format
- * b - right-part vector
- * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
- * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
- * will contain norm of the residual at the end of iteration
- * x - output vector
- */
-void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
-                                  sp_matrix_skyline_ilu_ptr ilu,
-                                  double* b,
-                                  double* x0,
-                                  int* max_iter,
-                                  double* tolerance,
-                                  double* x);
-
-
-/*
- * Create ILU decomposition of the sparse matrix in skyline format
- * lu_diag - ILU decomposition diagonal
- * lu_lowertr - lower triangle of the ILU decomposition
- * lu_uppertr - upper triangle of the ILU decomposition
- */
-void sp_matrix_skyline_ilu_copy_init(sp_matrix_skyline_ilu_ptr self,
-                                     sp_matrix_skyline_ptr parent);
-
-/* Free the sparse matrix skyline & ilu decomposition structure */
-void sp_matrix_skyline_ilu_free(sp_matrix_skyline_ilu_ptr self);
-
-/*
- * by given L,U - ILU decomposition of the matrix A
- * calculates L*x = y
- */
-void sp_matrix_skyline_ilu_lower_mv(sp_matrix_skyline_ilu_ptr self,
-                                    double* x,
-                                    double* y);
-/*
- * by given L,U - ILU decomposition of the matrix A
- * calculates U*x = y
- */
-void sp_matrix_skyline_ilu_upper_mv(sp_matrix_skyline_ilu_ptr self,
-                                    double* x,
-                                    double* y);
-
-/*
- * by given L,U - ILU decomposition of the matrix A
- * Solves SLAE L*x = b
- * Warning! Side-Effect: modifies b
- */
-void sp_matrix_skyline_ilu_lower_solve(sp_matrix_skyline_ilu_ptr self,
-                                       double* b,
-                                       double* x);
-
-/*
- * by given L,U - ILU decomposition of the matrix A
- * Solves SLAE U*x = b
- * Warning! Side-Effect: modifies b 
- */
-void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
-                                       double* b,
-                                       double* x);
 
 /* Print contens of the matrix in index form to the stdout */
 void sp_matrix_printf(sp_matrix_ptr self);

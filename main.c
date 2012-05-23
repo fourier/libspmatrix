@@ -24,13 +24,17 @@
 #include <memory.h>
 
 #include "sp_matrix.h"
+#include "sp_direct.h"
+#include "sp_iter.h"
 #include "sp_utils.h"
 #include "sp_file.h"
 #include "sp_cont.h"
 #include "sp_tree.h"
 #include "sp_perm.h"
 #include "sp_test.h"
+#ifdef USE_LOGGER
 #include "logger.h"
+#endif
 
 static void sp_matrix_create_convert_mv()
 {
@@ -1057,6 +1061,7 @@ static void big_matrix()
   sp_matrix_yale yale;
   int *etree, *rowcounts, *colcounts;
   int i,j;
+  sp_chol_symbolic symb;
   EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale,"bcsstk11.mtx",CCS)));
   if (result)
   {
@@ -1108,6 +1113,10 @@ static void big_matrix()
     free(etree);
     free(rowcounts);
     free(colcounts);
+
+    /* test symbolic analysis */
+    ASSERT_TRUE(sp_matrix_yale_symbolic_init(&yale,&symb));
+    sp_matrix_yale_symbolic_free(&symb);
     
     sp_matrix_yale_free(&yale);
   }
@@ -1129,13 +1138,14 @@ static void big_matrix()
 int main(int argc, const char *argv[])
 {
   sp_test_suite *suite1;
+#ifdef USE_LOGGER
   /* logger */
   logger_parameters params;
   memset(&params,0,sizeof(params));
   params.log_file_path = "spmatrix.log";
   params.log_level = LOG_LEVEL_ALL;
   logger_init_with_params(&params);
-
+#endif
   /* tests */
   SP_ADD_TEST(sp_matrix_create_convert_mv);
   SP_ADD_TEST(yale_format);
@@ -1160,9 +1170,9 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(big_matrix);
   
   sp_run_tests(argc,argv);
-
+#ifdef USE_LOGGER
   /* finalize logger */
   logger_fini();
-
+#endif
   return 0;
 }
