@@ -20,7 +20,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string.h>             /* for memcpy */
 
 #include "sp_direct.h"
 #include "sp_tree.h"
@@ -249,4 +249,30 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
     symb->rowcounts = 0;
     symb->colcounts = 0;
   }
+}
+
+
+int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
+                                 sp_chol_symbolic_ptr symb,
+                                 sp_matrix_yale_ptr L,
+                                 sparse_storage_type type)
+{
+  int result = 1;
+  int count,i;
+  sp_matrix_yale_init2(L,type,self->rows_count,self->cols_count,
+                       symb->nonzeros,
+                       type == CRS ? symb->rowcounts : symb->colcounts);
+  if (type == CRS)
+  {
+    for (i = 0; i < self->rows_count; ++ i)
+    {
+      /* ereach simply defines the portrait of every i-th row */
+      sp_matrix_yale_ereach(self,symb->etree,i,L->indicies+L->offsets[i]);
+    }
+  }
+  else
+  {
+    
+  }
+  return result;
 }

@@ -144,7 +144,7 @@ void sp_matrix_clear(sp_matrix_ptr mtx);
 
 /*
  * Copy sparse matrix from mtx_from to mtx_to
- * This function assumes what mtx_to is already cleared by free_sp_matrix
+ * This function assumes what mtx_to is already cleared by sp_matrix_free
  * or mtx_to is a pointer to uninitialized sp_matrix structure
  */
 void sp_matrix_copy(sp_matrix_ptr mtx_from,
@@ -153,6 +153,7 @@ void sp_matrix_copy(sp_matrix_ptr mtx_from,
 /*
  * Converts matrix storage format CRS <=> CCS
  * mtx_to shall be uninitialized sp_matrix structure
+ * if the type is the same - do nothing 
  */
 void sp_matrix_convert(sp_matrix_ptr mtx_from,
                        sp_matrix_ptr mtx_to,
@@ -180,6 +181,28 @@ void sp_matrix_skyline_free(sp_matrix_skyline_ptr self);
  */
 void sp_matrix_yale_init(sp_matrix_yale_ptr self,
                          sp_matrix_ptr mtx);
+
+/*
+ * Creates the sparse matrix in Yale format
+ * using given size and row/column counts
+ * offsets and sizes filled, indicies and values initialized to 0
+ * and shall be filled manually
+ */
+void sp_matrix_yale_init2(sp_matrix_yale_ptr self,
+                          sparse_storage_type type,
+                          int rows_count,
+                          int cols_count,
+                          int nonzeros,
+                          int* counts);
+                          
+/*
+ * Copy sparse matrix from mtx_from to mtx_to
+ * This function assumes what mtx_to is already cleared by sp_matrix_yale_free
+ * or mtx_to is a pointer to uninitialized sp_matrix structure
+ */
+void sp_matrix_yale_copy(sp_matrix_yale_ptr mtx_from,
+                         sp_matrix_yale_ptr mtx_to);
+
 
 /*
  * Destructor for a sparse matrix in Yale format
@@ -228,6 +251,20 @@ void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y);
  */
 void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
 
+/*
+ * Transposes the matrix in Yale format
+ */
+void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
+                              sp_matrix_yale_ptr to);
+
+/*
+ * Convert sparse matrix to given format type
+ * if the type is the same - do nothing
+ * matrix 'to' shall be uninitialized
+ */
+void sp_matrix_yale_convert(sp_matrix_yale_ptr from,
+                            sp_matrix_yale_ptr to,
+                            sparse_storage_type type);
 
 /*
  * Calculates the permuted matrix C = P*A*Q

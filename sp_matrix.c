@@ -305,6 +305,58 @@ void sp_matrix_yale_init(sp_matrix_yale_ptr self,
   self->offsets[i] = nonzeros;
 }
 
+void sp_matrix_yale_init2(sp_matrix_yale_ptr self,
+                          sparse_storage_type type,
+                          int rows_count,
+                          int cols_count,
+                          int nonzeros,
+                          int* counts)
+{
+  int i,j;
+  int n = type == CRS ? rows_count : cols_count;
+  /* initialize matrix */
+  memset(self,sizeof(sp_matrix_yale),0);
+  self->storage_type = type;
+  self->rows_count = rows_count;
+  self->cols_count = cols_count;
+  self->nonzeros   = nonzeros;
+  /* allocate memory for arrays */
+  self->offsets  = calloc(n+1,      sizeof(int));
+  self->indicies = calloc(nonzeros, sizeof(int));
+  self->values   = calloc(nonzeros, sizeof(double));
+  /* calculate offsets */
+  j = 0;
+  for (i = 0; i < n; ++ i)
+  {
+    self->offsets[i] = j;
+    j += counts[i];
+  }
+  self->offsets[i] = nonzeros;
+}
+
+void sp_matrix_yale_copy(sp_matrix_yale_ptr mtx_from,
+                         sp_matrix_yale_ptr mtx_to)
+{
+  int n = (mtx_from->storage_type == CRS) ?
+    mtx_from->rows_count : mtx_from->cols_count;
+  /* initialize matrix */
+  memset(mtx_to,sizeof(sp_matrix_yale),0);
+  mtx_to->storage_type = mtx_from->storage_type;
+  mtx_to->rows_count   = mtx_from->rows_count;
+  mtx_to->cols_count   = mtx_from->cols_count;
+  mtx_to->nonzeros     = mtx_from->nonzeros;
+  /* allocate memory for arrays */
+  mtx_to->offsets  = calloc(n+1,      sizeof(int));
+  mtx_to->indicies = calloc(mtx_from->nonzeros, sizeof(int));
+  mtx_to->values   = calloc(mtx_from->nonzeros, sizeof(double));
+  /* copy data */
+  memcpy(mtx_to->offsets,mtx_from->offsets,n*sizeof(int));
+  memcpy(mtx_to->indicies,mtx_from->indicies,mtx_from->nonzeros*sizeof(int));
+  memcpy(mtx_to->values,mtx_from->values,mtx_from->nonzeros*sizeof(double));
+}
+
+
+
 void sp_matrix_yale_free(sp_matrix_yale_ptr self)
 {
   free(self->offsets);
@@ -677,6 +729,56 @@ void sp_matrix_printf2(sp_matrix_ptr self)
     }
   }
 }
+
+
+void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
+                              sp_matrix_yale_ptr to)
+{
+  int n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  int i,j,k,p;
+  int* offsets = calloc(n+1,sizeof(int));
+  /* 1. row/column counts shifted by 1 */
+  for ( i = 0; i < self->nonzeros; ++i)
+  {
+    offsets[self->indicies[i]+1]++;
+  }
+  /* 2. initialize an empty matrix */
+  sp_matrix_yale_init2(to,self->storage_type,
+                       self->rows_count,self->cols_count,
+                       self->nonzeros,offsets+1);
+
+  /* 3. offsets - partial sums of counts of row/columns */
+  memcpy(offsets,to->offsets,n*sizeof(int));
+  for ( i = 0; i < n; ++i)
+  {
+    for ( p = self->offsets[i]; p < self->offsets[i+1]; ++p )
+    {
+      j = self->indicies[p];
+      /* a_ij != 0 */
+      /* in new matrix a'_ji = a_ij 
+       * off[j] - shall point to the beginning of the jth column
+       * therefore off[j]++ - next nonzero row in this column,
+       * which is the element a_ji, and therefore its row index = i
+       */ 
+      k = offsets[j]++;
+      to->indicies[k] = i;
+      to->values[k]   = self->values[p];
+    }
+  }
+
+}
+
+void sp_matrix_yale_convert(sp_matrix_yale_ptr from,
+                            sp_matrix_yale_ptr to,
+                            sparse_storage_type type)
+{
+  if (from->storage_type == type)
+    return;
+  sp_matrix_yale_transpose(from,to);
+  to->storage_type = type;
+}
+
+
 
 int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
                            sp_matrix_yale_ptr permuted,

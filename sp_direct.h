@@ -55,7 +55,10 @@ int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* etree);
  * 2 7 9 10 -1 -1 -1 -1 -1 -1 -1
  * then the return value is 4
  */
-int sp_matrix_yale_ereach(sp_matrix_yale_ptr self, int* etree, int k, int* out);
+int sp_matrix_yale_ereach(sp_matrix_yale_ptr self,
+                          int* etree,
+                          int k,
+                          int* out);
 
 /*
  * Calculates row and column counts for the Cholesky decomposition
@@ -92,5 +95,16 @@ int sp_matrix_yale_symbolic_init(sp_matrix_yale_ptr self,
  * only for its structures
  */
 void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb);
+
+/*
+ * Finds the symbolic Cholesky decomposition - portrait of the matrix L
+ * either with row or column storage without numeric values
+ * using the given matrix and results of the symbolic analysis
+ * Returns nonzero if succesfull 
+ */
+int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
+                                 sp_chol_symbolic_ptr symb,
+                                 sp_matrix_yale_ptr L,
+                                 sparse_storage_type type);
 
 #endif /* _SP_DIRECT_H_ */
