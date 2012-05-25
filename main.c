@@ -1095,7 +1095,7 @@ static void save_vector(int* v, int size, const char* fname)
   }
 }
 
-static void big_matrix()
+static void big_matrix_from_file()
 {
   int result;
   sp_matrix_yale yale;
@@ -1186,13 +1186,69 @@ static void yale_transpose_convert()
   sp_matrix_yale_init(&yale,&mtx);
   sp_matrix_yale_init(&yale2,&mtx2);
 
-  sp_matrix_yale_printf(&yale);
-  printf("\n");
-  sp_matrix_yale_printf(&yale2);
-  printf("\n");
+  /* sp_matrix_yale_printf(&yale); */
+  /* sp_matrix_yale_printf(&yale2); */
+  /* 1. verify convert CRS->CCS */
   sp_matrix_yale_convert(&yale,&yale3,CCS);
-  sp_matrix_yale_printf(&yale3);
-  printf("\n");
+  ASSERT_TRUE(memcmp(yale2.offsets,yale3.offsets,
+                     (yale.rows_count+1)*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale2.indicies,yale3.indicies,
+                     yale.nonzeros*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale2.values,yale3.values,
+                     yale.nonzeros*sizeof(double)) == 0);
+  ASSERT_TRUE(yale2.rows_count == yale3.rows_count &&
+              yale2.cols_count == yale3.cols_count &&
+              yale2.nonzeros == yale3.nonzeros &&
+              yale3.storage_type == CCS);
+  /* sp_matrix_yale_printf(&yale3); */    
+  /* 2. verify convert CCS->CCS */
+  sp_matrix_yale_free(&yale3);
+  sp_matrix_yale_convert(&yale2,&yale3,CRS);
+  ASSERT_TRUE(memcmp(yale.offsets,yale3.offsets,
+                     (yale.rows_count+1)*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,yale3.indicies,
+                     yale.nonzeros*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,yale3.values,
+                     yale.nonzeros*sizeof(double)) == 0);
+  ASSERT_TRUE(yale.rows_count == yale3.rows_count &&
+              yale.cols_count == yale3.cols_count &&
+              yale.nonzeros == yale3.nonzeros &&
+              yale3.storage_type == CRS);
+  /* sp_matrix_yale_printf(&yale3); */  
+  /* 3. verify transpose CRS */
+  sp_matrix_yale_free(&yale3);
+  sp_matrix_yale_transpose(&yale,&yale3);
+  ASSERT_TRUE(memcmp(yale2.offsets,yale3.offsets,
+                     (yale2.rows_count+1)*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale2.indicies,yale3.indicies,
+                     yale2.nonzeros*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale2.values,yale3.values,
+                     yale2.nonzeros*sizeof(double)) == 0);
+  ASSERT_TRUE(yale2.rows_count == yale3.rows_count &&
+              yale2.cols_count == yale3.cols_count &&
+              yale2.nonzeros == yale3.nonzeros &&
+              yale3.storage_type == CRS);
+  /* sp_matrix_yale_printf(&yale3); */
+  /* 4. verify transpose CCS */
+  sp_matrix_yale_free(&yale3);
+  sp_matrix_yale_transpose(&yale2,&yale3);
+  ASSERT_TRUE(memcmp(yale.offsets,yale3.offsets,
+                     (yale.rows_count+1)*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,yale3.indicies,
+                     yale.nonzeros*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,yale3.values,
+                     yale.nonzeros*sizeof(double)) == 0);
+  ASSERT_TRUE(yale.rows_count == yale3.rows_count &&
+              yale.cols_count == yale3.cols_count &&
+              yale.nonzeros == yale3.nonzeros &&
+              yale3.storage_type == CCS);
+  /* sp_matrix_yale_printf(&yale3); */
+  /* clear allocated memory */
+  sp_matrix_free(&mtx);
+  sp_matrix_free(&mtx2);
+  sp_matrix_yale_free(&yale);
+  sp_matrix_yale_free(&yale2);
+  sp_matrix_yale_free(&yale3);
 }
 
 /* #define DEF_TEST(name) static void name() { printf( #name "\n"); } */
@@ -1240,7 +1296,7 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_ereach);
   SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
   /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
-  SP_ADD_TEST(big_matrix);
+  SP_ADD_TEST(big_matrix_from_file);
   SP_ADD_TEST(yale_transpose_convert);
   sp_run_tests(argc,argv);
 #ifdef USE_LOGGER
