@@ -33,6 +33,10 @@ typedef struct
   int* rowcounts;               /* row counts for Cholesky matrix L */
   int* colcounts;               /* column counts for Cholesky matrix L */
   int nonzeros;                 /* number of nonzeros in Cholesky matrix L */
+  int* crs_indicies;            /* column indicies for CRS format of L */
+  int* crs_offsets;             /* row offsets - beginning of row for CRS */
+  int* ccs_indicies;            /* row indicies for CCS format of L */
+  int* ccs_offsets;             /* column offsets - beginning of column */
 } sp_chol_symbolic;
 typedef sp_chol_symbolic* sp_chol_symbolic_ptr;
 
@@ -87,7 +91,7 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
  * Performs the symbolic analysis used in Cholesky decomposition
  * Returns nonzero if succesfull
  */
-int sp_matrix_yale_symbolic_init(sp_matrix_yale_ptr self,
+int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
                                  sp_chol_symbolic_ptr symb);
 /*
  * Deallocates Cholesky symbolic analysis structure values
@@ -96,15 +100,6 @@ int sp_matrix_yale_symbolic_init(sp_matrix_yale_ptr self,
  */
 void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb);
 
-/*
- * Finds the symbolic Cholesky decomposition - portrait of the matrix L
- * either with the column storage type WITHOUT numeric values
- * using the given matrix and results of the symbolic analysis
- * Returns nonzero if succesfull 
- */
-int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
-                                 sp_chol_symbolic_ptr symb,
-                                 sp_matrix_yale_ptr L);
 
 /*
  * Finds the numeric Cholesky decomposition of the given matrix

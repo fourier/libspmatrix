@@ -504,7 +504,7 @@ static void cholesky()
      26, 38, 4, 6, 37, 0, 70];
   */
   sp_matrix mtx,Lmtx;
-  sp_matrix_yale yale,yale_expected,L;
+  sp_matrix_yale yale,yale_expected,yale_expected_crs,L;
   sp_chol_symbolic symb;
   int i,j;
   /* expected decomposition */
@@ -564,34 +564,54 @@ static void cholesky()
   MTX(&Lmtx,6,0,2.74064);MTX(&Lmtx,6,1,3.22323);MTX(&Lmtx,6,2,-0.68591);
   MTX(&Lmtx,6,3,-1.36292);MTX(&Lmtx,6,4,2.38705);MTX(&Lmtx,6,6,6.63880);
   
-  /* initialize Yale expected in CRS format */
+  /* initialize Yale expected in CCS format */
   sp_matrix_yale_init(&yale_expected,&Lmtx);
+  /* convert to CRS */
+  sp_matrix_yale_convert(&yale_expected,&yale_expected_crs,CRS);
   /* symbolic analysis */
-  ASSERT_TRUE(sp_matrix_yale_symbolic_init(&yale,&symb));
-  ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb,&L));
-
+  ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb));
   /* verify CCS */
   for (i = 0; i < 7+1; ++ i)
   {
     /* printf("offsets: %d == %d\n", */
     /*        yale_expected.offsets[i],L.offsets[i]); */
-    ASSERT_TRUE(yale_expected.offsets[i]==L.offsets[i]);
+    ASSERT_TRUE(yale_expected.offsets[i]==symb.ccs_offsets[i]);
     for (j = yale_expected.offsets[i];
          j < yale_expected.offsets[i+1];
          ++ j)
     {
       /* printf("indexes: %d == %d\n", */
       /*        yale_expected.indicies[j], L.indicies[j]); */
-      ASSERT_TRUE(yale_expected.indicies[j] == L.indicies[j]);
+      ASSERT_TRUE(yale_expected.indicies[j] == symb.ccs_indicies[j]);
     }
   }
+  /* verify CRS */
+  for (i = 0; i < 7+1; ++ i)
+  {
+    /* printf("offsets: %d == %d\n", */
+    /*        yale_expected_crs.offsets[i],symb.crs_offsets[i]); */
+    ASSERT_TRUE(yale_expected_crs.offsets[i]==symb.crs_offsets[i]);
+    for (j = yale_expected_crs.offsets[i];
+         j < yale_expected_crs.offsets[i+1];
+         ++ j)
+    {
+      /* printf("indexes: %d == %d\n", */
+      /*        yale_expected_crs.indicies[j], symb.crs_indicies[j]); */
+      ASSERT_TRUE(yale_expected_crs.indicies[j] == symb.crs_indicies[j]);
+    }
+  }
+
+  
+  ASSERT_TRUE(sp_matrix_yale_chol_numeric(&yale,&yale_expected));
   sp_matrix_yale_symbolic_free(&symb);
+
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_free(&Lmtx);
   sp_matrix_yale_free(&yale);
   sp_matrix_yale_free(&yale_expected);
-  sp_matrix_yale_free(&L);
+  sp_matrix_yale_free(&yale_expected_crs);
+  /* sp_matrix_yale_free(&L);       */
 }
 
 
@@ -1159,7 +1179,7 @@ static void big_matrix_from_file()
     free(colcounts);
 
     /* test symbolic analysis */
-    ASSERT_TRUE(sp_matrix_yale_symbolic_init(&yale,&symb));
+    ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb));
     /* test ereach */
     ereach = (int*)malloc(yale.rows_count*sizeof(int));
     for (i = 0; i < yale.rows_count; ++ i)
@@ -1287,11 +1307,11 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(cg_solver);
   SP_ADD_TEST(ilu_and_skyline);
   SP_ADD_TEST(pcg_ilu_solver);
-  SP_ADD_TEST(cholesky);
   SP_ADD_TEST(load_from_files);
   SP_ADD_TEST(stack_container);
   SP_ADD_TEST(queue_container);
   SP_ADD_TEST(tree_search);
+  SP_ADD_TEST(yale_transpose_convert);
   
   suite1 = sp_add_suite("etree",test_etree_init,test_etree_fini);
   SP_ADD_SUITE_TEST(suite1,etree_create_etree);
@@ -1300,7 +1320,8 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
   /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
   SP_ADD_TEST(big_matrix_from_file);
-  SP_ADD_TEST(yale_transpose_convert);
+  SP_ADD_TEST(cholesky);
+
   sp_run_tests(argc,argv);
 #ifdef USE_LOGGER
   /* finalize logger */

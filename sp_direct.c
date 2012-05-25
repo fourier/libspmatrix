@@ -204,7 +204,64 @@ void sp_matrix_lower_solve(sp_matrix_ptr self,
   }
 }
 
-int sp_matrix_yale_symbolic_init(sp_matrix_yale_ptr self,
+/*
+ * Finds the symbolic Cholesky decomposition - portrait of the matrix L
+ * for row/column storage type WITHOUT numeric values
+ * using the given matrix and results of the premilinary symbolic analysis
+ * 
+ * Returns nonzero if succesfull 
+ */
+static
+int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
+                                  sp_chol_symbolic_ptr symb)
+{
+  int result = 1;
+  int count,i,j,p,k;
+  int *offsets, *rowptr;
+
+  offsets = calloc(self->rows_count + 1,sizeof(int));
+  symb->crs_indicies = calloc(symb->nonzeros,sizeof(int));
+  symb->ccs_indicies = calloc(symb->nonzeros,sizeof(int));  
+  /* calculate offsets for CRS */
+  j = 0;
+  for (i = 0; i < self->rows_count; ++ i)
+  {
+    offsets[i] = j;
+    j += symb->rowcounts[i];
+  }
+  offsets[i] = symb->nonzeros;
+  symb->crs_offsets = memdup(offsets,(self->rows_count + 1)*sizeof(int));
+  /* calculate offsets for CCS */
+  j = 0;
+  for (i = 0; i < self->rows_count; ++ i)
+  {
+    offsets[i] = j;
+    j += symb->colcounts[i];
+  }
+  offsets[i] = symb->nonzeros;
+  symb->ccs_offsets = memdup(offsets,(self->rows_count + 1)*sizeof(int));
+  symb->ccs_indicies = calloc(symb->nonzeros,sizeof(int));
+  for (i = 0; i < self->rows_count; ++ i)
+  {
+    rowptr = symb->crs_indicies + symb->crs_offsets[i];
+    /* ereach simply defines the portrait of every i-th row */
+    count = sp_matrix_yale_ereach(self,symb->etree,i,rowptr);
+    /* so, a_ij != 0 where j in indicies array */
+    for ( p = 0; p < count; ++ p)
+    {
+      j = rowptr[p];
+      /* a_ij != 0  */
+      /* algoritm is the same as in sp_matrix_yale_transpose */
+      k = offsets[j]++;
+      symb->ccs_indicies[k] = i;
+    }
+  }
+  free(offsets);
+  return result;
+}
+
+
+int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
                                  sp_chol_symbolic_ptr symb)
 {
 #define _SYMB_VERIFY(x) if (!(x)){sp_matrix_yale_symbolic_free(symb);break;}
@@ -231,6 +288,7 @@ int sp_matrix_yale_symbolic_init(sp_matrix_yale_ptr self,
       {
         symb->nonzeros += symb->rowcounts[i];
       }
+      _SYMB_VERIFY((result = sp_matrix_yale_chol_structure(self,symb)));
     } while(0);
   }
 #undef _SYMB_VERIFY
@@ -245,57 +303,54 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
     free(symb->post);
     free(symb->rowcounts);
     free(symb->colcounts);
+    if (symb->crs_indicies)
+      free(symb->crs_indicies);
+    if (symb->crs_offsets)
+      free(symb->crs_offsets);
+    if (symb->ccs_indicies)
+      free(symb->ccs_indicies);
+    if (symb->ccs_offsets)
+      free(symb->ccs_offsets);
     symb->nonzeros = 0;
     symb->etree = 0;
     symb->rowcounts = 0;
     symb->colcounts = 0;
+    symb->crs_offsets = 0;
+    symb->crs_indicies = 0;
+    symb->ccs_offsets = 0;
+    symb->ccs_indicies = 0;
   }
 }
 
-
-int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
-                                 sp_chol_symbolic_ptr symb,
-                                 sp_matrix_yale_ptr L)
-{
-  int result = 1;
-  int count,i,j,p,k;
-  int *offsets, *indicies;
-  sp_matrix_yale_init2(L,CCS,self->rows_count,self->cols_count,
-                       symb->nonzeros, symb->colcounts);
-  offsets = memdup(L->offsets,(self->cols_count+1)*sizeof(int));
-  indicies = calloc(L->nonzeros,sizeof(int));
-  for (i = 0; i < self->rows_count; ++ i)
-  {
-    /* ereach simply defines the portrait of every i-th row */
-    count = sp_matrix_yale_ereach(self,symb->etree,i,indicies);
-    /* so, a_ij != 0 where j in indicies array */
-    for ( p = 0; p < count; ++ p)
-    {
-      j = indicies[p];
-      /* a_ij != 0  */
-      /* algoritm is the same as in sp_matrix_yale_transpose */
-      k = offsets[j]++;
-      L->indicies[k] = i;
-    }
-  }
-  free(offsets);
-  free(indicies);
-
-  return result;
-}
 
 int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
                                 sp_matrix_yale_ptr L)
 {
   int result = 1;
-  int i,j,k;
+#if 0
+  int i,j,k,p;
   int* offsets;
   double* values;
+  double v;
   if (self->storage_type != CCS || L->storage_type != CCS)
     return 0;
+  offsets = memdup(L->offsets,(L->cols_count + 1)*sizeof(int));
+  values = calloc(L->nonzeros,sizeof(double));
   for (i = 0; i < self->rows_count; ++ i)
   {
-    /* calculate diagonal element l_22 */
+    v = 0;
+    /* 1. calculate diagonal element l_22 */
+    /* loop by all rows in i-th column */
+    for (p = L->offsets[i]; p < L->offsets[i+1]; ++ p)
+    {
+      j = L->indicies[p];
+      /* L_ji = L->values[p] */
+      k = offsets[j]++;
+      values[k] = L->values[p];
+      printf("a_%d%d=%f ",j,i,values[k]);
+    }
+    printf("\n");
   }
+#endif
   return result;
 }
