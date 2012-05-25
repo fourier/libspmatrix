@@ -124,6 +124,11 @@ const char* sp_extract_fortran_numbers(const char* string,
                                        /* output */
                                        fortran_number* numbers,
                                        int* extracted);
-                                      
+/*
+ * Allocates the memory block of size bytes and copy the
+ * appropriate memory block pointed by src
+ * Returns the pointer to the newly allocated block
+ */
+void* memdup(const void* src, int bytes);
 
 #endif /* _SP_UTILS_H_ */

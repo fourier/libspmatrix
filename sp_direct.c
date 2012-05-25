@@ -20,10 +20,11 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <string.h>             /* for memcpy */
 
 #include "sp_direct.h"
 #include "sp_tree.h"
+#include "sp_utils.h"
+
 
 
 int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
@@ -254,25 +255,47 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
 
 int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
                                  sp_chol_symbolic_ptr symb,
-                                 sp_matrix_yale_ptr L,
-                                 sparse_storage_type type)
+                                 sp_matrix_yale_ptr L)
 {
   int result = 1;
-  int count,i;
-  sp_matrix_yale_init2(L,type,self->rows_count,self->cols_count,
-                       symb->nonzeros,
-                       type == CRS ? symb->rowcounts : symb->colcounts);
-  if (type == CRS)
+  int count,i,j,p,k;
+  int *offsets, *indicies;
+  sp_matrix_yale_init2(L,CCS,self->rows_count,self->cols_count,
+                       symb->nonzeros, symb->colcounts);
+  offsets = memdup(L->offsets,(self->cols_count+1)*sizeof(int));
+  indicies = calloc(L->nonzeros,sizeof(int));
+  for (i = 0; i < self->rows_count; ++ i)
   {
-    for (i = 0; i < self->rows_count; ++ i)
+    /* ereach simply defines the portrait of every i-th row */
+    count = sp_matrix_yale_ereach(self,symb->etree,i,indicies);
+    /* so, a_ij != 0 where j in indicies array */
+    for ( p = 0; p < count; ++ p)
     {
-      /* ereach simply defines the portrait of every i-th row */
-      sp_matrix_yale_ereach(self,symb->etree,i,L->indicies+L->offsets[i]);
+      j = indicies[p];
+      /* a_ij != 0  */
+      /* algoritm is the same as in sp_matrix_yale_transpose */
+      k = offsets[j]++;
+      L->indicies[k] = i;
     }
   }
-  else
+  free(offsets);
+  free(indicies);
+
+  return result;
+}
+
+int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
+                                sp_matrix_yale_ptr L)
+{
+  int result = 1;
+  int i,j,k;
+  int* offsets;
+  double* values;
+  if (self->storage_type != CCS || L->storage_type != CCS)
+    return 0;
+  for (i = 0; i < self->rows_count; ++ i)
   {
-    
+    /* calculate diagonal element l_22 */
   }
   return result;
 }

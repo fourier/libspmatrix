@@ -504,20 +504,20 @@ static void cholesky()
      26, 38, 4, 6, 37, 0, 70];
   */
   sp_matrix mtx,Lmtx;
-  sp_matrix_yale yale,L,yale_expected;
+  sp_matrix_yale yale,yale_expected,L;
   sp_chol_symbolic symb;
   int i,j;
   /* expected decomposition */
-  double cholesky_expected[7][7] = 
-  {
-    {9.48683, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000},
-    {0.63246,11.25167, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000},
-    {0.42164, 2.99807, 9.94152, 0.00000, 0.00000, 0.00000, 0.00000},
-    {4.84883, 1.68271, 3.31043, 7.66149, 0.00000, 0.00000, 0.00000},
-    {3.05687, 0.45030,-0.06427, 1.12678,12.00746, 0.00000, 0.00000},
-    {0.00000, 0.00000, 0.00000, 0.00000, 0.00000, 8.00000, 0.00000},
-    {2.74064, 3.22323,-0.68591,-1.36292, 2.38705, 0.00000, 6.63880}
-  };
+  /* double cholesky_expected[7][7] =  */
+  /* { */
+  /*   {9.48683, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000}, */
+  /*   {0.63246,11.25167, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000}, */
+  /*   {0.42164, 2.99807, 9.94152, 0.00000, 0.00000, 0.00000, 0.00000}, */
+  /*   {4.84883, 1.68271, 3.31043, 7.66149, 0.00000, 0.00000, 0.00000}, */
+  /*   {3.05687, 0.45030,-0.06427, 1.12678,12.00746, 0.00000, 0.00000}, */
+  /*   {0.00000, 0.00000, 0.00000, 0.00000, 0.00000, 8.00000, 0.00000}, */
+  /*   {2.74064, 3.22323,-0.68591,-1.36292, 2.38705, 0.00000, 6.63880} */
+  /* }; */
   /* fill initial matrix */
   sp_matrix_init(&mtx,7,7,5,CCS);
 /* {90, 6, 4, 46, 29, 0, 26}, */
@@ -541,8 +541,11 @@ static void cholesky()
   MTX(&mtx,6,0,26);MTX(&mtx,6,1,38);MTX(&mtx,6,2,4);MTX(&mtx,6,3,6);
   MTX(&mtx,6,4,37);MTX(&mtx,6,6,70);
 
+  /* initialize Yale format from given CCS format */
+  sp_matrix_yale_init(&yale,&mtx);
+
   /* fill expected matrix */
-  sp_matrix_init(&Lmtx,7,7,5,CRS);
+  sp_matrix_init(&Lmtx,7,7,5,CCS);
   /* {9.48683, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000}, */
   MTX(&Lmtx,0,0,9.48683);
   /* {0.63246,11.25167, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000}, */
@@ -561,28 +564,28 @@ static void cholesky()
   MTX(&Lmtx,6,0,2.74064);MTX(&Lmtx,6,1,3.22323);MTX(&Lmtx,6,2,-0.68591);
   MTX(&Lmtx,6,3,-1.36292);MTX(&Lmtx,6,4,2.38705);MTX(&Lmtx,6,6,6.63880);
   
-  /* initialize Yale format from given CCS format */
-  sp_matrix_yale_init(&yale,&mtx);
+  /* initialize Yale expected in CRS format */
   sp_matrix_yale_init(&yale_expected,&Lmtx);
   /* symbolic analysis */
   ASSERT_TRUE(sp_matrix_yale_symbolic_init(&yale,&symb));
-  ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb,&L,CRS));
+  ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb,&L));
 
-  /* verify offsets */
+  /* verify CCS */
   for (i = 0; i < 7+1; ++ i)
   {
-    /* printf("offsets: %d == %d\n",yale_expected.offsets[i],L.offsets[i]); */
+    /* printf("offsets: %d == %d\n", */
+    /*        yale_expected.offsets[i],L.offsets[i]); */
     ASSERT_TRUE(yale_expected.offsets[i]==L.offsets[i]);
-    for (j = yale_expected.offsets[i]; j < yale_expected.offsets[i+1]; ++ j)
+    for (j = yale_expected.offsets[i];
+         j < yale_expected.offsets[i+1];
+         ++ j)
     {
-      /* printf("indexes: %d == %d\n",yale_expected.indicies[j], L.indicies[j]); */
+      /* printf("indexes: %d == %d\n", */
+      /*        yale_expected.indicies[j], L.indicies[j]); */
       ASSERT_TRUE(yale_expected.indicies[j] == L.indicies[j]);
     }
   }
-  
   sp_matrix_yale_symbolic_free(&symb);
-
-  
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_free(&Lmtx);

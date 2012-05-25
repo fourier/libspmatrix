@@ -119,15 +119,11 @@ void sp_matrix_copy(sp_matrix_ptr mtx_from, sp_matrix_ptr mtx_to)
     mtx_to->storage[i].width = mtx_from->storage[i].width;
     mtx_to->storage[i].last_index = mtx_from->storage[i].last_index;
     mtx_to->storage[i].indexes =
-      (int*)malloc(sizeof(int)*mtx_from->storage[i].width);
-    memset(mtx_to->storage[i].indexes,0,sizeof(int)*mtx_from->storage[i].width);
+      memdup(mtx_from->storage[i].indexes,
+             sizeof(int)*mtx_from->storage[i].width);
     mtx_to->storage[i].values =
-      (double*)malloc(sizeof(double)*mtx_from->storage[i].width);
-    memset(mtx_to->storage[i].values,0,sizeof(double)*mtx_from->storage[i].width);
-    memcpy(mtx_to->storage[i].indexes, mtx_from->storage[i].indexes,
-           sizeof(int)*mtx_from->storage[i].width);
-    memcpy(mtx_to->storage[i].values, mtx_from->storage[i].values,
-           sizeof(double)*mtx_from->storage[i].width);
+      memdup(mtx_from->storage[i].values,
+             sizeof(double)*mtx_from->storage[i].width);
   }
 }
 
@@ -345,14 +341,10 @@ void sp_matrix_yale_copy(sp_matrix_yale_ptr mtx_from,
   mtx_to->rows_count   = mtx_from->rows_count;
   mtx_to->cols_count   = mtx_from->cols_count;
   mtx_to->nonzeros     = mtx_from->nonzeros;
-  /* allocate memory for arrays */
-  mtx_to->offsets  = calloc(n+1,      sizeof(int));
-  mtx_to->indicies = calloc(mtx_from->nonzeros, sizeof(int));
-  mtx_to->values   = calloc(mtx_from->nonzeros, sizeof(double));
   /* copy data */
-  memcpy(mtx_to->offsets,mtx_from->offsets,n*sizeof(int));
-  memcpy(mtx_to->indicies,mtx_from->indicies,mtx_from->nonzeros*sizeof(int));
-  memcpy(mtx_to->values,mtx_from->values,mtx_from->nonzeros*sizeof(double));
+  mtx_to->offsets  = memdup(mtx_from->offsets,(n+1)*sizeof(int));
+  mtx_to->indicies = memdup(mtx_from->indicies,mtx_from->nonzeros*sizeof(int));
+  mtx_to->values   = memdup(mtx_from->values,mtx_from->nonzeros*sizeof(double));
 }
 
 
@@ -748,7 +740,7 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
                        self->nonzeros,offsets+1);
 
   /* 3. offsets - partial sums of counts of row/columns */
-  memcpy(offsets,to->offsets,n*sizeof(int));
+  memcpy(offsets,to->offsets,(n+1)*sizeof(int));
   for ( i = 0; i < n; ++i)
   {
     for ( p = self->offsets[i]; p < self->offsets[i+1]; ++p )
@@ -756,8 +748,8 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
       j = self->indicies[p];
       /* a_ij != 0 */
       /* in new matrix a'_ji = a_ij 
-       * off[j] - shall point to the beginning of the jth column
-       * therefore off[j]++ - next nonzero row in this column,
+       * offsets[j] - shall point to the beginning of the jth column
+       * therefore offsets[j]++ - next nonzero row in this column,
        * which is the element a_ji, and therefore its row index = i
        */ 
       k = offsets[j]++;

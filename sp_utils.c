@@ -480,3 +480,12 @@ const char* sp_extract_fortran_numbers(const char* string,
   return result;
 }
 
+void* memdup(const void* src, int bytes)
+{
+  void* result = malloc(bytes);
+  if (result)
+  {
+    memcpy(result,src,bytes);
+  }
+  return result;
+}

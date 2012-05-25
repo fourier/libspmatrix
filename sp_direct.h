@@ -98,13 +98,22 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb);
 
 /*
  * Finds the symbolic Cholesky decomposition - portrait of the matrix L
- * either with row or column storage without numeric values
+ * either with the column storage type WITHOUT numeric values
  * using the given matrix and results of the symbolic analysis
  * Returns nonzero if succesfull 
  */
 int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
                                  sp_chol_symbolic_ptr symb,
-                                 sp_matrix_yale_ptr L,
-                                 sparse_storage_type type);
+                                 sp_matrix_yale_ptr L);
+
+/*
+ * Finds the numeric Cholesky decomposition of the given matrix
+ * Symbolic Cholesky decomposition shall already be found in the
+ * CCS matrix L. Any existing values will be overwritten.
+ * Returns nonzero if succesfull 
+ */
+int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
+                                sp_matrix_yale_ptr L);
+
 
 #endif /* _SP_DIRECT_H_ */
