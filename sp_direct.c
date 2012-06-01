@@ -161,6 +161,7 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
     }
   }
 #undef _TREE_MARK
+  free(marked);
   return result;
 }
 
@@ -217,11 +218,11 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
 {
   int result = 1;
   int count,i,j,p,k;
-  int *offsets, *rowptr;
-
+  int *offsets, *indicies;
   offsets = calloc(self->rows_count + 1,sizeof(int));
   symb->crs_indicies = calloc(symb->nonzeros,sizeof(int));
-  symb->ccs_indicies = calloc(symb->nonzeros,sizeof(int));  
+  symb->ccs_indicies = calloc(symb->nonzeros,sizeof(int));
+  indicies = calloc(symb->nonzeros,sizeof(int));  
   /* calculate offsets for CRS */
   j = 0;
   for (i = 0; i < self->rows_count; ++ i)
@@ -240,23 +241,24 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
   }
   offsets[i] = symb->nonzeros;
   symb->ccs_offsets = memdup(offsets,(self->rows_count + 1)*sizeof(int));
-  symb->ccs_indicies = calloc(symb->nonzeros,sizeof(int));
   for (i = 0; i < self->rows_count; ++ i)
   {
-    rowptr = symb->crs_indicies + symb->crs_offsets[i];
     /* ereach simply defines the portrait of every i-th row */
-    count = sp_matrix_yale_ereach(self,symb->etree,i,rowptr);
+    count = sp_matrix_yale_ereach(self,symb->etree,i,indicies);
+    assert(count == symb->crs_offsets[i+1]-symb->crs_offsets[i]);
     /* so, a_ij != 0 where j in indicies array */
     for ( p = 0; p < count; ++ p)
     {
-      j = rowptr[p];
+      j = indicies[p];
       /* a_ij != 0  */
       /* algoritm is the same as in sp_matrix_yale_transpose */
       k = offsets[j]++;
       symb->ccs_indicies[k] = i;
     }
+    memcpy(symb->crs_indicies+symb->crs_offsets[i],indicies,count*sizeof(int));
   }
   free(offsets);
+  free(indicies);
   return result;
 }
 
@@ -313,6 +315,7 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
       free(symb->ccs_offsets);
     symb->nonzeros = 0;
     symb->etree = 0;
+    symb->post = 0;
     symb->rowcounts = 0;
     symb->colcounts = 0;
     symb->crs_offsets = 0;
@@ -322,35 +325,130 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
   }
 }
 
+/*
+ * Sparse Triangular solver for CCS matrix
+ * n - up to n-th row.
+ * b - right part, scattered
+ * indicies - indexes of the solution
+ * size - number of nonzeros in solution
+ * returns - x*x
+ */
+static double sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
+                                         int n,
+                                         double* x,
+                                         int* indicies,
+                                         int size)
+{
+  int i,j,p,q;
+  double d = 0;
+  if (self->storage_type != CCS)
+    return d;
+  /* printf("\nSOLVE: n = %d\n",n); */
+  /* printf("SOLVE: x = [ "); */
+  /* for (i = 0; i < self->rows_count; ++i) */
+  /*   printf("%.2f ",x[i]); */
+  /* printf("]\n"); */
+  /* printf("SOLVE: size = %d\n",size); */
+  /* printf("SOLVE: indicies = [ "); */
+  /* for (i = 0; i < size; ++i) */
+  /*   printf("%d ",indicies[i]); */
+  /* printf("]\n"); */
+  
+  /* for j in X do */
+  for (p = 0; p < size; ++ p)
+  {
+    j = indicies[p];
+    /* xj =xj/ljj */
+    /* diagonal j-th element - is the first column element */
+    x[j] = x[j]/self->values[self->offsets[j]];
+    /* for i>j  where lij != 0 do */
+    for (q = self->offsets[j]; q < self->offsets[j+1]; ++ q)
+    {
+      i = self->indicies[q];
+      if ( i >= n )
+        break;
+      /* xi = xi - lij*xj */
+      if (i > j)
+      {
+        x[i] = x[i] - self->values[q]*x[j];
+      }
+    }
+    /* end for */
+  }
+  /* end for */
+  for (p = 0; p < size; ++ p)
+  {
+    j = indicies[p];
+    d += x[j]*x[j];
+  }
+  return d;
+}
 
 int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
+                                sp_chol_symbolic_ptr symb,
                                 sp_matrix_yale_ptr L)
 {
   int result = 1;
-#if 0
   int i,j,k,p;
   int* offsets;
-  double* values;
-  double v;
-  if (self->storage_type != CCS || L->storage_type != CCS)
+  double* x;
+  double v,A_kk;
+  if (!self || !symb || !L || self->storage_type != CCS)
     return 0;
-  offsets = memdup(L->offsets,(L->cols_count + 1)*sizeof(int));
-  values = calloc(L->nonzeros,sizeof(double));
-  for (i = 0; i < self->rows_count; ++ i)
+  /* initialize L */
+  L->storage_type = CCS;
+  L->rows_count = self->rows_count;
+  L->cols_count = self->cols_count;
+  L->nonzeros = symb->nonzeros;
+  L->offsets =  memdup(symb->ccs_offsets,(self->rows_count+1)*sizeof(int));
+  L->indicies = memdup(symb->ccs_indicies,symb->nonzeros*sizeof(int));
+  L->values = calloc(symb->nonzeros,sizeof(double));
+  /* store offsets */
+  offsets = memdup(symb->ccs_offsets,(self->rows_count+1)*sizeof(int));
+  /* right-part vector */
+  x = calloc(self->rows_count,sizeof(double));
+  /* up-looking Cholesky */
+  /* L11 = sqrt(a11) */
+  L->values[0] = sqrt(self->values[0]);
+  offsets[0]++;
+  /* loop by rows, constructing one k-th row at a time */
+  for (k = 1; k < self->rows_count; ++ k)
   {
+    memset(x,0,self->rows_count*sizeof(double));
     v = 0;
-    /* 1. calculate diagonal element l_22 */
-    /* loop by all rows in i-th column */
-    for (p = L->offsets[i]; p < L->offsets[i+1]; ++ p)
+    /*
+     * construct the scattered vector x, containing nonzeros
+     * a_jk, where j < k: A(1:k-1,k)
+     */
+    for (p = self->offsets[k];
+         p < self->offsets[k+1] && self->indicies[p] < k;
+         ++p)
+      x[self->indicies[p]] = self->values[p];
+    A_kk = self->values[p];
+    /* solve the SLAE L(1:k-1,1:k-1)*L(k,1:k-1)=A(1:k-1,k) */
+    v = sp_matrix_yale_lower_solve(L,k,x,
+                                   symb->crs_indicies + symb->crs_offsets[k],
+                                   symb->rowcounts[k]-1);
+    /* store result to kth row */
+    for (p = self->offsets[k];
+         p < self->offsets[k+1] && self->indicies[p] < k;
+         ++p)
     {
-      j = L->indicies[p];
-      /* L_ji = L->values[p] */
-      k = offsets[j]++;
-      values[k] = L->values[p];
-      printf("a_%d%d=%f ",j,i,values[k]);
+      /* self->indicies[p] - column number */
+      j = self->indicies[p];
+      /* x[self->indicies[p]] - value in this column for row k */
+      /* L->values[offsets[self->indicies[p]]++]; */
+      i = offsets[j];
+      L->values[i] = x[j];
+      offsets[j]++;
     }
-    printf("\n");
+    /* L_kk = sqrt(a_kk - L(k,1:k-1)*L(k,1:k-1)*/
+    L->values[L->offsets[k]] = sqrt(A_kk-v);
+    offsets[k]++;
   }
-#endif
+  free(x);
+  free(offsets);
   return result;
 }
+
+

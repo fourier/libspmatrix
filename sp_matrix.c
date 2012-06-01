@@ -757,7 +757,7 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
       to->values[k]   = self->values[p];
     }
   }
-
+  free(offsets);
 }
 
 void sp_matrix_yale_convert(sp_matrix_yale_ptr from,

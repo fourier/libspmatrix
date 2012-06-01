@@ -34,6 +34,9 @@
 #include "sp_test.h"
 #ifdef USE_LOGGER
 #include "logger.h"
+#else
+#define LOGTIC(x);
+#define LOGTOC(x);
 #endif
 
 static void sp_matrix_create_convert_mv()
@@ -506,7 +509,8 @@ static void cholesky()
   sp_matrix mtx,Lmtx;
   sp_matrix_yale yale,yale_expected,yale_expected_crs,L;
   sp_chol_symbolic symb;
-  int i,j;
+  int i,j,count;
+  int* ereach;
   /* expected decomposition */
   /* double cholesky_expected[7][7] =  */
   /* { */
@@ -571,22 +575,28 @@ static void cholesky()
   /* symbolic analysis */
   ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb));
   /* verify CCS */
-  for (i = 0; i < 7+1; ++ i)
+  for (i = 0; i < 7; ++ i)
   {
     /* printf("offsets: %d == %d\n", */
-    /*        yale_expected.offsets[i],L.offsets[i]); */
+    /*        yale_expected.offsets[i],symb.ccs_offsets[i]); */
     ASSERT_TRUE(yale_expected.offsets[i]==symb.ccs_offsets[i]);
     for (j = yale_expected.offsets[i];
          j < yale_expected.offsets[i+1];
          ++ j)
     {
       /* printf("indexes: %d == %d\n", */
-      /*        yale_expected.indicies[j], L.indicies[j]); */
+      /*        yale_expected.indicies[j], symb.ccs_indicies[j]); */
       ASSERT_TRUE(yale_expected.indicies[j] == symb.ccs_indicies[j]);
     }
   }
   /* verify CRS */
-  for (i = 0; i < 7+1; ++ i)
+  ereach = calloc(symb.nonzeros,sizeof(int));
+  for (i = 0; i < 7; ++ i)
+  {
+    count = sp_matrix_yale_ereach(&yale,symb.etree,i,ereach);
+    ASSERT_TRUE(count == symb.rowcounts[i]);
+  }
+  for (i = 0; i < 7; ++ i)
   {
     /* printf("offsets: %d == %d\n", */
     /*        yale_expected_crs.offsets[i],symb.crs_offsets[i]); */
@@ -602,16 +612,36 @@ static void cholesky()
   }
 
   
-  ASSERT_TRUE(sp_matrix_yale_chol_numeric(&yale,&yale_expected));
-  sp_matrix_yale_symbolic_free(&symb);
+  ASSERT_TRUE(sp_matrix_yale_chol_numeric(&yale,&symb,&L));
+  for (i = 0; i < 7; ++ i)
+  {
+    /* printf("offsets: %d == %d\n", */
+    /*        yale_expected.offsets[i],L.offsets[i]); */
+    ASSERT_TRUE(yale_expected.offsets[i]==L.offsets[i]);
+    for (j = yale_expected.offsets[i];
+         j < yale_expected.offsets[i+1];
+         ++ j)
+    {
+      /* printf("indexes: %d == %d\n", */
+      /*        yale_expected.indicies[j], L.indicies[j]); */
+      ASSERT_TRUE(yale_expected.indicies[j] == L.indicies[j]);
+      /* printf("values: %f == %f\n", */
+      /*        yale_expected.values[j], L.values[j]); */
+      ASSERT_TRUE(fabs(yale_expected.values[j]-L.values[j]) < 1e5);
+    }
+  }
 
+  /* clear symbolic decomposition */
+  sp_matrix_yale_symbolic_free(&symb);
+  /* clear ereach */
+  free(ereach);
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_free(&Lmtx);
   sp_matrix_yale_free(&yale);
   sp_matrix_yale_free(&yale_expected);
   sp_matrix_yale_free(&yale_expected_crs);
-  /* sp_matrix_yale_free(&L);       */
+  sp_matrix_yale_free(&L);
 }
 
 
@@ -813,7 +843,7 @@ static void etree_postorder()
       ASSERT_TRUE(postordered_matrix[k][l]);
     }
   }
-      
+  sp_matrix_yale_free(&yale_post);
 }
 
 static void etree_ereach()
@@ -1121,7 +1151,7 @@ static void save_vector(int* v, int size, const char* fname)
 static void big_matrix_from_file()
 {
   int result;
-  sp_matrix_yale yale;
+  sp_matrix_yale yale,L;
   int *etree, *rowcounts, *colcounts;
   int *ereach;
   int i,j;
@@ -1179,15 +1209,22 @@ static void big_matrix_from_file()
     free(colcounts);
 
     /* test symbolic analysis */
-    ASSERT_TRUE(sp_matrix_yale_chol_symbolic(&yale,&symb));
+    LOGTIC("symbolic analysis of big matrix");
+    result = sp_matrix_yale_chol_symbolic(&yale,&symb);
+    LOGTOC("symbolic analysis of big matrix");
+    ASSERT_TRUE(result);
     /* test ereach */
     ereach = (int*)malloc(yale.rows_count*sizeof(int));
     for (i = 0; i < yale.rows_count; ++ i)
       ASSERT_TRUE(sp_matrix_yale_ereach(&yale,symb.etree,i,ereach)
                   == symb.rowcounts[i]);
     free(ereach);
+    LOGTIC("numeric analysis of big matrix");    
+    result = sp_matrix_yale_chol_numeric(&yale,&symb,&L);
+    LOGTOC("numeric analysis of big matrix");
+    ASSERT_TRUE(result);
+    sp_matrix_yale_free(&L);
     sp_matrix_yale_symbolic_free(&symb);
-    
     sp_matrix_yale_free(&yale);
   }
 }
@@ -1274,6 +1311,47 @@ static void yale_transpose_convert()
   sp_matrix_yale_free(&yale3);
 }
 
+#if 0
+static void lower_solve()
+{
+  sp_matrix m;
+  sp_matrix_yale y;
+  double x[5] = {1,-1,-6,0,-6};
+  double b[5];
+  double sol[5] = {1,0,-3,0,1};
+  int indicies[5] = {0,2,4};
+  /* nonzeros in i-th solution vector */
+  int sizes[5] = {1,1,2,2,3};
+  int i,j;
+  double v;
+  sp_matrix_init(&m,5,5,2,CCS);
+  MTX(&m,0,0,1);
+  MTX(&m,1,0,-1);MTX(&m,1,1,0.5);
+  MTX(&m,2,1,3);MTX(&m,2,2,2);
+  MTX(&m,3,1,1);MTX(&m,3,3,-1);
+  MTX(&m,4,2,3);MTX(&m,4,4,3);
+  sp_matrix_yale_init(&y,&m);
+  sp_matrix_yale_printf(&y);
+
+  for (i = 0; i < 5; ++ i)
+  {
+    printf("i = %d: ",i);
+    memcpy(b,x,sizeof(double)*(i+1));
+    v = sp_matrix_yale_lower_solve(&y,i+1,b,indicies,sizes[i]);
+    for (j = 0; j < sizes[i]; ++ j)
+    {
+      printf("x[%d] = %.2f(%.2f) ",indicies[j],
+             b[indicies[j]],
+             sol[indicies[j]]);
+      ASSERT_TRUE(EQL(b[indicies[j]],sol[indicies[j]]));
+    }
+    printf("x*x = %f\n",v);
+  }
+  sp_matrix_yale_free(&y);
+  sp_matrix_free(&m);
+}
+#endif
+
 /* #define DEF_TEST(name) static void name() { printf( #name "\n"); } */
 
 /* DEF_TEST(init1) */
@@ -1295,7 +1373,7 @@ int main(int argc, const char *argv[])
   logger_parameters params;
   memset(&params,0,sizeof(params));
   params.log_file_path = "spmatrix.log";
-  params.log_level = LOG_LEVEL_ALL;
+  params.log_level = LOG_LEVEL_NORMAL;
   logger_init_with_params(&params);
 #endif
   /* tests */
@@ -1312,6 +1390,7 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(queue_container);
   SP_ADD_TEST(tree_search);
   SP_ADD_TEST(yale_transpose_convert);
+  /* SP_ADD_TEST(lower_solve); */
   
   suite1 = sp_add_suite("etree",test_etree_init,test_etree_fini);
   SP_ADD_SUITE_TEST(suite1,etree_create_etree);

@@ -35,7 +35,7 @@ typedef struct
   const char* test_name;
   test_func_t test_func;
 } sp_test_object;
-
+typedef sp_test_object* sp_test_object_ptr;
 
 /*
  * Tests Queue element
@@ -163,9 +163,9 @@ void sp_add_test(test_func_t func, const char* name)
   sp_test_queue_push(g_test_queue, test);
 }
 
-static int sp_is_test(sp_test_object test, const char* name)
+static int sp_is_test(sp_test_object_ptr test, const char* name)
 {
-  return strcmp(test.test_name,name) == 0;
+  return strcmp(test->test_name,name) == 0;
 }
 
 static int sp_test_exist(sp_test_queue_ptr test_queue, const char* name)
@@ -173,11 +173,25 @@ static int sp_test_exist(sp_test_queue_ptr test_queue, const char* name)
   sp_test_queue_element* first = test_queue->first;
   sp_test_queue_element* last  = test_queue->last;
   for ( ; first != last; first = first->next)
-    if (sp_is_test(first->value,name) )
+    if (sp_is_test(&first->value,name) )
       return 1;
-  return sp_is_test(first->value,name);
+  return sp_is_test(&first->value,name);
 }
 
+static void sp_perform_test(sp_test_object_ptr current_test)
+{
+  if (!setjmp(g_test_restart_jmp_point))
+  {
+    current_test->test_func();
+    printf("test %s [PASSED]\n",
+           current_test->test_name);
+  }
+  else
+  {
+    printf("test %s [FAILED]\n",
+           current_test->test_name);
+  }  
+}
 
 static void sp_perform_tests(sp_test_queue_ptr test_queue,
                              int argc,
@@ -190,19 +204,9 @@ static void sp_perform_tests(sp_test_queue_ptr test_queue,
   while(!sp_test_queue_isempty(test_queue))
   {
     current_test = sp_test_queue_front(test_queue);
-    if (!test_name || (test_name && sp_is_test(current_test,test_name)))
+    if (!test_name || (test_name && sp_is_test(&current_test,test_name)))
     {
-      if (!setjmp(g_test_restart_jmp_point))
-      {
-        current_test.test_func();
-        printf("test %s [PASSED]\n",
-               current_test.test_name);
-      }
-      else
-      {
-        printf("test %s [FAILED]\n",
-               current_test.test_name);
-      }
+      sp_perform_test(&current_test);
     }
     sp_test_queue_pop(test_queue);
   }

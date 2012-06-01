@@ -102,12 +102,12 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb);
 
 
 /*
- * Finds the numeric Cholesky decomposition of the given matrix
- * Symbolic Cholesky decomposition shall already be found in the
- * CCS matrix L. Any existing values will be overwritten.
+ * Finds the numeric Cholesky decomposition of the given matrix.
+ * Symbolic Cholesky decomposition shall already be found.
  * Returns nonzero if succesfull 
  */
 int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
+                                sp_chol_symbolic_ptr symb,
                                 sp_matrix_yale_ptr L);
 
 

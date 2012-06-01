@@ -190,8 +190,12 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
   int element_number = -1;
   int i,j;
   double value;
+  char* contents;
+  /* clear the structures */
+  memset(&mtx,0,sizeof(mtx));
+  memset(&header,0,sizeof(header));
   /* read the file contents  */
-  char* contents = sp_read_text_file(filename);
+  contents = sp_read_text_file(filename);
   if (!contents)
     return 0;
 

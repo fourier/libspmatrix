@@ -18,18 +18,18 @@
 # along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 
 # Set this variable if want to use liblogger
-LOGGER := 
+LOGGER := 1
 
 ifdef LOGGER
  LOGGERINC = -I ../liblogger
- LOGGERLINK = -L../liblogger -llogger
+ LOGGERLINK = -L../liblogger -llogger -lrt
  LOGGERCFLAGS = -DUSE_LOGGER
 endif
 
 
 CC = gcc
 
-CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS)
+CFLAGS = -ggdb -g -O2 --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS)
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
 
