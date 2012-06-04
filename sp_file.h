@@ -46,6 +46,7 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
  * Side-effect: matrix gets ordered
  */
 int sp_matrix_save_file(sp_matrix_ptr self, const char* filename);
+int sp_matrix_yale_save_file(sp_matrix_yale_ptr self, const char* filename);
 
 
 

@@ -27,6 +27,15 @@
 #include "sp_utils.h"
 
 /*
+ * Enum - supported export formats
+ */
+typedef enum
+{
+  FMT_MM,
+  FMT_TXT,
+  FMT_UNSUPPORTED
+} supported_format;
+/*
  * Data desrtiption for Matrix Market file format
  */
 
@@ -655,7 +664,6 @@ static int sp_matrix_save_file_triplet(sp_matrix_ptr self,
     {
       if (matrix_type != MM_GENERAL && self->storage[i].indexes[j] > i)
       {
-        result = 0;
         break;
       }
       if (self->storage_type == CRS)
@@ -686,13 +694,21 @@ static int sp_matrix_save_file_triplet(sp_matrix_ptr self,
 static int sp_matrix_type_mm(sp_matrix_ptr self)
 {
   int matrix_type = MM_GENERAL;
+  matrix_properties props;
   if ( !self->ordered )         /* order matrix */
     sp_matrix_reorder(self);
-
-  if (sp_matrix_issymmetric(self))
-    matrix_type = MM_SYMMETRIC;
-  else if (sp_matrix_isskew_symmetric(self))
-    matrix_type = MM_SKEW_SYMMETRIC;
+  props = sp_matrix_properites(self);
+  switch(props)
+  {
+  case PROP_SYMMETRIC:
+    matrix_type = MM_SYMMETRIC; break;
+  case PROP_SKEW_SYMMETRIC:
+    matrix_type = MM_SKEW_SYMMETRIC; break;
+  case PROP_GENERAL:
+  case PROP_SYMMETRIC_PORTRAIT:
+  default:
+    break;
+  }
   return matrix_type;
 }
 
@@ -780,6 +796,23 @@ static int sp_matrix_save_file_txt(sp_matrix_ptr self, const char* filename)
   return result;
 }
 
+
+static supported_format guess_export_format(const char* filename)
+{
+  /* determine file extension */
+  const char* ext = sp_parse_file_extension(filename);
+  if (!ext)
+  {
+    fprintf(stderr,"File type is not supported: %s\n", filename);
+    return 0;
+  }
+  if ( !sp_istrcmp(ext,"mtx") )
+    return FMT_MM;
+  else if ( !sp_istrcmp(ext,"txt") )
+    return FMT_TXT;
+  return FMT_UNSUPPORTED;
+}
+
 /*
  * Save the sparse martix from the file.
  * File format guessed from the extension
@@ -790,17 +823,181 @@ static int sp_matrix_save_file_txt(sp_matrix_ptr self, const char* filename)
  */
 int sp_matrix_save_file(sp_matrix_ptr self, const char* filename)
 {
-  /* determine file extension */
-  const char* ext = sp_parse_file_extension(filename);
-  if (!ext)
+  supported_format fmt = guess_export_format(filename);
+  switch(fmt)
   {
-    fprintf(stderr,"File type is not supported: %s\n", filename);
+  case FMT_MM:  return sp_matrix_save_file_mm(self,filename);
+  case FMT_TXT: return sp_matrix_save_file_txt(self,filename);
+  case FMT_UNSUPPORTED:
+  default:
+    break;
+  }
+  return 0;
+}
+
+static int sp_matrix_yale_save_file_triplet(sp_matrix_yale_ptr self,
+                                            FILE* file,
+                                            int matrix_type,
+                                            int base)
+{
+  int result = 1;
+  int i,p,n,size;
+  double value;
+  char buf[64];
+  
+  n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  
+  /* write elements */
+  for ( i = 0; i < n; ++ i)
+  {
+    for ( p = self->offsets[i]; p < self->offsets[i+1]; ++ p )
+    {
+      if (matrix_type != MM_GENERAL && self->indicies[p] > i)
+      {
+        break;
+      }
+      if (self->storage_type == CRS)
+        size = sprintf(buf,"%d %d %.16e\n",i+base,
+                       self->indicies[p]+base,
+                       self->values[p]);
+      else                      /* CCS */
+      {
+        value = self->values[p];
+        /* lower triangle = -upper triangle for skew symmetic matix */
+        if (matrix_type == MM_SKEW_SYMMETRIC)
+          value = -value;
+        if (matrix_type == MM_GENERAL)
+          size = sprintf(buf,"%d %d %.16e\n",self->indicies[p]+base,
+                         i+base,
+                         value);
+        else                    /* transposed */
+          size = sprintf(buf,"%d %d %.16e\n",i+base,
+                         self->indicies[p]+base,
+                         value);
+      }
+      fwrite(buf,1,size,file);
+    }
+  }
+  return result;
+}
+
+static
+int sp_matrix_yale_save_file_mm(sp_matrix_yale_ptr self,const char* filename)
+{
+  int result = 1;
+  FILE* file = fopen(filename,"wt+");
+  int matrix_type;
+  matrix_properties props;
+  int i,j,p,n,nonzeros;
+  int size;
+  /* MM format limitation for the line is 1024 characters */
+  char buf[1024+1];
+  if (!file)
+  {
+    fprintf(stderr,"Error opening file %s for writing",filename);
     return 0;
   }
-  if ( !sp_istrcmp(ext,"mtx") )
-    return sp_matrix_save_file_mm(self,filename);
-  else if ( !sp_istrcmp(ext,"txt") )
-    return sp_matrix_save_file_txt(self,filename);
 
+  n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  
+  props = sp_matrix_yale_properites(self);
+  switch (props)
+  {
+  case PROP_SYMMETRIC:
+    matrix_type = MM_SYMMETRIC; break;
+  case PROP_SKEW_SYMMETRIC:
+    matrix_type = MM_SKEW_SYMMETRIC; break;
+  case PROP_SYMMETRIC_PORTRAIT:
+  case PROP_GENERAL:
+  default:
+    matrix_type = MM_GENERAL;
+  }
+  
+  size = sprintf(buf,"%s matrix coordinate real %s\n",
+                 MM_HEADER_STRING,
+                 matrix_type == MM_GENERAL ? "general" :
+                 (matrix_type == MM_SYMMETRIC ? "symmetric" :
+                  "skew-symmetric"));
+  fwrite(buf, 1, size, file);
+  fwrite(MM_HEADER_OUTPUT_ABOUT,1,strlen(MM_HEADER_OUTPUT_ABOUT),file);
+
+  /* calculate nonzeros */
+  nonzeros = self->nonzeros;
+  /*
+   * in skew symmetric matrix nzeros/2 elements in lower triangle
+   * (diagonal always empty)
+   */
+  if ( matrix_type == MM_SKEW_SYMMETRIC)
+    nonzeros  /= 2;
+  /*
+   * in symmetric matrix (nzeros+diagonal)/2 elements in lower triangle
+   */
+  if ( matrix_type == MM_SYMMETRIC)
+  {
+    j = 0;
+    for ( i = 0; i < n; ++ i)
+    {
+      for (p = self->offsets[i]; p < self->offsets[i+1]; ++ p)
+      {
+        if (self->indicies[p] > i)
+          break;
+        if (self->indicies[p] == i)
+        {
+          j++;
+          break;
+        }
+      }
+    }
+    nonzeros = (nonzeros + j)/2;
+  }
+  
+  /* write sizes */
+  size = sprintf(buf,"%d %d %d\n",self->rows_count,self->cols_count,nonzeros);
+  fwrite(buf,1,size,file);
+
+  if (!sp_matrix_yale_save_file_triplet(self,file,matrix_type,1))
+  {
+    fprintf(stderr, "Cannot save file!");
+    result = 0;
+  }
+  
+  fflush(file);
+  fclose(file);
+  return result;
+}
+
+static
+int sp_matrix_yale_save_file_txt(sp_matrix_yale_ptr self,const char* filename)
+{
+  int result = 1;
+  int matrix_type;
+  FILE* file = fopen(filename,"wt+");
+  if (!file)
+  {
+    fprintf(stderr,"Error opening file %s for writing",filename);
+    return 0;
+  }
+  matrix_type = MM_GENERAL; /* sp_matrix_type_mm(self); */
+  if (!sp_matrix_yale_save_file_triplet(self,file,matrix_type,0))
+  {
+    fprintf(stderr, "Cannot save file!");
+    result = 0;
+  }
+  fflush(file);
+  fclose(file);
+  return result;
+}
+
+int sp_matrix_yale_save_file(sp_matrix_yale_ptr self, const char* filename)
+{
+  supported_format fmt = guess_export_format(filename);
+  switch(fmt)
+  {
+  case FMT_MM:  return sp_matrix_yale_save_file_mm(self,filename);
+  case FMT_TXT: return sp_matrix_yale_save_file_txt(self,filename);
+  case FMT_UNSUPPORTED:
+  default:
+    break;
+  }
   return 0;
 }

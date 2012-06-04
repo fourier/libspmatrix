@@ -20,11 +20,19 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <float.h>
+#include <math.h>
+#include <stdio.h>
 
 #include "sp_direct.h"
 #include "sp_tree.h"
 #include "sp_utils.h"
 
+/* trivial comparison with zero */
+static int is_almost_zero(double x)
+{
+  return (fabs(x) < 2*FLT_EPSILON);
+}
 
 
 int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
@@ -331,16 +339,18 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
  * b - right part, scattered
  * indicies - indexes of the solution
  * size - number of nonzeros in solution
- * returns - x*x
+ * dot - x*x
+ * returns nonzero if successful
  */
-static double sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
-                                         int n,
-                                         double* x,
-                                         int* indicies,
-                                         int size)
+static int sp_matrix_yale_sparse_lower_solve(sp_matrix_yale_ptr self,
+                                             int n,
+                                             double* x,
+                                             int* indicies,
+                                             int size,
+                                             double* dot)
 {
   int i,j,p,q;
-  double d = 0;
+  double d = 0,value = 0;
   if (self->storage_type != CCS)
     return d;
   /* printf("\nSOLVE: n = %d\n",n); */
@@ -360,7 +370,10 @@ static double sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
     j = indicies[p];
     /* xj =xj/ljj */
     /* diagonal j-th element - is the first column element */
-    x[j] = x[j]/self->values[self->offsets[j]];
+    value = self->values[self->offsets[j]];
+    if (is_almost_zero(value))
+      return 0;
+    x[j] = x[j]/value;
     /* for i>j  where lij != 0 do */
     for (q = self->offsets[j]; q < self->offsets[j+1]; ++ q)
     {
@@ -381,7 +394,8 @@ static double sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
     j = indicies[p];
     d += x[j]*x[j];
   }
-  return d;
+  *dot = d;
+  return 1;
 }
 
 int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
@@ -389,9 +403,12 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
                                 sp_matrix_yale_ptr L)
 {
   int result = 1;
-  int i,j,k,p;
+  int i,j,p;
+  int k = 0;
   int* offsets;
   double* x;
+  int* rowoffsets;
+  double value;
   double v,A_kk;
   if (!self || !symb || !L || self->storage_type != CCS)
     return 0;
@@ -407,9 +424,14 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
   offsets = memdup(symb->ccs_offsets,(self->rows_count+1)*sizeof(int));
   /* right-part vector */
   x = calloc(self->rows_count,sizeof(double));
+#define _SP_CHOL_STOP {sp_matrix_yale_free(L);free(offsets);free(x);\
+    printf("Cholesky decomposition: error in %d row\n",k);return 0;}
   /* up-looking Cholesky */
   /* L11 = sqrt(a11) */
-  L->values[0] = sqrt(self->values[0]);
+  value = self->values[0];
+  if (value < 0)
+    _SP_CHOL_STOP;
+  L->values[0] = sqrt(value);
   offsets[0]++;
   /* loop by rows, constructing one k-th row at a time */
   for (k = 1; k < self->rows_count; ++ k)
@@ -426,9 +448,15 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
       x[self->indicies[p]] = self->values[p];
     A_kk = self->values[p];
     /* solve the SLAE L(1:k-1,1:k-1)*L(k,1:k-1)=A(1:k-1,k) */
-    v = sp_matrix_yale_lower_solve(L,k,x,
-                                   symb->crs_indicies + symb->crs_offsets[k],
-                                   symb->rowcounts[k]-1);
+    rowoffsets = symb->crs_indicies+symb->crs_offsets[k];
+    if (!sp_matrix_yale_sparse_lower_solve(L,k,x,
+                                           rowoffsets,
+                                           symb->rowcounts[k]-1,
+                                           &v))
+    {
+      printf("v is almost zero\n");
+      _SP_CHOL_STOP;
+    }
     /* store result to kth row */
     for (p = self->offsets[k];
          p < self->offsets[k+1] && self->indicies[p] < k;
@@ -443,11 +471,18 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
       offsets[j]++;
     }
     /* L_kk = sqrt(a_kk - L(k,1:k-1)*L(k,1:k-1)*/
-    L->values[L->offsets[k]] = sqrt(A_kk-v);
+    value = A_kk-v;
+    if (value < 0)
+    {
+      printf("Akk = %f, v = %f\n",A_kk,v);
+      _SP_CHOL_STOP;
+    }
+    L->values[L->offsets[k]] = sqrt(value);
     offsets[k]++;
   }
   free(x);
   free(offsets);
+#undef SP_CHOL_STOP
   return result;
 }
 

@@ -29,7 +29,7 @@ endif
 
 CC = gcc
 
-CFLAGS = -ggdb -g -O2 --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS)
+CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS)
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
 

@@ -127,13 +127,13 @@ void sp_matrix_copy(sp_matrix_ptr mtx_from, sp_matrix_ptr mtx_to)
   }
 }
 
-void sp_matrix_convert(sp_matrix_ptr mtx_from,
-                       sp_matrix_ptr mtx_to,
-                       sparse_storage_type type)
+int sp_matrix_convert(sp_matrix_ptr mtx_from,
+                      sp_matrix_ptr mtx_to,
+                      sparse_storage_type type)
 {
   int i,j;
   if (type == mtx_from->storage_type)
-    return;
+    return 0;
   sp_matrix_init(mtx_to,
                  mtx_from->rows_count,
                  mtx_from->cols_count,
@@ -157,6 +157,19 @@ void sp_matrix_convert(sp_matrix_ptr mtx_from,
             mtx_from->storage[i].values[j]);
     }
   }
+  return 1;
+}
+
+int sp_matrix_convert_inplace(sp_matrix_ptr self,
+                              sparse_storage_type type)
+{
+  sp_matrix mtx;
+  if (sp_matrix_convert(self,&mtx,type))
+  {
+    sp_matrix_free(self);
+    memcpy(self,&mtx,sizeof(mtx));
+  }
+  return 0;
 }
 
 void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
@@ -173,7 +186,7 @@ void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
   /* currenty implemented conversion only from CRS format */
   assert(mtx->storage_type == CRS);
   /* matrix shall be with symmetric portrait */
-  assert(sp_matrix_issymmetric_portrait(mtx));
+  assert(sp_matrix_properites(mtx) != PROP_GENERAL);
   
   self->rows_count = mtx->rows_count;
   self->cols_count = mtx->cols_count;
@@ -542,114 +555,64 @@ void sp_matrix_reorder(sp_matrix_ptr self)
 
 }
 
-
-int sp_matrix_issymmetric(sp_matrix_ptr self)
+matrix_properties sp_matrix_properites(sp_matrix_ptr self)
 {
-  double *value;
+  matrix_properties props = PROP_GENERAL;
+  double value;
+  double *tvalue;
   int n = self->rows_count;
   int i,j;
   if  (self->rows_count != self->cols_count )
-    return FALSE;
-  if (self->storage_type == CRS)
-  {
-    for ( i = 0; i < n; ++ i)
-      for (j = 0; j < self->storage[i].last_index; ++ j)
-      {
-        value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
-        if ( !value )
-          return FALSE;
-        if (!EQL(*value,self->storage[i].values[j]))
-          return FALSE;
-      }
-  }
-  else                          /* CCS */
-  {
-    for ( i = 0; i < n; ++ i)
-      for (j = 0; j < self->storage[i].last_index; ++ j)
-      {
-        value = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
-        if ( !value )
-          return FALSE;
-        if (! EQL(*value,self->storage[i].values[j]))
-          return FALSE;
-      }
-    
-  }
-  return TRUE;
-}
-
-
-int sp_matrix_issymmetric_portrait(sp_matrix_ptr self)
-{
-  double *value;
-  int n = self->rows_count;
-  int i,j;
-  if  (self->rows_count != self->cols_count )
-    return FALSE;
-  if (self->storage_type == CRS)
-  {
-    for ( i = 0; i < n; ++ i)
-      for (j = 0; j < self->storage[i].last_index; ++ j)
-      {
-        value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
-        if ( !value )
-          return FALSE;
-      }
-  }
-  else                          /* CCS */
-  {
-    for ( i = 0; i < n; ++ i)
-      for (j = 0; j < self->storage[i].last_index; ++ j)
-      {
-        value = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
-        if ( !value )
-          return FALSE;
-      }
-  }
-  return TRUE;
-}
-
-int sp_matrix_isskew_symmetric(sp_matrix_ptr self)
-{
-  double *value;
-  int n = self->rows_count;
-  int i,j;
-  if  (self->rows_count != self->cols_count )
-    return FALSE;
-  if (self->storage_type == CRS)
-  {
-    for ( i = 0; i < n; ++ i)
-      for (j = 0; j < self->storage[i].last_index; ++ j)
-      {
-        value = sp_matrix_element_ptr(self,self->storage[i].indexes[j],i);
-        if ( !value )
-          return FALSE;
-        if (!EQL(*value,-self->storage[i].values[j]))
-          return FALSE;
-      }
-  }
-  else                          /* CCS */
-  {
-    for ( i = 0; i < n; ++ i)
-      for (j = 0; j < self->storage[i].last_index; ++ j)
-      {
-        value = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
-        if ( !value )
-          return FALSE;
-        if (! EQL(*value,-self->storage[i].values[j]))
-          return FALSE;
-      }
-    
-  }
-  /* check diagonal - it shall contain zeros */
+    return PROP_GENERAL;
   for ( i = 0; i < n; ++ i)
-  {
-    if (sp_matrix_element_ptr(self,i,i))
-      return FALSE;
-  }
-  return TRUE;
-}
+    for (j = 0; j < self->storage[i].last_index; ++ j)
+    {
+      value = self->storage[i].values[j];
+      if (self->storage_type == CRS)
+        tvalue = sp_matrix_element_ptr(self, self->storage[i].indexes[j], i);
+      else                    /* CCS */
+        tvalue = sp_matrix_element_ptr(self,i,self->storage[i].indexes[j]);
+      /* general case - no such value found in transposed */
+      if ( !tvalue)
+        return PROP_GENERAL;
+      /* check for symmetricity */
+      if (EQL(*tvalue,value))
+      {
+        if (props == PROP_SYMMETRIC)
+          continue;
+        if (props == PROP_GENERAL)
+          props = PROP_SYMMETRIC;
+        else
+          /* if previous skew-symmetric or symmetric portrait */
+          props = PROP_SYMMETRIC_PORTRAIT;
+      }
+      /* check for skew-symmetricity */
+      else if (EQL(*tvalue,-value))
+      {
+        if (props == PROP_SKEW_SYMMETRIC)
+          continue;
+        if (props == PROP_GENERAL)
+          props = PROP_SKEW_SYMMETRIC;
+        else
+          /* if previous symmetric or symmetric portrait */
+          props = PROP_SYMMETRIC_PORTRAIT;
+      }
+      /* otherwise symmetic portrait */
+      else
+        props = PROP_SYMMETRIC_PORTRAIT;
+    }
 
+  /* for skew-symmetic check diagonal - it shall contain zeros */
+  if (props == PROP_SKEW_SYMMETRIC)
+  {
+    for ( i = 0; i < n; ++ i)
+    {
+      if (sp_matrix_element_ptr(self,i,i))
+        return PROP_GENERAL;
+    }
+  }
+  return props;
+}
 
 int sp_matrix_nonzeros(sp_matrix_ptr self)
 {
@@ -804,6 +767,73 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
   sp_matrix_yale_init(permuted,&mtx);
   sp_matrix_free(&mtx);
   return result;
+}
+
+
+matrix_properties sp_matrix_yale_properites(sp_matrix_yale_ptr self)
+{
+  matrix_properties props = PROP_GENERAL;
+  int n = self->rows_count;
+  int i,p;
+  sp_matrix_yale mtx;
+  if  (self->rows_count != self->cols_count )
+    return PROP_GENERAL;
+  /* easiest way is to find transposed matrix */
+  sp_matrix_yale_transpose(self,&mtx);
+  /* properties:
+   * symmetricity:      A = A^T
+   * skew-symmetricity: A = -A^T
+   * symmetric portrait: portrait(A) = portrait(A^T)
+   */
+  if (memcmp(self->offsets,mtx.offsets,(n+1)*sizeof(int)))
+  {
+    sp_matrix_yale_free(&mtx);
+    return PROP_GENERAL;
+  }
+  if (memcmp(self->indicies,mtx.indicies,self->nonzeros*sizeof(int)))
+  {
+    sp_matrix_yale_free(&mtx);
+    return PROP_GENERAL;
+  }
+  /* matrix is known to have at least symmetric portrait */
+  for (i = 0; i < n; ++ i)
+  {
+    for (p = self->offsets[i]; p < self->offsets[i+1]; ++ p)
+    {
+      if (self->indicies[p] == i) /* diagonal element */
+      {
+        /* diagonal elements shall be empty in skew symmetric matrix */
+        if (props == PROP_SKEW_SYMMETRIC)
+        {
+          props = PROP_SYMMETRIC_PORTRAIT;
+          continue;
+        }
+      }
+      if (EQL(self->values[p],mtx.values[p]))
+      {
+        if (props == PROP_SYMMETRIC)
+          continue;
+        if (props == PROP_GENERAL)
+          props = PROP_SYMMETRIC;
+        else
+          props = PROP_SYMMETRIC_PORTRAIT;
+      }
+      else if (EQL(self->values[p],-mtx.values[p]))
+      {
+        if (props == PROP_SKEW_SYMMETRIC)
+          continue;
+        if (props == PROP_GENERAL)
+          props = PROP_SKEW_SYMMETRIC;
+        else
+          props = PROP_SYMMETRIC_PORTRAIT;
+      }
+      else
+        props = PROP_SYMMETRIC_PORTRAIT;
+    }
+  }
+  
+  sp_matrix_yale_free(&mtx);
+  return props;
 }
 
 

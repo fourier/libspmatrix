@@ -35,6 +35,14 @@ enum
   ORDERED = 1
 };
 
+typedef enum
+{
+  PROP_GENERAL,
+  PROP_SYMMETRIC,
+  PROP_SYMMETRIC_PORTRAIT,
+  PROP_SKEW_SYMMETRIC
+} matrix_properties;
+
 /*
  * Sparse matrix row/column storage array
  */
@@ -153,11 +161,21 @@ void sp_matrix_copy(sp_matrix_ptr mtx_from,
 /*
  * Converts matrix storage format CRS <=> CCS
  * mtx_to shall be uninitialized sp_matrix structure
- * if the type is the same - do nothing 
+ * if the type is the same - do nothing and return 0
+ * returns nonzero if conversion was successull
  */
-void sp_matrix_convert(sp_matrix_ptr mtx_from,
-                       sp_matrix_ptr mtx_to,
-                       sparse_storage_type type);
+int sp_matrix_convert(sp_matrix_ptr mtx_from,
+                      sp_matrix_ptr mtx_to,
+                      sparse_storage_type type);
+
+/*
+ * Converts matrix storage format CRS <=> CCS inplace
+ * if the type is the same - do nothing and return 0
+ * returns nonzero if conversion was successull
+ */
+int sp_matrix_convert_inplace(sp_matrix_ptr self,
+                              sparse_storage_type type);
+
 
 
 /*
@@ -228,14 +246,8 @@ double sp_matrix_element_add(sp_matrix_ptr self,
 /* rearrange columns of a matrix to prepare for solving SLAE */
 void sp_matrix_reorder(sp_matrix_ptr self);
 
-/* returns nonzero value if the matrix is symmetric */
-int sp_matrix_issymmetric(sp_matrix_ptr self);
-
-/* returns nonzero value if the matrix protrait is symmetric */
-int sp_matrix_issymmetric_portrait(sp_matrix_ptr self);
-
-/* returns nonzero value if the matrix is skew-symmetric */
-int sp_matrix_isskew_symmetric(sp_matrix_ptr self);
+/* determines the matrix properties */
+matrix_properties sp_matrix_properites(sp_matrix_ptr self);
 
 /* returns the number of nonzeroes in matrix */
 int sp_matrix_nonzeros(sp_matrix_ptr self);
@@ -278,6 +290,8 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
                            int* pinv,
                            int* q);
 
+/* determines the matrix properties */
+matrix_properties sp_matrix_yale_properites(sp_matrix_yale_ptr self);
 
 /* Print contens of the matrix in index form to the stdout */
 void sp_matrix_printf(sp_matrix_ptr self);

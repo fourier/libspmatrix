@@ -1311,6 +1311,92 @@ static void yale_transpose_convert()
   sp_matrix_yale_free(&yale3);
 }
 
+static void yale_properties()
+{
+  /* test sparse matrix properties: symmetricity,
+   * symmetric portrait, skew-symmetricicty
+   */
+  sp_matrix mtx,sym,symp,ssym;
+  sp_matrix_yale yale,ysym,ysymp,yssym;
+  sp_matrix_init(&mtx,4,4,2,CRS);
+  sp_matrix_init(&sym,4,4,2,CRS);
+  sp_matrix_init(&symp,4,4,2,CRS);
+  sp_matrix_init(&ssym,4,4,2,CRS);
+
+  /* general matrix */
+  MTX(&mtx,0,0,1);
+  MTX(&mtx,1,0,-1);MTX(&mtx,1,1,2);
+  MTX(&mtx,2,1,1);MTX(&mtx,2,2,3);
+  MTX(&mtx,3,0,1);MTX(&mtx,3,2,-1);MTX(&mtx,3,3,4);
+  sp_matrix_yale_init(&yale,&mtx);
+  
+  /* symmetric matrix */
+  MTX(&sym,0,0,1);
+  MTX(&sym,1,0,-1);MTX(&sym,0,1,-1);
+  MTX(&sym,2,1,2);MTX(&sym,1,2,2);
+  MTX(&sym,3,0,-2);MTX(&sym,0,3,-2);MTX(&sym,3,3,4);
+  sp_matrix_yale_init(&ysym,&sym);
+
+  /* skew-symmetric matrix */
+  MTX(&ssym,1,0,-1);MTX(&ssym,0,1,1);
+  MTX(&ssym,2,1,2);MTX(&ssym,1,2,-2);
+  MTX(&ssym,3,0,-2);MTX(&ssym,0,3,2);
+  sp_matrix_yale_init(&yssym,&ssym);
+
+  /* symmetic portrait matrix */
+  MTX(&symp,0,0,1);
+  MTX(&symp,1,0,-1);MTX(&symp,0,1,0.5);
+  MTX(&symp,2,1,2);MTX(&symp,1,2,3);
+  MTX(&symp,3,0,-2);MTX(&symp,0,3,-1);MTX(&symp,3,3,4);
+  sp_matrix_yale_init(&ysymp,&symp);
+
+  ASSERT_TRUE(sp_matrix_properites(&mtx) == PROP_GENERAL);
+  ASSERT_TRUE(sp_matrix_properites(&sym) == PROP_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_properites(&ssym) == PROP_SKEW_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_properites(&symp) == PROP_SYMMETRIC_PORTRAIT);
+
+  ASSERT_TRUE(sp_matrix_yale_properites(&yale) == PROP_GENERAL);
+  ASSERT_TRUE(sp_matrix_yale_properites(&ysym) == PROP_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_yale_properites(&yssym) == PROP_SKEW_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_yale_properites(&ysymp) == PROP_SYMMETRIC_PORTRAIT);
+  
+  sp_matrix_convert_inplace(&mtx,CCS);
+  sp_matrix_convert_inplace(&sym,CCS);
+  sp_matrix_convert_inplace(&ssym,CCS);
+  sp_matrix_convert_inplace(&symp,CCS);
+
+  ASSERT_TRUE(sp_matrix_properites(&mtx) == PROP_GENERAL);
+  ASSERT_TRUE(sp_matrix_properites(&sym) == PROP_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_properites(&ssym) == PROP_SKEW_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_properites(&symp) == PROP_SYMMETRIC_PORTRAIT);
+
+  sp_matrix_yale_free(&yale);
+  sp_matrix_yale_free(&ysym);
+  sp_matrix_yale_free(&yssym);
+  sp_matrix_yale_free(&ysymp);
+  
+  sp_matrix_yale_init(&yale,&mtx);
+  sp_matrix_yale_init(&ysym,&sym);
+  sp_matrix_yale_init(&yssym,&ssym);
+  sp_matrix_yale_init(&ysymp,&symp);
+
+  ASSERT_TRUE(sp_matrix_yale_properites(&yale) == PROP_GENERAL);
+  ASSERT_TRUE(sp_matrix_yale_properites(&ysym) == PROP_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_yale_properites(&yssym) == PROP_SKEW_SYMMETRIC);
+  ASSERT_TRUE(sp_matrix_yale_properites(&ysymp) == PROP_SYMMETRIC_PORTRAIT);
+ 
+  sp_matrix_free(&mtx);
+  sp_matrix_free(&sym);
+  sp_matrix_free(&ssym);
+  sp_matrix_free(&symp);
+  sp_matrix_yale_free(&yale);
+  sp_matrix_yale_free(&ysym);
+  sp_matrix_yale_free(&yssym);
+  sp_matrix_yale_free(&ysymp);
+}
+
+
+
 #if 0
 static void lower_solve()
 {
@@ -1352,6 +1438,7 @@ static void lower_solve()
 }
 #endif
 
+
 /* #define DEF_TEST(name) static void name() { printf( #name "\n"); } */
 
 /* DEF_TEST(init1) */
@@ -1390,6 +1477,7 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(queue_container);
   SP_ADD_TEST(tree_search);
   SP_ADD_TEST(yale_transpose_convert);
+  SP_ADD_TEST(yale_properties);
   /* SP_ADD_TEST(lower_solve); */
   
   suite1 = sp_add_suite("etree",test_etree_init,test_etree_fini);
