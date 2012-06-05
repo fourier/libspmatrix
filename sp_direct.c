@@ -28,6 +28,12 @@
 #include "sp_tree.h"
 #include "sp_utils.h"
 
+#ifdef USE_LOGGER
+#include <logger.h>
+#else
+#define LOGERROR(...) fprintf(stderr,__VA_ARGS__);
+#endif
+
 /* trivial comparison with zero */
 static int is_almost_zero(double x)
 {
@@ -353,42 +359,28 @@ static int sp_matrix_yale_sparse_lower_solve(sp_matrix_yale_ptr self,
   double d = 0,value = 0;
   if (self->storage_type != CCS)
     return d;
-  /* printf("\nSOLVE: n = %d\n",n); */
-  /* printf("SOLVE: x = [ "); */
-  /* for (i = 0; i < self->rows_count; ++i) */
-  /*   printf("%.2f ",x[i]); */
-  /* printf("]\n"); */
-  /* printf("SOLVE: size = %d\n",size); */
-  /* printf("SOLVE: indicies = [ "); */
-  /* for (i = 0; i < size; ++i) */
-  /*   printf("%d ",indicies[i]); */
-  /* printf("]\n"); */
-  
+ 
   /* for j in X do */
   for (p = 0; p < size; ++ p)
   {
     j = indicies[p];
     /* xj =xj/ljj */
-    /* diagonal j-th element - is the first column element */
+    /* diagonal j-th element - is the first column element in L */
     value = self->values[self->offsets[j]];
     if (is_almost_zero(value))
       return 0;
     x[j] = x[j]/value;
     /* for i>j  where lij != 0 do */
-    for (q = self->offsets[j]; q < self->offsets[j+1]; ++ q)
+    for (q = self->offsets[j]+1; /* under diagonal */
+         q < self->offsets[j+1] && (i = self->indicies[q]) < n;
+         ++ q)
     {
-      i = self->indicies[q];
-      if ( i >= n )
-        break;
       /* xi = xi - lij*xj */
-      if (i > j)
-      {
-        x[i] = x[i] - self->values[q]*x[j];
-      }
-    }
-    /* end for */
-  }
-  /* end for */
+      x[i] = x[i] - self->values[q]*x[j];
+    } /* end for */
+    
+  } /* end for */
+  /* calculate scalar product */
   for (p = 0; p < size; ++ p)
   {
     j = indicies[p];
@@ -397,6 +389,7 @@ static int sp_matrix_yale_sparse_lower_solve(sp_matrix_yale_ptr self,
   *dot = d;
   return 1;
 }
+
 
 int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
                                 sp_chol_symbolic_ptr symb,
@@ -425,16 +418,10 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
   /* right-part vector */
   x = calloc(self->rows_count,sizeof(double));
 #define _SP_CHOL_STOP {sp_matrix_yale_free(L);free(offsets);free(x);\
-    printf("Cholesky decomposition: error in %d row\n",k);return 0;}
+    LOGERROR("Cholesky decomposition: error in %d row\n",k);return 0;}
   /* up-looking Cholesky */
-  /* L11 = sqrt(a11) */
-  value = self->values[0];
-  if (value < 0)
-    _SP_CHOL_STOP;
-  L->values[0] = sqrt(value);
-  offsets[0]++;
   /* loop by rows, constructing one k-th row at a time */
-  for (k = 1; k < self->rows_count; ++ k)
+  for (k = 0; k < self->rows_count; ++ k)
   {
     memset(x,0,self->rows_count*sizeof(double));
     v = 0;
@@ -453,30 +440,19 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
                                            rowoffsets,
                                            symb->rowcounts[k]-1,
                                            &v))
-    {
-      printf("v is almost zero\n");
       _SP_CHOL_STOP;
-    }
     /* store result to kth row */
-    for (p = self->offsets[k];
-         p < self->offsets[k+1] && self->indicies[p] < k;
+    for (p = symb->crs_offsets[k];
+         p < symb->crs_offsets[k+1] && (j = symb->crs_indicies[p]) < k;
          ++p)
     {
-      /* self->indicies[p] - column number */
-      j = self->indicies[p];
-      /* x[self->indicies[p]] - value in this column for row k */
-      /* L->values[offsets[self->indicies[p]]++]; */
       i = offsets[j];
       L->values[i] = x[j];
       offsets[j]++;
     }
-    /* L_kk = sqrt(a_kk - L(k,1:k-1)*L(k,1:k-1)*/
     value = A_kk-v;
     if (value < 0)
-    {
-      printf("Akk = %f, v = %f\n",A_kk,v);
       _SP_CHOL_STOP;
-    }
     L->values[L->offsets[k]] = sqrt(value);
     offsets[k]++;
   }

@@ -17,8 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 
-# Set this variable if want to use liblogger
+# Set this variable if you want to use liblogger
 LOGGER := 1
+
+# Set this variable if you want to use coverage
+COVERAGE := 
 
 ifdef LOGGER
  LOGGERINC = -I ../liblogger
@@ -26,16 +29,21 @@ ifdef LOGGER
  LOGGERCFLAGS = -DUSE_LOGGER
 endif
 
+ifdef COVERAGE
+	COVERAGECFLAGS = --coverage
+	COVERAGELINK = -lgcov
+endif
+
 
 CC = gcc
 
-CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS)
+CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
 
 
 INCLUDES = -I . $(LOGGERINC)
-LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK)
+LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
 
 OUTPUT_SRC = main.c
 FEM2D_SRC = main_fem2d.c

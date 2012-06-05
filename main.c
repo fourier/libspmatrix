@@ -1219,6 +1219,7 @@ static void big_matrix_from_file()
       ASSERT_TRUE(sp_matrix_yale_ereach(&yale,symb.etree,i,ereach)
                   == symb.rowcounts[i]);
     free(ereach);
+
     LOGTIC("numeric analysis of big matrix");    
     result = sp_matrix_yale_chol_numeric(&yale,&symb,&L);
     LOGTOC("numeric analysis of big matrix");
