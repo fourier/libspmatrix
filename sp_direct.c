@@ -175,44 +175,86 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
 }
 
 
-void sp_matrix_lower_solve(sp_matrix_ptr self,
-                           int n,
-                           double* b,
-                           double* x)
+void sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
+                                int n,
+                                double* b,
+                                double* x)
 {
-  int i,j;
+  int i,j,p;
   assert(self);
   assert(b);
   assert(x);
-  assert(n>0 && n <= self->rows_count);
+  assert(n >= 0 && n <= self->rows_count);
 
-  memset(x,0,sizeof(double)*n);
-  
-  if (!self->ordered)
-    sp_matrix_reorder(self);
   if (self->storage_type == CCS)
   {
-    for ( j = 0; j < n; ++ j)
-      x[j] = b[j];
+    memcpy(x,b,n*sizeof(double));
     for ( j = 0; j < n; ++ j)
     {
-      x[j] /= self->storage[j].values[0]; 
-      for (i = 1; i <= self->storage[j].last_index; ++ i)
-        x[self->storage[j].indexes[i]] -= x[j]*self->storage[j].values[i];
+      x[j] /= self->values[self->offsets[j]];
+      for (p = self->offsets[j]+1; p < self->offsets[j+1]; ++ p)
+      {
+        i = self->indicies[p];
+        x[i] -= self->values[p] * x[j];
+      }
     }
   }
   else                          /* CRS */
   {
+    memset(x,0,n*sizeof(double));
     for ( i = 0; i < n; ++ i)
     {
+      /* x_i = (b_i - \sum\limits_{j=1}^{i-1} l_ij x_j)/l_ii*/
       x[i] = b[i];
-      for (j = 0; j <= self->storage[i].last_index &&
-             self->storage[i].indexes[j] <= i-1; ++ j)
-        x[i] -= x[self->storage[i].indexes[j]]*self->storage[i].values[j];
-      x[i] /= self->storage[i].values[self->storage[i].last_index];
+      for (p = self->offsets[i];
+           p < self->offsets[i+1] && (j = self->indicies[p]) < i; ++ p)
+        x[i] -= self->values[p] * x[j];
+      x[i] /= self->values[self->offsets[i+1]-1];
     }
   }
 }
+
+void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
+                                      int n,
+                                      double* b,
+                                      double* x)
+{
+  int i,j,p;
+  assert(self);
+  assert(b);
+  assert(x);
+  assert(n >= 0 && n <= self->rows_count);
+
+  if (self->storage_type == CCS)
+  {
+    memset(x,0,n*sizeof(double));
+    for ( i = n-1; i >= 0; -- i)
+    {
+      /* x_i = (b_i - \sum\limits_{j=i+1}^{n} l_ji x_j)/l_ii */
+      x[i] = b[i];
+      for (p = self->offsets[i]+1; p < self->offsets[i+1]; ++ p)
+      {
+        j = self->indicies[p];
+        x[i] -= self->values[p] * x[j];
+      }
+      x[i] /= self->values[self->offsets[i]];
+    }
+  }
+  else                          /* CRS */
+  {
+    memcpy(x,b,n*sizeof(double));
+    for ( j = n-1; j >= 0; -- j)
+    {
+      x[j] /= self->values[self->offsets[j+1]-1];
+      for (p = self->offsets[j]; p < self->offsets[j+1]-1; ++ p)
+      {
+        i = self->indicies[p];
+        x[i] -= self->values[p] * x[j];
+      }
+    }
+  }
+}
+
 
 /*
  * Finds the symbolic Cholesky decomposition - portrait of the matrix L
@@ -337,7 +379,7 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
 /*
  * Sparse Triangular solver for CCS matrix
  * n - up to n-th row.
- * b - right part, scattered
+ * x - right part, scattered. Will be overwritten on output
  * indicies - indexes of the solution
  * size - number of nonzeros in solution
  * dot - x*x

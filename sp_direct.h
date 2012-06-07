@@ -78,14 +78,26 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
 
 /*
  * Solves SLAE L*x = b
- * by given L sparse matrix 
+ * by given L sparse matrix with nonzero diagonal
  * n - is the size of the x vector, and therefore
  * the matrix L will be used up to nth row & column.
  */
-void sp_matrix_lower_solve(sp_matrix_ptr self,
-                           int n,
-                           double* b,
-                           double* x);
+void sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
+                                int n,
+                                double* b,
+                                double* x);
+
+/*
+ * Solves SLAE L^T*x = b
+ * by given L sparse matrix with nonzero diagonal
+ * n - is the size of the x vector, and therefore
+ * the matrix L will be used up to nth row & column.
+ */
+void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
+                                      int n,
+                                      double* b,
+                                      double* x);
+
 
 /*
  * Performs the symbolic analysis used in Cholesky decomposition

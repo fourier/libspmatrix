@@ -264,20 +264,32 @@ static void sparse_permutations()
 
 }
 
-static void triangle_solver()
+static void lower_triangular_solver()
 {
   int i;
-  sp_matrix mtx,mtx2;
+  sp_matrix mtx;
+  sp_matrix_yale yale;
   double x[5] = {0};
   double x_expected[] = {1,2,-3,5,-7};
   double b[] = {-1, 5, -10, 40, -71};
+  double bt[] = {4, 29, 5, 30, -77};
 
   /*
+   * L*x = b:
+   * 
    * |-1  0  0  0  0 |   | 1 |   |-1 |
    * | 1  2  0  0  0 |   | 2 |   | 5 |
    * |-1  0  3  0  0 | x |-3 | = |-10|
    * | 0  5  0  6  0 |   | 5 |   | 40|
    * | 0  0 -2  0 11 |   |-7 |   |-71|
+   *
+   * L'*x = b:
+   * 
+   * |-1  1 -1  0  0 |   | 1 |   | 4 |
+   * | 0  2  0  5  0 |   | 2 |   | 29| 
+   * | 0  0  3  0 -2 | x |-3 | = | 5 |
+   * | 0  0  0  6  0 |   | 5 |   | 30|
+   * | 0  0  0  0 11 |   |-7 |   |-77|
    */
   sp_matrix_init(&mtx,5,5,3,CRS);
   MTX(&mtx,0,0,-1);
@@ -285,19 +297,31 @@ static void triangle_solver()
   MTX(&mtx,2,0,-1);MTX(&mtx,2,2,3);
   MTX(&mtx,3,1,5);MTX(&mtx,3,3,6);
   MTX(&mtx,4,2,-2);MTX(&mtx,4,4,11);
+  sp_matrix_yale_init(&yale,&mtx);
+  sp_matrix_free(&mtx);
+  /* CRS */
+  sp_matrix_yale_lower_solve(&yale,5,b,x);
+  for (i = 0; i < 5; ++ i)
+    ASSERT_TRUE(EQL(x_expected[i],x[i]));
 
-  sp_matrix_lower_solve(&mtx,5,b,x);
+  memset(x,0,sizeof(double)*5);
+  sp_matrix_yale_lower_trans_solve(&yale,5,bt,x);
   for (i = 0; i < 5; ++ i)
     ASSERT_TRUE(EQL(x_expected[i],x[i]));
   
-  sp_matrix_convert(&mtx,&mtx2,CCS);
+  /* CCS */
+  sp_matrix_yale_convert_inplace(&yale,CCS);
   memset(x,0,sizeof(double)*5);
-  sp_matrix_lower_solve(&mtx,5,b,x);
+  sp_matrix_yale_lower_solve(&yale,5,b,x);
   for (i = 0; i < 5; ++ i)
     ASSERT_TRUE(EQL(x_expected[i],x[i]));
 
-  sp_matrix_free(&mtx2);
-  sp_matrix_free(&mtx);
+  memset(x,0,sizeof(double)*5);
+  sp_matrix_yale_lower_trans_solve(&yale,5,bt,x);
+  for (i = 0; i < 5; ++ i)
+    ASSERT_TRUE(EQL(x_expected[i],x[i]));
+
+  sp_matrix_yale_free(&yale);
 }
 
 static void cg_solver()
@@ -1151,17 +1175,18 @@ static void save_vector(int* v, int size, const char* fname)
 static void print_props(sp_matrix_yale_ptr yale)
 {
   matrix_properties props = sp_matrix_yale_properites(yale);
-  printf("Properties: \n");
+  printf("Properties: ");
   switch(props)
   {
-  case PROP_SYMMETRIC: printf("symmetric\n");break;
-  case PROP_SKEW_SYMMETRIC: printf("skew-symmetric\n"); break;
-  case PROP_SYMMETRIC_PORTRAIT: printf("symmetric portrait\n"); break;
+  case PROP_SYMMETRIC: printf("symmetric");break;
+  case PROP_SKEW_SYMMETRIC: printf("skew-symmetric"); break;
+  case PROP_SYMMETRIC_PORTRAIT: printf("symmetric portrait"); break;
   case PROP_GENERAL:
   default:
-    printf("general\n");
+    printf("general");
     break;
   }
+  printf("\n");
 }
 
 static void big_matrix_from_file1()
@@ -1170,22 +1195,22 @@ static void big_matrix_from_file1()
   matrix_comparison comp;
   sp_matrix_yale yale1,yale2;
   EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale1,"bcsstk18.mtx",CCS)));
-  do
+  if (result)
   {
     sp_matrix_yale_printf2(&yale1);
-    if (!result) break;
     EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale2,"bcsstk18.rsa",CCS)));
-    if (!result) break;
-    sp_matrix_yale_printf2(&yale2);
-    print_props(&yale1);
-    print_props(&yale2);
-    comp = sp_matrix_yale_cmp(&yale1,&yale2);
-    ASSERT_TRUE(comp == MTX_SAME || comp == MTX_EQUAL);
-    sp_matrix_yale_free(&yale2);
-    result = 0;
-  } while(0);
-  if (result)
+    if (result)
+    {
+      sp_matrix_yale_printf2(&yale2);
+      print_props(&yale1);
+      print_props(&yale2);
+      comp = sp_matrix_yale_cmp(&yale1,&yale2);
+      ASSERT_TRUE(comp == MTX_SAME || comp == MTX_EQUAL);
+      sp_matrix_yale_free(&yale2);
+    }
     sp_matrix_yale_free(&yale1);    
+  }
+
 }
 
 
@@ -1548,7 +1573,7 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(yale_format);
   SP_ADD_TEST(permutations);
   SP_ADD_TEST(sparse_permutations);
-  SP_ADD_TEST(triangle_solver);
+  SP_ADD_TEST(lower_triangular_solver);
   SP_ADD_TEST(cg_solver);
   SP_ADD_TEST(ilu_and_skyline);
   SP_ADD_TEST(pcg_ilu_solver);
@@ -1567,9 +1592,9 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
   /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
   SP_ADD_TEST(cholesky);
-  SP_ADD_TEST(big_matrix_from_file1);
-  SP_ADD_TEST(big_matrix_from_file2);
-  SP_ADD_TEST(big_matrix_from_file3);
+  /* SP_ADD_TEST(big_matrix_from_file1); */
+  /* SP_ADD_TEST(big_matrix_from_file2); */
+  /* SP_ADD_TEST(big_matrix_from_file3); */
 
   sp_run_tests(argc,argv);
 #ifdef USE_LOGGER

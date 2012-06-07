@@ -282,9 +282,15 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
  * if the type is the same - do nothing
  * matrix 'to' shall be uninitialized
  */
-void sp_matrix_yale_convert(sp_matrix_yale_ptr from,
+int sp_matrix_yale_convert(sp_matrix_yale_ptr from,
                             sp_matrix_yale_ptr to,
                             sparse_storage_type type);
+
+/*
+ * Convert sparse matrix to given format type inplace
+ */
+int sp_matrix_yale_convert_inplace(sp_matrix_yale_ptr self,
+                                   sparse_storage_type type);
 
 /*
  * Calculates the permuted matrix C = P*A*Q

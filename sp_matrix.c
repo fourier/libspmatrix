@@ -161,6 +161,7 @@ int sp_matrix_convert_inplace(sp_matrix_ptr self,
   {
     sp_matrix_free(self);
     memcpy(self,&mtx,sizeof(mtx));
+    return 1;
   }
   return 0;
 }
@@ -709,15 +710,30 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
   free(offsets);
 }
 
-void sp_matrix_yale_convert(sp_matrix_yale_ptr from,
-                            sp_matrix_yale_ptr to,
-                            sparse_storage_type type)
+int sp_matrix_yale_convert(sp_matrix_yale_ptr from,
+                           sp_matrix_yale_ptr to,
+                           sparse_storage_type type)
 {
   if (from->storage_type == type)
-    return;
+    return 0;
   sp_matrix_yale_transpose(from,to);
   to->storage_type = type;
+  return 1;
 }
+
+int sp_matrix_yale_convert_inplace(sp_matrix_yale_ptr self,
+                                   sparse_storage_type type)
+{
+  sp_matrix_yale mtx;
+  if (sp_matrix_yale_convert(self,&mtx,type))
+  {
+    sp_matrix_yale_free(self);
+    memcpy(self,&mtx,sizeof(mtx));
+    return 1;
+  }
+  return 0;
+}
+
 
 
 

@@ -662,6 +662,9 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     }
     sp_matrix_yale_init(self,&mtx);
     sp_matrix_free(&mtx);
+    free(colptr);
+    free(rowind);
+    free(values);
   }
   /*  */
   return 1;
