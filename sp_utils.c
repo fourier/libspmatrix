@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "sp_utils.h"
+#include "sp_log.h"
 
 
 static int is_from(const char c, const char* from)
@@ -140,7 +141,7 @@ char* sp_read_text_file(const char* filename)
   file = fopen(filename,"rt");
   if (!file)
   {
-    fprintf(stderr,"Cannot read file %s\n", filename);
+    LOGERROR("Cannot read file %s", filename);
     free(contents);
     return 0;
   }
@@ -230,7 +231,7 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   /* find start \( */
   if (!*ptr || *ptr != '(')
   {
-    fprintf(stderr, "Incorrect FORTRAN IO format: %s, no '('\n",string);
+    LOGERROR("Incorrect FORTRAN IO format: %s, no '('",string);
     return 0;
   }
   /* find end \) */
@@ -238,7 +239,7 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   while(*end && *end != ')') ++end;
   if (!*end  || *end != ')')
   {
-    fprintf(stderr, "Incorrect FORTRAN IO format: %s, no ')'\n",string);
+    LOGERROR("Incorrect FORTRAN IO format: %s, no ')'",string);
     return 0;
   }
   ptr++;
@@ -251,7 +252,7 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   ptr = ptr1;
   if (!is_from(*ptr1,"FIEDGfiedg"))
   {
-    fprintf(stderr, "Incorrect FORTRAN IO format: %s, %c != [FIEDG]\n",
+    LOGERROR("Incorrect FORTRAN IO format: %s, %c != [FIEDG]",
             string,*ptr1);
     return 0;
   }
@@ -261,8 +262,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
   if (ptr1 == ptr)
   {
-    fprintf(stderr, "Incorrect FORTRAN IO format: %s, field-width = ''\n",
-            string);
+    LOGERROR("Incorrect FORTRAN IO format: %s, field-width = ''",
+             string);
     return 0;
   }
   format->width = sp_extract_positional_int(ptr,ptr1-ptr);
@@ -274,8 +275,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
       return 1;
     if (*ptr1 != '.')
     {
-      fprintf(stderr,"Incorrect FORTRAN IO format: %s, type = 'I'\n",
-              string);
+      LOGERROR("Incorrect FORTRAN IO format: %s, type = 'I'",
+               string);
       return 0;
     }
     ptr1++;
@@ -283,8 +284,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
     while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
     if (ptr1 == ptr)
     {
-      fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = 'I'\n",
-              string);
+      LOGERROR("Incorrect FORTRAN IO format: %s, type = 'I'",
+               string);
       return 0;
     }
     format->num1 = sp_extract_positional_int(ptr,ptr1-ptr);
@@ -294,8 +295,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   {
     if (*ptr1 != '.')
     {
-      fprintf(stderr,"Incorrect FORTRAN IO format: %s, type = 'F'\n",
-              string);
+      LOGERROR("Incorrect FORTRAN IO format: %s, type = 'F'",
+               string);
       return 0;
     }
     ptr1++;
@@ -303,8 +304,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
     while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
     if (ptr1 == ptr)
     {
-      fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = 'F'\n",
-              string);
+      LOGERROR("Incorrect FORTRAN IO format: %s, type = 'F'",
+               string);
       return 0;
     }
     format->num1 = sp_extract_positional_int(ptr,ptr1-ptr);
@@ -313,8 +314,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   {
     if (*ptr1 != '.')
     {
-      fprintf(stderr,"Incorrect FORTRAN IO format: %s, type = '%c'\n",
-              string,format->type);
+      LOGERROR("Incorrect FORTRAN IO format: %s, type = '%c'",
+               string,format->type);
       return 0;
     }
     ptr1++;
@@ -322,8 +323,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
     while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
     if (ptr1 == ptr)
     {
-      fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
-              string,format->type);
+      LOGERROR("Incorrect FORTRAN IO format: %s, type = '%c'",
+               string,format->type);
       return 0;
     }
     format->num1 = sp_extract_positional_int(ptr,ptr1-ptr);
@@ -332,8 +333,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
     {
       if (*ptr1 != 'E')
       {
-        fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
-                string,format->type);
+        LOGERROR("Incorrect FORTRAN IO format: %s, type = '%c'",
+                 string,format->type);
         return 0;
       }
       ptr1++;
@@ -341,8 +342,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
       while(isdigit(*ptr1) && ptr1 != end) ++ptr1;
       if (ptr1 == ptr)
       {
-        fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
-                string,format->type);
+        LOGERROR("Incorrect FORTRAN IO format: %s, type = '%c'",
+                 string,format->type);
         return 0;
       }
       format->num2 = sp_extract_positional_int(ptr,ptr1-ptr);
@@ -350,8 +351,8 @@ int sp_parse_fortran_format(const char* string, fortran_io_format* format)
   }
   if ( ptr1 != end)
   {
-    fprintf(stderr, "Incorrect FORTRAN IO format: %s, type = '%c'\n",
-            string,format->type);
+    LOGERROR("Incorrect FORTRAN IO format: %s, type = '%c'",
+             string,format->type);
     return 0;
   }
   return 1;
@@ -371,8 +372,8 @@ static const char* sp_extract_fortran_numbers_I(const char* string,
   /* width */
   while (*ptr && *ptr != '\n')
     size++,ptr++;
-  if (size > format->repeat * format->width)
-    return string;
+  /* if (size < format->repeat * format->width) */
+  /*   return string; */
   ptr = string;
   *extracted = 0;
   for ( i = 0; i < format->repeat; ++ i)
@@ -390,7 +391,7 @@ static const char* sp_extract_fortran_numbers_I(const char* string,
       break;
     ptr += format->width;
   }
-  result = ptr;
+  result = string + size;
   return result;
 }
 
@@ -409,8 +410,8 @@ const char* sp_extract_fortran_numbers_F(const char* string,
   /* width */
   while (*ptr && *ptr != '\n')
     size++,ptr++;
-  if (size > format->repeat * format->width)
-    return string;
+  /* if (size < format->repeat * format->width) */
+  /*   return string; */
   ptr = string;
   *extracted = 0;
   for ( i = 0; i < format->repeat; ++ i)
@@ -428,7 +429,7 @@ const char* sp_extract_fortran_numbers_F(const char* string,
       break;
     ptr += format->width;
   }
-  result = ptr;
+  result = string + size;
   return result;
 }
 

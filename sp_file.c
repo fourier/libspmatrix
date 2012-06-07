@@ -25,6 +25,7 @@
 
 #include "sp_file.h"
 #include "sp_utils.h"
+#include "sp_log.h"
 
 /*
  * Enum - supported export formats
@@ -96,7 +97,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   {
     if ( *header_ptr != *ptr )
     {
-      fprintf(stderr, "Error reading MatrixMarket header!\n");
+      LOGERROR("Error reading MatrixMarket header!");
       return contents;
     }
     header_ptr++, ptr++;
@@ -114,7 +115,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
     header->storage = MM_ARRAY;
   else
   {
-    fprintf(stderr, "Unkown storage type: %s\n", word);
+    LOGERROR("Unkown storage type: %s", word);
     ptr = contents;
   }
   free((char*)word);
@@ -131,7 +132,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
     header->elements = MM_PATTERN;
   else
   {
-    fprintf(stderr, "Unkown elements type: %s\n", word);
+    LOGERROR("Unkown elements type: %s", word);
     ptr = contents;
   }
   free((char*)word);
@@ -148,7 +149,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
     header->portrait = MM_HERMITIAN;
   else
   {
-    fprintf(stderr, "Unkown portrait type: %s\n", word);
+    LOGERROR("Unkown portrait type: %s", word);
     ptr = contents;
   }
   free((char*)word);
@@ -161,22 +162,22 @@ static int mm_validate_header(mm_header* header)
 {
   if (header->object != MM_MATRIX)
   {
-    fprintf(stderr,"MM objects other than matrix are not supported\n");
+    LOGERROR("MM objects other than matrix are not supported");
     return 0;
   }
   if (header->storage != MM_COORDINATE)
   {
-    fprintf(stderr,"Currently only coordinate format of MM files supported\n");
+    LOGERROR("Currently only coordinate format of MM files supported");
     return 0;
   }
   if (header->elements == MM_COMPLEX)
   {
-    fprintf(stderr,"Complex matricies not supported\n");
+    LOGERROR("Complex matricies not supported");
     return 0;
   }
   if (header->portrait == MM_HERMITIAN)
   {
-    fprintf(stderr,"Hermitian matricies not supported\n");
+    LOGERROR("Hermitian matricies not supported");
     return 0;
   }
   return 1;
@@ -219,7 +220,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
         break;
       if (!mm_validate_header(&header))
       {
-        printf("Not supported matrix type\n");
+        LOGERROR("Not supported matrix type");
         break;
       }
       /* goto next step - parse sizes */
@@ -233,7 +234,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
         /* read sizes */
         if (sscanf(line, "%d %d %d", &rows, &cols, &nonzeros) != 3)
         {
-          fprintf(stderr, "Unable to parse sizes\n");
+          LOGERROR("Unable to parse sizes");
           break;
         }
         sp_matrix_init(&mtx,rows,cols,nonzeros/rows + 1,type);
@@ -250,7 +251,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
         {
           if (sscanf(line, "%d %d", &i, &j) != 2)
           {
-            fprintf(stderr, "Unable to parse line %s\n",line);
+            LOGERROR("Unable to parse line %s",line);
             break;
           }
           value = 1;
@@ -259,7 +260,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
         {
           if (sscanf(line, "%d %d %lg", &i, &j, &value) != 3)
           {
-            fprintf(stderr, "Unable to parse line %s\n",line);
+            LOGERROR("Unable to parse line %s",line);
             break;
           }
 
@@ -284,8 +285,8 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
   /* check for error */
   if ( element_number != nonzeros)
   {
-    fprintf(stderr,"Error loading matrix, expected %d nonzeros, parsed %d\n",
-            nonzeros, element_number);
+    LOGERROR("Error loading matrix, expected %d nonzeros, parsed %d",
+             nonzeros, element_number);
     sp_matrix_free(&mtx);
   }
   else
@@ -321,7 +322,9 @@ static int hb_extract_positional_format(const char* from, int size,
 static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
                                        const char* filename)
 {
-  int i,n;
+  int i,j,p,n;
+  sp_matrix mtx;
+  matrix_properties props = PROP_GENERAL;
   /* 1 for '\n' */
 
   /* HB format line limitation 80 chars */
@@ -365,7 +368,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   FILE* file = fopen(filename,"rt");
   if (!file)
   {
-    fprintf(stderr, "Unable to open file %s for reading\n",filename);
+    LOGERROR("Unable to open file %s for reading",filename);
     return 0;
   }
 
@@ -400,7 +403,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   ptr += 14;
   rhscrd = sp_extract_positional_int(ptr,14);
   if (rhscrd)
-    fprintf(stderr, "Right-part vector is not supported, ignoring\n");
+    LOGWARN("Right-part vector is not supported, ignoring");
   /*
    * Line 3.
    * MXTYPE, matrix type (see table), (3 characters)
@@ -416,21 +419,27 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   /* we support only real matrix */
   if (buf[0] != 'R')
   {
-    fprintf(stderr,"Complex or Pattern matrix not supported\n");
+    LOGERROR("Complex or Pattern matrix not supported");
     fclose(file);
     return 0;
   }
   if (buf[1] == 'H')
   {
-    fprintf(stderr,"Complex Hermitian matrix not supported\n");
+    LOGERROR("Complex Hermitian matrix not supported");
     fclose(file);
     return 0;
   }
   if (buf[2] == 'E')
   {
-    fprintf(stderr,"Elemental matrix not supported\n");
+    LOGERROR("Elemental matrix not supported");
     fclose(file);
     return 0;
+  }
+  switch(buf[1])
+  {
+  case 'S': props = PROP_SYMMETRIC; break;
+  case 'Z': props = PROP_SKEW_SYMMETRIC; break;
+  default:  props = PROP_GENERAL; break;
   }
   ptr = buf + 14;
   nrow = sp_extract_positional_int(ptr,14);
@@ -450,21 +459,21 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   ptr = buf;
   if (!hb_extract_positional_format(ptr,16,&ptrfmt))
   {
-    fprintf(stderr,"Unknown format: %s",ptr);
+    LOGERROR("Unknown format: %s",ptr);
     fclose(file);
     return 0;
   }
   ptr += 16;
   if (!hb_extract_positional_format(ptr,16,&indfmt))
   {
-    fprintf(stderr,"Unknown format: %s",ptr);
+    LOGERROR("Unknown format: %s",ptr);
     fclose(file);
     return 0;
   }
   ptr += 16;
   if (!hb_extract_positional_format(ptr,20,&valfmt))
   {
-    fprintf(stderr,"Unknown format: %s",ptr);
+    LOGERROR("Unknown format: %s",ptr);
     fclose(file);
     return 0;
   }
@@ -473,7 +482,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     ptr += 20;
     if (!hb_extract_positional_format(ptr,20,&rhsfmt))
     {
-      fprintf(stderr,"Unknown format: %s",ptr);
+      LOGERROR("Unknown format: %s",ptr);
       fclose(file);
       return 0;
     }
@@ -502,7 +511,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
                                             &extracted);
     if (ptr == &buf[0])
     {
-      fprintf(stderr,"Unable to parse pointers: %s\n", buf);
+      LOGERROR("Unable to parse pointers: %s", buf);
       fclose(file);
       free(fortran_numbers);
       free(colptr);
@@ -517,8 +526,18 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   free(fortran_numbers);
   if ( n != nrow + 1)
   {
-    fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
-            "%d nonzeros\n", n, nnzero);
+    LOGERROR("Unable to parse row indicies: parsed = %d != "
+             "%d nonzeros", n, nnzero);
+    fclose(file);
+    free(colptr);
+    free(rowind);
+    return 0;
+  }
+
+  if (colptr[nrow] != nnzero+1)
+  {
+    LOGERROR("Unable to parse row indicies: last index = %d != "
+             "%d nonzeros", colptr[nrow], nnzero);
     fclose(file);
     free(colptr);
     free(rowind);
@@ -538,7 +557,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
                                             &extracted);
     if (ptr == &buf[0])
     {
-      fprintf(stderr,"Unable to parse row indicies: %s\n", buf);
+      LOGERROR("Unable to parse row indicies: %s", buf);
       fclose(file);
       free(fortran_numbers);
       free(colptr);
@@ -555,8 +574,8 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   free(fortran_numbers);
   if ( n != nnzero)
   {
-    fprintf(stderr,"Unable to parse row indicies: parsed = %d != "
-            "%d nonzeros\n", n, nnzero);
+    LOGERROR("Unable to parse row indicies: parsed = %d != "
+             "%d nonzeros", n, nnzero);
     fclose(file);
     free(colptr);
     free(rowind);
@@ -575,7 +594,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
                                             &extracted);
     if (ptr == &buf[0])
     {
-      fprintf(stderr,"Unable to parse values: %s\n", buf);
+      LOGERROR("Unable to parse values: %s", buf);
       fclose(file);
       free(fortran_numbers);
       free(colptr);
@@ -594,28 +613,57 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   fclose(file);
   if ( n != nnzero)
   {
-    fprintf(stderr,"Unable to parse values: parsed = %d != "
-            "%d nonzeros\n", n, nnzero);
+    LOGERROR("Unable to parse values: parsed = %d != "
+            "%d nonzeros", n, nnzero);
     free(colptr);
     free(rowind);
     free(values);
     return 0;
   }
-  /* printf("So far HB file %s parsed successfully\n",filename); */
-  self->rows_count = nrow;
-  self->cols_count = ncol;
-  self->nonzeros   = nnzero;
-  self->storage_type = CCS;
-  self->offsets = colptr;
-  self->indicies = rowind;
-  self->values = values;
-
+  LOGINFO("So far HB file %s parsed successfully",filename);
   /* all indicies are 1 based in HB format */
-  for ( i = 0; i < ncol + 1; ++ i)
-    self->offsets[i]--;
+  for ( i = 0; i < ncol+1; ++ i)
+    colptr[i]--;
   for ( i = 0; i < nnzero; ++ i)
-    self->indicies[i]--;
-  
+  {
+    rowind[i]--;
+    assert(rowind[i] < nrow);
+  }
+
+  if (props == PROP_GENERAL)
+  {
+    self->rows_count = nrow;
+    self->cols_count = ncol;
+    self->nonzeros   = nnzero;
+    self->storage_type = CCS;
+    self->offsets = colptr;
+    self->indicies = rowind;
+    self->values = values;
+  }
+  else                          /* symmetric and skew-symmetic */
+  {
+    /* easiest way is to construct the new matrix, since for
+     * the symmetric and skew-symmetric matricies only one half of
+     * elements stored
+     */
+    /* bandwidth */
+    n = nnzero/ncol + 1;
+    sp_matrix_init(&mtx,nrow,ncol,n+1,CCS);
+    for (i = 0; i < ncol; ++ i)
+    {
+      for (p = colptr[i]; p < colptr[i+1]; ++ p)
+      {
+        j = rowind[p];
+        assert(j < nrow);
+        MTX(&mtx,j,i,values[p]);
+        if (i != j)
+          MTX(&mtx,i,j,(props == PROP_SYMMETRIC ? values[p] : -values[p]));
+      }
+    }
+    sp_matrix_yale_init(self,&mtx);
+    sp_matrix_free(&mtx);
+  }
+  /*  */
   return 1;
 }
 
@@ -627,7 +675,7 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
   const char* ext = sp_parse_file_extension(filename);
   if (!ext)
   {
-    fprintf(stderr,"File type is not supported: %s\n", filename);
+    LOGERROR("File type is not supported: %s", filename);
     return 0;
   }
   if ( !sp_istrcmp(ext,"mtx") )
@@ -639,7 +687,7 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
            !sp_istrcmp(ext,"rra"))
     return sp_matrix_yale_load_file_hb(self, filename);
   else
-    fprintf(stderr,"File type is not supported: .%s\n", ext);
+    LOGERROR("File type is not supported: *.%s", ext);
 
   return 0;
 }
@@ -723,7 +771,7 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
   char buf[1024+1];
   if (!file)
   {
-    fprintf(stderr,"Error opening file %s for writing",filename);
+    LOGERROR("Error opening file %s for writing",filename);
     return 0;
   }
   matrix_type = sp_matrix_type_mm(self);
@@ -765,7 +813,7 @@ static int sp_matrix_save_file_mm(sp_matrix_ptr self, const char* filename)
 
   if (!sp_matrix_save_file_triplet(self,file,matrix_type,1))
   {
-    fprintf(stderr, "Cannot save file!");
+    LOGERROR("Cannot save file!");
     result = 0;
   }
   
@@ -782,13 +830,13 @@ static int sp_matrix_save_file_txt(sp_matrix_ptr self, const char* filename)
   FILE* file = fopen(filename,"wt+");
   if (!file)
   {
-    fprintf(stderr,"Error opening file %s for writing",filename);
+    LOGERROR("Error opening file %s for writing",filename);
     return 0;
   }
   matrix_type = MM_GENERAL; /* sp_matrix_type_mm(self); */
   if (!sp_matrix_save_file_triplet(self,file,matrix_type,0))
   {
-    fprintf(stderr, "Cannot save file!");
+    LOGERROR("Cannot save file!");
     result = 0;
   }
   fflush(file);
@@ -803,7 +851,7 @@ static supported_format guess_export_format(const char* filename)
   const char* ext = sp_parse_file_extension(filename);
   if (!ext)
   {
-    fprintf(stderr,"File type is not supported: %s\n", filename);
+    LOGERROR("File type is not supported: %s", filename);
     return 0;
   }
   if ( !sp_istrcmp(ext,"mtx") )
@@ -957,7 +1005,7 @@ int sp_matrix_yale_save_file_mm(sp_matrix_yale_ptr self,const char* filename)
 
   if (!sp_matrix_yale_save_file_triplet(self,file,matrix_type,1))
   {
-    fprintf(stderr, "Cannot save file!");
+    LOGERROR("Cannot save file!");
     result = 0;
   }
   
@@ -974,13 +1022,13 @@ int sp_matrix_yale_save_file_txt(sp_matrix_yale_ptr self,const char* filename)
   FILE* file = fopen(filename,"wt+");
   if (!file)
   {
-    fprintf(stderr,"Error opening file %s for writing",filename);
+    LOGERROR("Error opening file %s for writing",filename);
     return 0;
   }
   matrix_type = MM_GENERAL; /* sp_matrix_type_mm(self); */
   if (!sp_matrix_yale_save_file_triplet(self,file,matrix_type,0))
   {
-    fprintf(stderr, "Cannot save file!");
+    LOGERROR("Cannot save file!");
     result = 0;
   }
   fflush(file);

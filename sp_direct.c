@@ -27,12 +27,7 @@
 #include "sp_direct.h"
 #include "sp_tree.h"
 #include "sp_utils.h"
-
-#ifdef USE_LOGGER
-#include <logger.h>
-#else
-#define LOGERROR(...) fprintf(stderr,__VA_ARGS__);
-#endif
+#include "sp_log.h"
 
 /* trivial comparison with zero */
 static int is_almost_zero(double x)
@@ -418,7 +413,7 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
   /* right-part vector */
   x = calloc(self->rows_count,sizeof(double));
 #define _SP_CHOL_STOP {sp_matrix_yale_free(L);free(offsets);free(x);\
-    LOGERROR("Cholesky decomposition: error in %d row\n",k);return 0;}
+    LOGERROR("Cholesky decomposition: error in %d row",k);return 0;}
   /* up-looking Cholesky */
   /* loop by rows, constructing one k-th row at a time */
   for (k = 0; k < self->rows_count; ++ k)

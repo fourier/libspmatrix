@@ -1148,7 +1148,48 @@ static void save_vector(int* v, int size, const char* fname)
   }
 }
 
-static void big_matrix_from_file()
+static void print_props(sp_matrix_yale_ptr yale)
+{
+  matrix_properties props = sp_matrix_yale_properites(yale);
+  printf("Properties: \n");
+  switch(props)
+  {
+  case PROP_SYMMETRIC: printf("symmetric\n");break;
+  case PROP_SKEW_SYMMETRIC: printf("skew-symmetric\n"); break;
+  case PROP_SYMMETRIC_PORTRAIT: printf("symmetric portrait\n"); break;
+  case PROP_GENERAL:
+  default:
+    printf("general\n");
+    break;
+  }
+}
+
+static void big_matrix_from_file1()
+{
+  int result;
+  matrix_comparison comp;
+  sp_matrix_yale yale1,yale2;
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale1,"bcsstk18.mtx",CCS)));
+  do
+  {
+    sp_matrix_yale_printf2(&yale1);
+    if (!result) break;
+    EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale2,"bcsstk18.rsa",CCS)));
+    if (!result) break;
+    sp_matrix_yale_printf2(&yale2);
+    print_props(&yale1);
+    print_props(&yale2);
+    comp = sp_matrix_yale_cmp(&yale1,&yale2);
+    ASSERT_TRUE(comp == MTX_SAME || comp == MTX_EQUAL);
+    sp_matrix_yale_free(&yale2);
+    result = 0;
+  } while(0);
+  if (result)
+    sp_matrix_yale_free(&yale1);    
+}
+
+
+static void big_matrix_from_file2()
 {
   int result;
   sp_matrix_yale yale,L;
@@ -1224,6 +1265,46 @@ static void big_matrix_from_file()
     result = sp_matrix_yale_chol_numeric(&yale,&symb,&L);
     LOGTOC("numeric analysis of big matrix");
     ASSERT_TRUE(result);
+    sp_matrix_yale_free(&L);
+    sp_matrix_yale_symbolic_free(&symb);
+    sp_matrix_yale_free(&yale);
+  }
+}
+
+
+static void big_matrix_from_file3()
+{
+  int result;
+  int* ereach;
+  int i;
+  sp_matrix_yale yale,L;
+  sp_chol_symbolic symb;
+  /* EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale,"s3dkt3m2.mtx",CCS))); */
+  EXPECT_TRUE((result = sp_matrix_yale_load_file(&yale,"bcsstk18.rsa",CCS)));
+  if (result)
+  {
+    printf("Loaded\n");
+    sp_matrix_yale_printf2(&yale);
+    print_props(&yale);
+    LOGTIC("symbolic analysis of big matrix 2");
+    result = sp_matrix_yale_chol_symbolic(&yale,&symb);
+    LOGTOC("symbolic analysis of big matrix 2");
+    ASSERT_TRUE(result);
+    printf("Symbolic analysis done\n");
+    /* test ereach */
+    ereach = (int*)malloc(yale.rows_count*sizeof(int));
+    for (i = 0; i < yale.rows_count; ++ i)
+      ASSERT_TRUE(sp_matrix_yale_ereach(&yale,symb.etree,i,ereach)
+                  == symb.rowcounts[i]);
+    free(ereach);
+    printf("Ereach test done\n");
+    LOGTIC("numeric analysis of big matrix 2");    
+    result = sp_matrix_yale_chol_numeric(&yale,&symb,&L);
+    LOGTOC("numeric analysis of big matrix 2");
+    ASSERT_TRUE(result);
+    printf("Numeric analysis done\n");
+    sp_matrix_yale_save_file(&L,"L.mtx");
+    sp_matrix_yale_save_file(&yale,"bcsstk18_2.mtx");
     sp_matrix_yale_free(&L);
     sp_matrix_yale_symbolic_free(&symb);
     sp_matrix_yale_free(&yale);
@@ -1396,8 +1477,6 @@ static void yale_properties()
   sp_matrix_yale_free(&ysymp);
 }
 
-
-
 #if 0
 static void lower_solve()
 {
@@ -1487,8 +1566,10 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_ereach);
   SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
   /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
-  SP_ADD_TEST(big_matrix_from_file);
   SP_ADD_TEST(cholesky);
+  SP_ADD_TEST(big_matrix_from_file1);
+  SP_ADD_TEST(big_matrix_from_file2);
+  SP_ADD_TEST(big_matrix_from_file3);
 
   sp_run_tests(argc,argv);
 #ifdef USE_LOGGER

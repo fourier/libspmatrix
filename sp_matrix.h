@@ -43,6 +43,14 @@ typedef enum
   PROP_SKEW_SYMMETRIC
 } matrix_properties;
 
+typedef enum
+{
+  MTX_SAME,
+  MTX_EQUAL,
+  MTX_SAME_PORTRAIT,
+  MTX_DIFFERENT
+} matrix_comparison;
+
 /*
  * Sparse matrix row/column storage array
  */
@@ -292,6 +300,10 @@ int sp_matrix_yale_permute(sp_matrix_yale_ptr self,
 
 /* determines the matrix properties */
 matrix_properties sp_matrix_yale_properites(sp_matrix_yale_ptr self);
+
+/* compare 2 matricies in the same format */
+matrix_comparison sp_matrix_yale_cmp(sp_matrix_yale_ptr mtx1,
+                                     sp_matrix_yale_ptr mtx2);
 
 /* Print contens of the matrix in index form to the stdout */
 void sp_matrix_printf(sp_matrix_ptr self);

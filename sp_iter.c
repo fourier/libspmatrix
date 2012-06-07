@@ -454,8 +454,8 @@ void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
     tol += r[i]*r[i];
   tol = sqrt(tol);
   /* TODO: move iter, tolerance1 and tolerance2 to the output parameters */
-  printf("iter = %d, tolerance1 = %e, tolerance2 = %e\n",
-         max_iter,tolerance,tol);
+  LOGINFO("iter = %d, tolerance1 = %e, tolerance2 = %e\n",
+          max_iter,tolerance,tol);
   free(r);
 }
 #endif

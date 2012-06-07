@@ -18,7 +18,7 @@
 # along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 
 # Set this variable if you want to use liblogger
-LOGGER := 1
+LOGGER := 
 
 # Set this variable if you want to use coverage
 COVERAGE := 

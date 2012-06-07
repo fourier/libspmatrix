@@ -28,14 +28,7 @@
 #include "sp_matrix.h"
 #include "sp_utils.h"
 #include "sp_tree.h"
-#ifdef USE_LOGGER
-#include "logger.h"
-#else
-#define LOGINFO(...) 
-#define LOG(...) printf(__VA_ARGS__);
-#define LOGWARN(...) printf(__VA_ARGS__);
-#define LOGERROR(...) fprintf(stderr,__VA_ARGS__);
-#endif
+#include "sp_log.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -403,9 +396,9 @@ double sp_matrix_element_add(sp_matrix_ptr self,int i, int j, double value)
   int* indexes = (int*)0;
   double* values = (double*)0;
   /* check for matrix and if i,j are proper indicies */
-  assert (self && 
-          (i >= 0 && i < self->rows_count ) &&
-          (j >= 0 && j < self->cols_count ));
+  assert (self);
+  assert(i >= 0 && i < self->rows_count);
+  assert(j >= 0 && j < self->cols_count);
   /* set I and J to be i and j in case of CRS or j and i otherwise */
   I = self->storage_type == CRS ? i : j;
   J = self->storage_type == CRS ? j : i;
@@ -528,7 +521,7 @@ void sp_matrix_reorder(sp_matrix_ptr self)
       /* assert(self->storage[i].indexes[j] < self->storage[i].indexes[j+1]); */
       if (self->storage[i].indexes[j] >= self->storage[i].indexes[j+1])
       {
-        printf("row %d\n",i);
+        LOGERROR("sp_matrix_reorder: error in row %d",i);
         indexed_array_printf(&self->storage[i]);
         assert(0);
       }
@@ -538,18 +531,11 @@ void sp_matrix_reorder(sp_matrix_ptr self)
   size = self->rows_count*self->cols_count;
   for ( i = 0; i < n; ++ i)
     stored += self->storage[i].last_index + 1;
-  /* printf("Sparse matrix compressed:\n"); */
-  /* printf("- size: %dx%d\n",self->rows_count,self->cols_count); */
-  /* printf("- nonzeros: %d\n",stored); */
-  /* printf("- fill factor: %.2f %%\n",stored/(size/100.0)); */
-  /* printf("- avergare nonzeros per row: %d\n", */
-  /*        /\* (int)rint(stored/(double)self->rows_count)); *\/ */
-  /*        (int)(stored/(double)self->rows_count)); */
-  LOGINFO("Sparse matrix compressed:\n");
-  LOGINFO("- size: %dx%d\n",self->rows_count,self->cols_count);
-  LOGINFO("- nonzeros: %d\n",stored);
-  LOGINFO("- fill factor: %.2f %%\n",stored/(size/100.0));
-  LOGINFO("- avergare nonzeros per row: %d\n",
+  LOGINFO("Sparse matrix compressed:");
+  LOGINFO("- size: %dx%d",self->rows_count,self->cols_count);
+  LOGINFO("- nonzeros: %d",stored);
+  LOGINFO("- fill factor: %.2f %%",stored/(size/100.0));
+  LOGINFO("- avergare nonzeros per row: %d",
           /* (int)rint(stored/(double)self->rows_count)); */
           (int)(stored/(double)self->rows_count));
 
@@ -836,6 +822,43 @@ matrix_properties sp_matrix_yale_properites(sp_matrix_yale_ptr self)
   return props;
 }
 
+
+matrix_comparison sp_matrix_yale_cmp(sp_matrix_yale_ptr mtx1,
+                                     sp_matrix_yale_ptr mtx2)
+{
+  matrix_comparison result = MTX_SAME;
+  int i,n;
+  if (mtx1 == mtx2)
+    return MTX_SAME;
+  if (mtx1->storage_type != mtx2->storage_type ||
+      mtx1->rows_count != mtx2->rows_count ||
+      mtx1->cols_count != mtx2->cols_count ||
+      mtx1->nonzeros != mtx2->nonzeros)
+    return MTX_DIFFERENT;
+  n = mtx1->storage_type == CRS ? mtx1->rows_count : mtx1->cols_count;
+  if (memcmp(mtx1->indicies,mtx2->indicies,mtx1->nonzeros*sizeof(int)) ||
+      memcmp(mtx1->offsets,mtx2->offsets, (n+1)*sizeof(int)))
+    return MTX_DIFFERENT;
+  result = MTX_SAME_PORTRAIT;
+  for (i = 0; i < mtx1->nonzeros; ++ i)
+  {
+    if (mtx1->values[i] == mtx2->values[i])
+    {
+      if (result == MTX_SAME_PORTRAIT)
+        result = MTX_SAME;
+    }
+    else if (EQL(mtx1->values[i],mtx2->values[i]))
+    {
+      if (result == MTX_SAME_PORTRAIT || result == MTX_SAME)
+        result = MTX_EQUAL;
+    }
+    else
+    {
+      return MTX_SAME_PORTRAIT;
+    }
+  }
+  return result;
+}
 
 
 
