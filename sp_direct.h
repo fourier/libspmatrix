@@ -79,24 +79,20 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
 /*
  * Solves SLAE L*x = b
  * by given L sparse matrix with nonzero diagonal
- * n - is the size of the x vector, and therefore
- * the matrix L will be used up to nth row & column.
+ * Returns nonzero if successfull
  */
-void sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
-                                int n,
-                                double* b,
-                                double* x);
+int sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
+                               double* b,
+                               double* x);
 
 /*
  * Solves SLAE L^T*x = b
  * by given L sparse matrix with nonzero diagonal
- * n - is the size of the x vector, and therefore
- * the matrix L will be used up to nth row & column.
+ * Returns nonzero if successfull
  */
-void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
-                                      int n,
-                                      double* b,
-                                      double* x);
+int sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
+                                     double* b,
+                                     double* x);
 
 
 /*
@@ -121,6 +117,39 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb);
 int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
                                 sp_chol_symbolic_ptr symb,
                                 sp_matrix_yale_ptr L);
+/*
+ * Solves the SLAE self*x=b using the Cholesky decomposition.
+ * self shall be symmetric positive-definite
+ * b and x sizes are the same as number of rows in self
+ * Returns nonzero if successfull
+ */
+int sp_matrix_yale_chol_solve(sp_matrix_yale_ptr self,
+                              double* b,
+                              double* x);
+/*
+ * Solves the SLAE self*x=b by the Cholesky decomposition
+ * using the preliminary calculated Cholesky symbolic decomposition
+ * data.
+ * self shall be symmetric positive-definite
+ * b and x sizes are the same as number of rows in self
+ * Returns nonzero if successfull
+ */
+int sp_matrix_yale_chol_symbolic_solve(sp_matrix_yale_ptr self,
+                                       sp_chol_symbolic_ptr symb,
+                                       double* b,
+                                       double* x);
+
+
+/*
+ * Solves the SLAE LL'*x=b with given matrix L from the 
+ * preliminary calculated Cholesky numeric decomposition
+ * b and x sizes are the same as number of rows in self
+ * Returns nonzero if successfull
+ */
+int sp_matrix_yale_chol_numeric_solve(sp_matrix_yale_ptr L,
+                                      double* b,
+                                      double* x);
+
 
 
 #endif /* _SP_DIRECT_H_ */

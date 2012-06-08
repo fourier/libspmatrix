@@ -175,23 +175,29 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
 }
 
 
-void sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
-                                int n,
-                                double* b,
-                                double* x)
+int sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
+                               double* b,
+                               double* x)
 {
   int i,j,p;
+  double value;
+  int n = self->rows_count;
   assert(self);
   assert(b);
   assert(x);
-  assert(n >= 0 && n <= self->rows_count);
 
   if (self->storage_type == CCS)
   {
     memcpy(x,b,n*sizeof(double));
     for ( j = 0; j < n; ++ j)
     {
-      x[j] /= self->values[self->offsets[j]];
+      value = self->values[self->offsets[j]];
+      if (is_almost_zero(value))
+      {
+        LOGERROR("Lower solver: diagonal element: %e",value);
+        return 0;
+      }
+      x[j] /= value;
       for (p = self->offsets[j]+1; p < self->offsets[j+1]; ++ p)
       {
         i = self->indicies[p];
@@ -209,21 +215,28 @@ void sp_matrix_yale_lower_solve(sp_matrix_yale_ptr self,
       for (p = self->offsets[i];
            p < self->offsets[i+1] && (j = self->indicies[p]) < i; ++ p)
         x[i] -= self->values[p] * x[j];
-      x[i] /= self->values[self->offsets[i+1]-1];
+      value = self->values[self->offsets[i+1]-1];
+      if (is_almost_zero(value))
+      {
+        LOGERROR("Lower solver: diagonal element: %e",value);
+        return 0;
+      }
+      x[i] /= value;
     }
   }
+  return 1;
 }
 
-void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
-                                      int n,
-                                      double* b,
-                                      double* x)
+int sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
+                                     double* b,
+                                     double* x)
 {
   int i,j,p;
+  double value;
+  int n = self->rows_count;  
   assert(self);
   assert(b);
   assert(x);
-  assert(n >= 0 && n <= self->rows_count);
 
   if (self->storage_type == CCS)
   {
@@ -237,7 +250,13 @@ void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
         j = self->indicies[p];
         x[i] -= self->values[p] * x[j];
       }
-      x[i] /= self->values[self->offsets[i]];
+      value = self->values[self->offsets[i]];
+      if (is_almost_zero(value))
+      {
+        LOGERROR("Lower solver: diagonal element: %e",value);
+        return 0;
+      }
+      x[i] /= value;
     }
   }
   else                          /* CRS */
@@ -245,7 +264,13 @@ void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
     memcpy(x,b,n*sizeof(double));
     for ( j = n-1; j >= 0; -- j)
     {
-      x[j] /= self->values[self->offsets[j+1]-1];
+      value = self->values[self->offsets[j+1]-1];
+      if (is_almost_zero(value))
+      {
+        LOGERROR("Lower solver: diagonal element: %e",value);
+        return 0;
+      }
+      x[j] /= value;
       for (p = self->offsets[j]; p < self->offsets[j+1]-1; ++ p)
       {
         i = self->indicies[p];
@@ -253,6 +278,7 @@ void sp_matrix_yale_lower_trans_solve(sp_matrix_yale_ptr self,
       }
     }
   }
+  return 1;
 }
 
 
@@ -405,7 +431,10 @@ static int sp_matrix_yale_sparse_lower_solve(sp_matrix_yale_ptr self,
     /* diagonal j-th element - is the first column element in L */
     value = self->values[self->offsets[j]];
     if (is_almost_zero(value))
+    {
+      LOGERROR("Sparse lower solver: %d diagonal element: %e",j,value);
       return 0;
+    }
     x[j] = x[j]/value;
     /* for i>j  where lij != 0 do */
     for (q = self->offsets[j]+1; /* under diagonal */
@@ -500,3 +529,59 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
 }
 
 
+int sp_matrix_yale_chol_solve(sp_matrix_yale_ptr self,
+                              double* b,
+                              double* x)
+{
+  int result = 0;
+  sp_chol_symbolic symb;
+  result = sp_matrix_yale_chol_symbolic(self,&symb);
+  if (result)
+  {
+    result = sp_matrix_yale_chol_symbolic_solve(self,&symb,b,x);
+    sp_matrix_yale_symbolic_free(&symb);
+  }
+  return result;
+}
+
+
+int sp_matrix_yale_chol_symbolic_solve(sp_matrix_yale_ptr self,
+                                       sp_chol_symbolic_ptr symb,
+                                       double* b,
+                                       double* x)
+{
+  int result = 0;
+  sp_matrix_yale L;
+  result = sp_matrix_yale_chol_numeric(self,symb,&L);
+  if (result)
+  {
+    result = sp_matrix_yale_chol_numeric_solve(&L,b,x);
+    sp_matrix_yale_free(&L);
+  }
+  return result;
+}
+
+
+int sp_matrix_yale_chol_numeric_solve(sp_matrix_yale_ptr L,
+                                      double* b,
+                                      double* x)
+{
+  int result = 0;
+  double *y = calloc(L->rows_count,sizeof(double));
+  memset(x,0,L->rows_count*sizeof(double));
+  /* SLAE: Ax=b
+   * A=LL'
+   * LL'x=b
+   * L'x=y
+   * Ly=b
+   */
+  /* Ly=b */
+  result = sp_matrix_yale_lower_solve(L,b,y);
+  if (result)
+  {
+    /* L'x = y  */
+    result = sp_matrix_yale_lower_trans_solve(L,y,x);
+  }
+  free(y);
+  return result;
+}

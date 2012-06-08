@@ -300,24 +300,24 @@ static void lower_triangular_solver()
   sp_matrix_yale_init(&yale,&mtx);
   sp_matrix_free(&mtx);
   /* CRS */
-  sp_matrix_yale_lower_solve(&yale,5,b,x);
+  ASSERT_TRUE(sp_matrix_yale_lower_solve(&yale,b,x));
   for (i = 0; i < 5; ++ i)
     ASSERT_TRUE(EQL(x_expected[i],x[i]));
 
   memset(x,0,sizeof(double)*5);
-  sp_matrix_yale_lower_trans_solve(&yale,5,bt,x);
+  ASSERT_TRUE(sp_matrix_yale_lower_trans_solve(&yale,bt,x));
   for (i = 0; i < 5; ++ i)
     ASSERT_TRUE(EQL(x_expected[i],x[i]));
   
   /* CCS */
   sp_matrix_yale_convert_inplace(&yale,CCS);
   memset(x,0,sizeof(double)*5);
-  sp_matrix_yale_lower_solve(&yale,5,b,x);
+  ASSERT_TRUE(sp_matrix_yale_lower_solve(&yale,b,x));
   for (i = 0; i < 5; ++ i)
     ASSERT_TRUE(EQL(x_expected[i],x[i]));
 
   memset(x,0,sizeof(double)*5);
-  sp_matrix_yale_lower_trans_solve(&yale,5,bt,x);
+  ASSERT_TRUE(sp_matrix_yale_lower_trans_solve(&yale,bt,x));
   for (i = 0; i < 5; ++ i)
     ASSERT_TRUE(EQL(x_expected[i],x[i]));
 
@@ -535,6 +535,11 @@ static void cholesky()
   sp_chol_symbolic symb;
   int i,j,count;
   int* ereach;
+  /* m*x=b */
+  double b[7] = {-276,-500,72,-304,-334,384,-552};
+  double x_expected[7] = {1,-2,3,-4,0,6,-7};
+  double x[7] = {0};
+
   /* expected decomposition */
   /* double cholesky_expected[7][7] =  */
   /* { */
@@ -654,6 +659,14 @@ static void cholesky()
       ASSERT_TRUE(fabs(yale_expected.values[j]-L.values[j]) < 1e5);
     }
   }
+
+  /* verify SLAE solver: m*x = b */
+  ASSERT_TRUE(sp_matrix_yale_chol_numeric_solve(&yale_expected,b,x));
+  for (i = 0; i < 7; ++ i)
+    ASSERT_TRUE(fabs(x[i]-x_expected[i])< 1e5);
+  ASSERT_TRUE(sp_matrix_yale_chol_solve(&yale,b,x));
+  for (i = 0; i < 7; ++ i)
+    ASSERT_TRUE(fabs(x[i]-x_expected[i])< 1e5);
 
   /* clear symbolic decomposition */
   sp_matrix_yale_symbolic_free(&symb);
@@ -1301,6 +1314,7 @@ static void big_matrix_from_file3()
 {
   int result;
   int* ereach;
+  double* x, *x_expected, *b;
   int i;
   sp_matrix_yale yale,L;
   sp_chol_symbolic symb;
@@ -1328,6 +1342,28 @@ static void big_matrix_from_file3()
     LOGTOC("numeric analysis of big matrix 2");
     ASSERT_TRUE(result);
     printf("Numeric analysis done\n");
+    
+    /* test the SLAE solver */
+    /* form the solution */
+    x = calloc(yale.rows_count,sizeof(double));
+    b = calloc(yale.rows_count,sizeof(double));
+    x_expected = calloc(yale.rows_count,sizeof(double));
+    for (i = 0; i < yale.rows_count; ++ i)
+      x_expected[i] = pow(-1,i%3) * (i % 10);
+    /* form the right-part */
+    sp_matrix_yale_mv(&yale,x_expected,b);
+    LOGTIC("big matrix numeric solve SLAE");
+    sp_matrix_yale_chol_numeric_solve(&L,b,x);
+    LOGTOC("big matrix numeric solve SLAE");
+    for (i = 0; i < yale.rows_count; ++ i)
+    {
+      if (fabs(x_expected[i]-x[i]) > 1e5)
+        printf("%d: %e == %e\n",i,x_expected[i],x[i]);
+      ASSERT_TRUE(fabs(x_expected[i]-x[i]) < 1e5);
+    }
+    free(x);
+    free(x_expected);
+    free(b);
     sp_matrix_yale_save_file(&L,"L.mtx");
     sp_matrix_yale_save_file(&yale,"bcsstk18_2.mtx");
     sp_matrix_yale_free(&L);
