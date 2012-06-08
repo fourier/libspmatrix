@@ -34,46 +34,75 @@ ifdef COVERAGE
 	COVERAGELINK = -lgcov
 endif
 
-
+PLATFORM = $(shell uname)
 CC = gcc
+
+OBJ_DIR = obj
+SRC_DIR = src
+TEST_SRC_DIR = test_src
+DEMO_SRC_DIR = demo_src
+BIN_DIR = bin
+LIB_DIR = lib
 
 CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
 # this option not works for gcc 3.4.4
 #-Wmissing-include-dirs
 
-
 INCLUDES = -I . $(LOGGERINC)
 LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
 
-OUTPUT_SRC = main.c
-FEM2D_SRC = main_fem2d.c
-SOURCES := $(wildcard *.c)
-HEADERS := $(wildcard *.h)
-OBJECTS := $(patsubst %.c,%.o,$(SOURCES))
-OBJECTS_LIB := $(filter-out $(patsubst %.c,%.o,$(OUTPUT_SRC)),$(OBJECTS))
-OUTPUT_TEST = spmatrixtest
-OUTPUT_LIB = libspmatrix.a
-FEM2D_DEMO = demo_fem2d
+LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
+TEST_SOURCES = $(wildcard $(TEST_SRC_DIR)/*.c)	
+DEMO_SOURCES = $(wildcard $(DEMO_SRC_DIR)/*.c)
+LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(LIB_SOURCES))
+TEST_OBJECTS = $(patsubst $(TEST_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(TEST_SOURCES))
+DEMO_OBJECTS = $(patsubst $(DEMO_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(DEMO_SOURCES))
+
+OUTPUT_TEST = $(BIN_DIR)/spmatrixtest
+OUTPUT_LIB = $(LIB_DIR)/libspmatrix.a
+FEM2D_DEMO = $(BIN_DIR)/demo_fem2d
 OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO)
 
 all: $(OUTPUT)
-	@echo "Done"
+	@echo "Build for $(PLATFORM) Done"
 
-%.o : %.c %.h
-	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) $< -o $@
+# Rule for creation of the objects directory
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
 
+$(BIN_DIR):
+	@mkdir -p $(BIN_DIR)
 
-$(OUTPUT_TEST): $(OUTPUT_LIB) 
-	$(CC) $(patsubst %.c,%.o,$(OUTPUT_SRC)) -o $(OUTPUT_TEST) $(LINKFLAGS)
+$(LIB_DIR):
+	@mkdir -p $(LIB_DIR)
 
+# before starting the compilation be sure to create the objects directory
+# compile library sources
+$(LIB_SOURCES): $(OBJ_DIR)
+$(LIB_OBJECTS): $(LIB_SOURCES) 
+	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -c $(patsubst %.o,%.c,$(SRC_DIR)/$(@F)) -o $@
 
-$(FEM2D_DEMO): $(OUTPUT_LIB) 
-	$(CC) $(patsubst %.c,%.o,$(FEM2D_SRC)) -o $(FEM2D_DEMO) $(LINKFLAGS)
+# compile test sources
+$(TEST_SOURCES): $(OBJ_DIR)
+$(TEST_OBJECTS): $(TEST_SOURCES)
+	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $(patsubst %.o,%.c,$(TEST_SRC_DIR)/$(@F)) -o $@
 
+# compile demo sources
+$(DEMO_SOURCES): $(OBJ_DIR)
+$(DEMO_OBJECTS): $(DEMO_SOURCES)
+	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $(patsubst %.o,%.c,$(DEMO_SRC_DIR)/$(@F)) -o $@
 
-$(OUTPUT_LIB): $(OBJECTS)
+# link binaries
+$(OUTPUT_TEST): $(OUTPUT_LIB) $(BIN_DIR) $(TEST_OBJECTS)
+	$(CC) $(TEST_OBJECTS) -o $(OUTPUT_TEST) $(LINKFLAGS) -L $(LIB_DIR)
+
+$(FEM2D_DEMO): $(OUTPUT_LIB) $(BIN_DIR) $(DEMO_OBJECTS)
+	$(CC) $(DEMO_OBJECTS) -o $(FEM2D_DEMO) $(LINKFLAGS) -L $(LIB_DIR)
+
+# link the library
+$(OUTPUT_LIB): $(LIB_OBJECTS) $(LIB_DIR)
 	$(RM) -f $(OUTPUT_LIB)
-	$(AR) cr $(OUTPUT_LIB) $(OBJECTS_LIB)
+	$(AR) cr $(OUTPUT_LIB) $(LIB_OBJECTS)
 	ranlib $(OUTPUT_LIB)
 
 lint:
@@ -84,7 +113,8 @@ test: $(OUTPUT_TEST)
 
 .PHONY : clean
 clean :
-	rm $(OBJECTS) $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB)
+	rm -f $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS) $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB)
+	rmdir $(BIN_DIR) $(LIB_DIR) $(OBJ_DIR)
 
 check-syntax: 
 	gcc -o nul -S ${CHK_SOURCES} 
