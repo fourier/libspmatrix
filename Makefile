@@ -37,12 +37,14 @@ endif
 PLATFORM = $(shell uname)
 CC = gcc
 
+
 OBJ_DIR = obj
 SRC_DIR = src
 TEST_SRC_DIR = test_src
 DEMO_SRC_DIR = demo_src
 BIN_DIR = bin
 LIB_DIR = lib
+DEPS_DIR = .deps
 
 CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
 # this option not works for gcc 3.4.4
@@ -63,8 +65,10 @@ OUTPUT_LIB = $(LIB_DIR)/libspmatrix.a
 FEM2D_DEMO = $(BIN_DIR)/demo_fem2d
 OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO)
 
-all: $(OUTPUT)
-	@echo "Build for $(PLATFORM) Done"
+
+# before starting the compilation be sure to create the objects directory
+all: $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR) $(DEPS_DIR) $(OUTPUT)
+	@echo "Build for $(PLATFORM) Done. See results in $(BIN_DIR) and $(LIB_DIR) directories"
 
 # Rule for creation of the objects directory
 $(OBJ_DIR):
@@ -76,21 +80,21 @@ $(BIN_DIR):
 $(LIB_DIR):
 	@mkdir -p $(LIB_DIR)
 
-# before starting the compilation be sure to create the objects directory
+$(DEPS_DIR):
+	@mkdir -p $(DEPS_DIR)
+
 # compile library sources
-$(LIB_SOURCES): $(OBJ_DIR)
-$(LIB_OBJECTS): $(LIB_SOURCES) 
-	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -c $(patsubst %.o,%.c,$(SRC_DIR)/$(@F)) -o $@
+$(LIB_OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+
+	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 # compile test sources
-$(TEST_SOURCES): $(OBJ_DIR)
-$(TEST_OBJECTS): $(TEST_SOURCES)
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $(patsubst %.o,%.c,$(TEST_SRC_DIR)/$(@F)) -o $@
+$(TEST_OBJECTS): $(OBJ_DIR)/%.o:$(TEST_SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # compile demo sources
-$(DEMO_SOURCES): $(OBJ_DIR)
-$(DEMO_OBJECTS): $(DEMO_SOURCES)
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $(patsubst %.o,%.c,$(DEMO_SRC_DIR)/$(@F)) -o $@
+$(DEMO_OBJECTS): $(OBJ_DIR)/%.o:$(DEMO_SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # link binaries
 $(OUTPUT_TEST): $(OUTPUT_LIB) $(BIN_DIR) $(TEST_OBJECTS)
