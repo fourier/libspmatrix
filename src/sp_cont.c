@@ -22,14 +22,13 @@
 #include <limits.h>
 #include <string.h>
 
-
 #include "sp_cont.h"
 
 void int_array_init(int_array_ptr self, int initial_size, int step_size)
 {
   self->allocated = initial_size;
   self->step_size = step_size;
-  self->items = malloc(sizeof(int)*self->allocated);
+  self->items = calloc(self->allocated,sizeof(int));
 }
 
 void int_array_extend(int_array_ptr self)

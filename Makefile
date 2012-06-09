@@ -70,7 +70,7 @@ OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO)
 
 # dependencies, based on article http://make.paulandlesley.org/autodep.html
 # idea: generate dependencies, then replace "something.o : " with "something.o .deps/something.P : "
-MAKEDEPEND = @gcc -MM $(CFLAGS) $(INCLUDES) -I src -o $*.d $<; sed 's/\($*\)\.o[ :]*/\1.o $(DEPS_DIR)\/$*.P : /g' < $*.d > $*.P; rm $*.d
+MAKEDEPEND = @gcc -MM $(CFLAGS) $(INCLUDES) -I src -o $*.d $<; sed 's/\($*\)\.o[ :]*/$(OBJ_DIR)\/\1.o $(DEPS_DIR)\/$*.P : /g' < $*.d > $*.P; rm $*.d; mv $*.P $(DEPS_DIR)
 
 -include $(DEPENDS:%.o=%.P)
 
@@ -94,21 +94,19 @@ $(LIB_DIR):
 $(DEPS_DIR):
 	@mkdir -p $(DEPS_DIR)
 
-
-
 # compile library sources
 $(LIB_OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	$(MAKEDEPEND) && echo -n $(OBJ_DIR)/ > $(df).P && cat $*.P >> $(df).P && rm $*.P
+	$(MAKEDEPEND)
 	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 # compile test sources
 $(TEST_OBJECTS): $(OBJ_DIR)/%.o:$(TEST_SRC_DIR)/%.c
-	$(MAKEDEPEND); echo -n $(OBJ_DIR)/ > $(df).P && cat $*.P >> $(df).P && rm $*.P
+	$(MAKEDEPEND)
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # compile demo sources
 $(DEMO_OBJECTS): $(OBJ_DIR)/%.o:$(DEMO_SRC_DIR)/%.c
-	$(MAKEDEPEND) && echo -n $(OBJ_DIR)/ > $(df).P && cat $*.P >> $(df).P && rm $*.P
+	$(MAKEDEPEND)
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # link binaries
@@ -125,7 +123,7 @@ $(OUTPUT_LIB): $(LIB_OBJECTS) $(LIB_DIR)
 	ranlib $(OUTPUT_LIB)
 
 lint:
-	splint *.c
+	splint $(LIB_SOURCES)
 
 test: $(OUTPUT_TEST)
 	./$(OUTPUT_TEST)
