@@ -37,7 +37,6 @@ endif
 PLATFORM = $(shell uname)
 CC = gcc
 
-
 OBJ_DIR = obj
 SRC_DIR = src
 TEST_SRC_DIR = test_src
@@ -45,10 +44,11 @@ DEMO_SRC_DIR = demo_src
 BIN_DIR = bin
 LIB_DIR = lib
 DEPS_DIR = .deps
+df = $(DEPS_DIR)/$(*F)
 
-CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
+CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations -Wmissing-include-dirs $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
 # this option not works for gcc 3.4.4
-#-Wmissing-include-dirs
+# -Wmissing-include-dirs
 
 INCLUDES = -I . $(LOGGERINC)
 LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
@@ -60,13 +60,24 @@ LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(LIB_SOURCES))
 TEST_OBJECTS = $(patsubst $(TEST_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(TEST_SOURCES))
 DEMO_OBJECTS = $(patsubst $(DEMO_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(DEMO_SOURCES))
 
+OBJECTS = $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS)
+DEPENDS = $(subst $(OBJ_DIR),$(DEPS_DIR),$(OBJECTS))
+
 OUTPUT_TEST = $(BIN_DIR)/spmatrixtest
 OUTPUT_LIB = $(LIB_DIR)/libspmatrix.a
 FEM2D_DEMO = $(BIN_DIR)/demo_fem2d
 OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO)
 
+# dependencies, based on article http://make.paulandlesley.org/autodep.html
+# idea: generate dependencies, then replace "something.o : " with "something.o .deps/something.P : "
+MAKEDEPEND = @gcc -MM $(CFLAGS) $(INCLUDES) -I src -o $*.d $<; sed 's/\($*\)\.o[ :]*/\1.o $(DEPS_DIR)\/$*.P : /g' < $*.d > $*.P; rm $*.d
+
+-include $(DEPENDS:%.o=%.P)
+
+.DEFAULT_GOAL := all
 
 # before starting the compilation be sure to create the objects directory
+.PHONY:
 all: $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR) $(DEPS_DIR) $(OUTPUT)
 	@echo "Build for $(PLATFORM) Done. See results in $(BIN_DIR) and $(LIB_DIR) directories"
 
@@ -83,17 +94,21 @@ $(LIB_DIR):
 $(DEPS_DIR):
 	@mkdir -p $(DEPS_DIR)
 
+
+
 # compile library sources
 $(LIB_OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-
+	$(MAKEDEPEND) && echo -n $(OBJ_DIR)/ > $(df).P && cat $*.P >> $(df).P && rm $*.P
 	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 # compile test sources
 $(TEST_OBJECTS): $(OBJ_DIR)/%.o:$(TEST_SRC_DIR)/%.c
+	$(MAKEDEPEND); echo -n $(OBJ_DIR)/ > $(df).P && cat $*.P >> $(df).P && rm $*.P
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # compile demo sources
 $(DEMO_OBJECTS): $(OBJ_DIR)/%.o:$(DEMO_SRC_DIR)/%.c
+	$(MAKEDEPEND) && echo -n $(OBJ_DIR)/ > $(df).P && cat $*.P >> $(df).P && rm $*.P
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # link binaries
@@ -117,8 +132,9 @@ test: $(OUTPUT_TEST)
 
 .PHONY : clean
 clean :
-	rm -f $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS) $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB)
-	rmdir $(BIN_DIR) $(LIB_DIR) $(OBJ_DIR)
+	@rm -f $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS) $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB)
+	@rmdir $(BIN_DIR) $(LIB_DIR) $(OBJ_DIR)
+	@rm -fr $(DEPS_DIR)
 
 check-syntax: 
 	gcc -o nul -S ${CHK_SOURCES} 
