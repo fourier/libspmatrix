@@ -438,76 +438,6 @@ double sp_matrix_element_add(sp_matrix_ptr self,int i, int j, double value)
   return value;
 }
 
-/* Swap 2 elements of the indexed array */
-void indexed_array_swap(indexed_array_ptr self,int i, int j)
-{
-  int tmp_idx;
-  double tmp_val;
-  tmp_idx = self->indexes[i];
-  self->indexes[i] = self->indexes[j];
-  self->indexes[j] = tmp_idx;
-  tmp_val = self->values[i];
-  self->values[i] = self->values[j];
-  self->values[j] = tmp_val;
-}
-
-void indexed_array_sort(indexed_array_ptr self, int l, int r)
-{
-  /*
-   * Quick sort procedure for indexed(compressed) arrays
-   * for example rows for CRS sparse matrix or columns for CSC
-   * sparse matrix
-   */
-  int pivot,i;
-  int tmp_idx;
-
-  /* boundary checks */
-  if (l < r)
-  {
-    if ( r - l == 1)
-    {
-      if (self->indexes[l] > self->indexes[r])
-        indexed_array_swap(self,r,l);
-      return;
-    }
-    /* choose the pivoting element */
-    pivot = (int)((r+l)/2.);
-    /* in-place partition procedure - move all elements
-     * lower than pivoting to the left, greater to the right */
-    tmp_idx  = self->indexes[pivot];
-    indexed_array_swap(self,pivot,r);
-    pivot = l;
-    for ( i = l; i < r; ++ i)
-    {
-      if (self->indexes[i] <= tmp_idx )
-      {
-        indexed_array_swap(self,i,pivot);
-        pivot++;
-      }
-    }
-    indexed_array_swap(self,r,pivot);
-    /* repeat procedure for the left and right parts of an array */
-    indexed_array_sort(self,l,pivot-1);
-    indexed_array_sort(self,pivot+1,r);
-  }
-}
-
-void indexed_array_printf(indexed_array_ptr self)
-{
-  int i;
-  if (self)
-  {
-    printf("indexes = [");
-    for (i = 0; i <= self->last_index; ++ i)
-      printf("%d,\t",self->indexes[i]);
-    printf("%d]\n",self->indexes[i]);
-    printf("values  = [");
-    for (i = 0; i <= self->last_index; ++ i)
-      printf("%f,\t",self->values[i]);
-    printf("%f]\n",self->values[i]);
-  }
-}
-
 
 void sp_matrix_reorder(sp_matrix_ptr self)
 {
@@ -611,29 +541,6 @@ int sp_matrix_nonzeros(sp_matrix_ptr self)
   return stored;
 }
 
-
-
-void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y)
-{
-  int i,j;
-  memset(y,0,sizeof(double)*self->rows_count);
-  if (self->storage_type == CRS)
-  {
-    for ( i = 0; i < self->rows_count; ++ i)
-    {
-      for ( j = 0; j <= self->storage[i].last_index; ++ j)
-        y[i] += self->storage[i].values[j]*x[self->storage[i].indexes[j]];
-    }
-  }
-  else                          /* CCS */
-  {
-    for ( j = 0; j < self->cols_count; ++ j)
-    {
-      for ( i = 0; i<= self->storage[j].last_index; ++ i)
-        y[self->storage[j].indexes[i]] += self->storage[j].values[i]*x[j];
-    }
-  }
-}
 
 void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y)
 {
@@ -909,6 +816,10 @@ void sp_matrix_yale_printf2(sp_matrix_yale_ptr self)
   printf("Storage type: %s\n", self->storage_type == CRS ? "CRS" : "CCS");
   printf("Size: %dx%d\n", self->rows_count,self->cols_count);
   printf("Nonzeros: %d\n", self->nonzeros);
+  printf ("Fill factor: %.2f %%\n",
+          self->nonzeros/(self->rows_count*(self->cols_count)/100.0));
+  printf("Avergare nonzeros per row: %d\n",
+         (int)(self->nonzeros/(double)self->rows_count));
 }
 
 

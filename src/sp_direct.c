@@ -322,7 +322,15 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
   {
     /* ereach simply defines the portrait of every i-th row */
     count = sp_matrix_yale_ereach(self,symb->etree,i,indicies);
-    assert(count == symb->crs_offsets[i+1]-symb->crs_offsets[i]);
+    if (count != symb->crs_offsets[i+1]-symb->crs_offsets[i])
+    {
+      LOGERROR("sp_matrix_yale_chol_structure: count = %d, expected: %d."
+               " Possibly not symmetric matrix",
+               count,symb->crs_offsets[i+1]-symb->crs_offsets[i]);
+      free(offsets);
+      free(indicies);
+      return 0;
+    }
     /* so, a_ij != 0 where j in indicies array */
     for ( p = 0; p < count; ++ p)
     {

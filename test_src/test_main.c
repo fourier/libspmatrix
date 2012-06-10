@@ -39,14 +39,9 @@
 #define LOGTOC(x);
 #endif
 
-static void sp_matrix_create_convert_mv()
+static void sp_matrix_create_convert()
 {
   sp_matrix mtx,mtx2,mtx3;
-  double b[] = {1, 2, 3, 4, 3, 2, 1};
-  double expected[] = {25, 34, 40, 45, 42, 16, 23};
-  int size = sizeof(expected)/sizeof(double);
-  int i;
-  double x[] = {0,0,0,0,0,0,0};
   /*
    * Sparse matrix
    * 9  0  0  3  1  0  1
@@ -70,21 +65,10 @@ static void sp_matrix_create_convert_mv()
 
   sp_matrix_reorder(&mtx);
   
-  /* 1st test - matrix-vector multiplication */
-  sp_matrix_mv(&mtx,b,x);
-  for (i = 0; i < size; ++ i)
-    ASSERT_TRUE(EQL(x[i],expected[i]));
-  
   /* 2nd test - conversion btw different storage types */
   sp_matrix_convert(&mtx,&mtx2,CCS);
-  sp_matrix_mv(&mtx2,b,x);
-  for (i = 0; i < size; ++ i)
-    ASSERT_TRUE(EQL(x[i],expected[i]));
-    
   sp_matrix_convert(&mtx2,&mtx3,CRS);
-  sp_matrix_mv(&mtx3,b,x);
-  for (i = 0; i < size; ++ i)
-    ASSERT_TRUE(EQL(x[i],expected[i]));
+
   sp_matrix_free(&mtx2);
   sp_matrix_free(&mtx3);
   
@@ -127,6 +111,11 @@ static void yale_format()
   ASSERT_TRUE(memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0);
   ASSERT_TRUE(memcmp(yale.values,values1,6*sizeof(double)) == 0);
 
+  sp_matrix_yale_mv(&yale,x,y);
+  for (i = 0; i < 3; ++ i)
+    ASSERT_TRUE(EQL(y[i],b[i]));
+
+  sp_matrix_yale_convert_inplace(&yale,CCS);
   sp_matrix_yale_mv(&yale,x,y);
   for (i = 0; i < 3; ++ i)
     ASSERT_TRUE(EQL(y[i],b[i]));
@@ -356,7 +345,7 @@ static void cg_solver()
   sp_matrix_yale_solve_cg(&yale,v,v,&max_iter,&tolerance,x);
 
   /* check for convergence */
-  sp_matrix_mv(&mtx,x,z);
+  sp_matrix_yale_mv(&yale,x,z);
   
   tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
   ASSERT_TRUE(tolerance < desired_tolearance*10);
@@ -509,7 +498,7 @@ static void pcg_ilu_solver()
   sp_matrix_yale_solve_pcg_ilu(&yale,&ilu,v,v,&max_iter,&tolerance,x);
 
   /* check for convergence */
-  sp_matrix_mv(&mtx,x,z);
+  sp_matrix_yale_mv(&yale,x,z);
 
   tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
   ASSERT_TRUE(tolerance < desired_tolearance*10);
@@ -1605,7 +1594,7 @@ int main(int argc, const char *argv[])
   logger_init_with_params(&params);
 #endif
   /* tests */
-  SP_ADD_TEST(sp_matrix_create_convert_mv);
+  SP_ADD_TEST(sp_matrix_create_convert);
   SP_ADD_TEST(yale_format);
   SP_ADD_TEST(permutations);
   SP_ADD_TEST(sparse_permutations);

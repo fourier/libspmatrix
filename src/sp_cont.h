@@ -22,9 +22,23 @@
 #define _SP_CONT_H_
 
 /*
+ * Sparse matrix row/column storage array
+ */
+typedef struct
+{
+  int width;                    /* size of an array */
+  int last_index;               /* last stored index, i.e. if width = 20
+                                 * it will be 9 if only 10 nonzero elements
+                                 * stored */
+  int  *indexes;                /* array of column/row indexes */
+  double *values;               /* array of values */
+} indexed_array;
+typedef indexed_array* indexed_array_ptr;
+
+
+/*
  * Dynamic array data structure
  */
-
 typedef struct
 {
   int allocated;
@@ -61,6 +75,15 @@ typedef struct
   int_queue_element* last;
 } int_queue;
 typedef int_queue* int_queue_ptr;
+
+/*
+ * indexed_arrays operations
+ */
+/* Performs in-place sort of the indexed array */
+void indexed_array_sort(indexed_array_ptr self, int l, int r);
+/* Print contents of the indexed array to the stdout  */
+void indexed_array_printf(indexed_array_ptr self);
+
 
 
 /*

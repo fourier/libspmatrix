@@ -41,32 +41,39 @@ OBJ_DIR = obj
 SRC_DIR = src
 TEST_SRC_DIR = test_src
 DEMO_SRC_DIR = demo_src
+SOLVER_SRC_DIR = solver_src
 BIN_DIR = bin
 LIB_DIR = lib
 DEPS_DIR = .deps
 df = $(DEPS_DIR)/$(*F)
 
-CFLAGS = -ggdb -g --std=c99 -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations -Wmissing-include-dirs $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
+CFLAGS = -ggdb -g -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations -Wmissing-include-dirs $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
 # this option not works for gcc 3.4.4
 # -Wmissing-include-dirs
+LIBCFLAGS = --std=c99
+SOLVERCFLAGS = --std=gnu99
 
 INCLUDES = -I . $(LOGGERINC)
 LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
+SOLVERLINKFLAGS = -lrt
 
 LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
 TEST_SOURCES = $(wildcard $(TEST_SRC_DIR)/*.c)	
 DEMO_SOURCES = $(wildcard $(DEMO_SRC_DIR)/*.c)
+SOLVER_SOURCES = $(wildcard $(SOLVER_SRC_DIR)/*.c)
 LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(LIB_SOURCES))
 TEST_OBJECTS = $(patsubst $(TEST_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(TEST_SOURCES))
 DEMO_OBJECTS = $(patsubst $(DEMO_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(DEMO_SOURCES))
+SOLVER_OBJECTS = $(patsubst $(SOLVER_SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOLVER_SOURCES))
 
-OBJECTS = $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS)
+OBJECTS = $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS) $(SOLVER_OBJECTS)
 DEPENDS = $(subst $(OBJ_DIR),$(DEPS_DIR),$(OBJECTS))
 
 OUTPUT_TEST = $(BIN_DIR)/spmatrixtest
 OUTPUT_LIB = $(LIB_DIR)/libspmatrix.a
 FEM2D_DEMO = $(BIN_DIR)/demo_fem2d
-OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO)
+OUTPUT_SOLVER = $(BIN_DIR)/solvertest
+OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_SOLVER)
 
 # dependencies, based on article http://make.paulandlesley.org/autodep.html
 # idea: generate dependencies, then replace "something.o : " with "something.o .deps/something.P : "
@@ -97,21 +104,30 @@ $(DEPS_DIR):
 # compile library sources
 $(LIB_OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(MAKEDEPEND)
-	$(CC) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
+	$(CC) -c $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 # compile test sources
 $(TEST_OBJECTS): $(OBJ_DIR)/%.o:$(TEST_SRC_DIR)/%.c
 	$(MAKEDEPEND)
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
 
 # compile demo sources
 $(DEMO_OBJECTS): $(OBJ_DIR)/%.o:$(DEMO_SRC_DIR)/%.c
 	$(MAKEDEPEND)
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+
+# compile solver test sources
+$(SOLVER_OBJECTS): $(OBJ_DIR)/%.o:$(SOLVER_SRC_DIR)/%.c
+	$(MAKEDEPEND)
+	$(CC) $(CFLAGS) $(SOLVERCFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+
 
 # link binaries
 $(OUTPUT_TEST): $(OUTPUT_LIB) $(BIN_DIR) $(TEST_OBJECTS)
 	$(CC) $(TEST_OBJECTS) -o $(OUTPUT_TEST) $(LINKFLAGS) -L $(LIB_DIR)
+
+$(OUTPUT_SOLVER): $(OUTPUT_LIB) $(BIN_DIR) $(SOLVER_OBJECTS)
+	$(CC) $(SOLVER_OBJECTS) -o $(OUTPUT_SOLVER) $(LINKFLAGS) $(SOLVERLINKFLAGS) -L $(LIB_DIR) 
 
 $(FEM2D_DEMO): $(OUTPUT_LIB) $(BIN_DIR) $(DEMO_OBJECTS)
 	$(CC) $(DEMO_OBJECTS) -o $(FEM2D_DEMO) $(LINKFLAGS) -L $(LIB_DIR)
@@ -130,7 +146,8 @@ test: $(OUTPUT_TEST)
 
 .PHONY : clean
 clean :
-	@rm -f $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS) $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB)
+	@rm -f $(LIB_OBJECTS) $(TEST_OBJECTS) $(DEMO_OBJECTS) $(SOLVER_OBJECTS)
+	@rm -f $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_LIB) $(OUTPUT_SOLVER)
 	@rmdir $(BIN_DIR) $(LIB_DIR) $(OBJ_DIR)
 	@rm -fr $(DEPS_DIR)
 

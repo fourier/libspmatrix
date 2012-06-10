@@ -21,6 +21,7 @@
 #ifndef __SP_MATRIX_H__
 #define __SP_MATRIX_H__
 
+#include "sp_cont.h"
 
 typedef enum
 {
@@ -50,20 +51,6 @@ typedef enum
   MTX_SAME_PORTRAIT,
   MTX_DIFFERENT
 } matrix_comparison;
-
-/*
- * Sparse matrix row/column storage array
- */
-typedef struct
-{
-  int width;                    /* size of an array */
-  int last_index;               /* last stored index, i.e. if width = 20
-                                 * it will be 9 if only 10 nonzero elements
-                                 * stored */
-  int  *indexes;                /* array of column/row indexes */
-  double *values;               /* array of values */
-} indexed_array;
-typedef indexed_array* indexed_array_ptr;
 
 /*
  * Sparse matrix row storage 
@@ -122,15 +109,6 @@ typedef sp_matrix_yale* sp_matrix_yale_ptr;
 
 /*************************************************************/
 /* Sparse matrix operations                                  */
-
-/* indexed_arrays operations */
-/* Swap i and j elements in the indexed array.
- * Used in indexed_array_sort*/
-void indexed_array_swap(indexed_array_ptr self,int i, int j);
-/* Performs in-place sort of the indexed array */
-void indexed_array_sort(indexed_array_ptr self, int l, int r);
-/* Print contents of the indexed array to the stdout  */
-void indexed_array_printf(indexed_array_ptr self);
 
 /*
  * Initializer for a sparse matrix with specified rows and columns
@@ -259,11 +237,6 @@ matrix_properties sp_matrix_properites(sp_matrix_ptr self);
 
 /* returns the number of nonzeroes in matrix */
 int sp_matrix_nonzeros(sp_matrix_ptr self);
-
-/* Matrix-vector multiplication
- * y = A*x
- */
-void sp_matrix_mv(sp_matrix_ptr self,double* x, double* y);
 
 /*
  * Matrix-vector multiplication for matrix in Yale format

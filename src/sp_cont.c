@@ -1,28 +1,104 @@
 /* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /*
- Copyright (C) 2011,2012 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+  Copyright (C) 2011,2012 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
  
- This file is part of libspmatrix.
+  This file is part of libspmatrix.
 
- libspmatrix is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published
- by the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+  libspmatrix is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as published
+  by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
- libspmatrix is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Lesser General Public License for more details.
+  libspmatrix is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
- You should have received a copy of the GNU Lesser General Public License
- along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU Lesser General Public License
+  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 
 #include "sp_cont.h"
+
+
+/*
+ * Swap i and j elements in the indexed array.
+ * Used in indexed_array_sort
+ */
+static void indexed_array_swap(indexed_array_ptr self,int i, int j)
+{
+  int tmp_idx;
+  double tmp_val;
+  tmp_idx = self->indexes[i];
+  self->indexes[i] = self->indexes[j];
+  self->indexes[j] = tmp_idx;
+  tmp_val = self->values[i];
+  self->values[i] = self->values[j];
+  self->values[j] = tmp_val;
+}
+
+void indexed_array_sort(indexed_array_ptr self, int l, int r)
+{
+  /*
+   * Quick sort procedure for indexed(compressed) arrays
+   * for example rows for CRS sparse matrix or columns for CSC
+   * sparse matrix
+   */
+  int pivot,i;
+  int tmp_idx;
+
+  /* boundary checks */
+  if (l < r)
+  {
+    if ( r - l == 1)
+    {
+      if (self->indexes[l] > self->indexes[r])
+        indexed_array_swap(self,r,l);
+      return;
+    }
+    /* choose the pivoting element */
+    pivot = (int)((r+l)/2.);
+    /* in-place partition procedure - move all elements
+     * lower than pivoting to the left, greater to the right */
+    tmp_idx  = self->indexes[pivot];
+    indexed_array_swap(self,pivot,r);
+    pivot = l;
+    for ( i = l; i < r; ++ i)
+    {
+      if (self->indexes[i] <= tmp_idx )
+      {
+        indexed_array_swap(self,i,pivot);
+        pivot++;
+      }
+    }
+    indexed_array_swap(self,r,pivot);
+    /* repeat procedure for the left and right parts of an array */
+    indexed_array_sort(self,l,pivot-1);
+    indexed_array_sort(self,pivot+1,r);
+  }
+}
+
+void indexed_array_printf(indexed_array_ptr self)
+{
+  int i;
+  if (self)
+  {
+    printf("indexes = [");
+    for (i = 0; i <= self->last_index; ++ i)
+      printf("%d,\t",self->indexes[i]);
+    printf("%d]\n",self->indexes[i]);
+    printf("values  = [");
+    for (i = 0; i <= self->last_index; ++ i)
+      printf("%f,\t",self->values[i]);
+    printf("%f]\n",self->values[i]);
+  }
+}
+
 
 void int_array_init(int_array_ptr self, int initial_size, int step_size)
 {
@@ -33,9 +109,9 @@ void int_array_init(int_array_ptr self, int initial_size, int step_size)
 
 void int_array_extend(int_array_ptr self)
 {
-    self->items = realloc(self->items,
-                          sizeof(int)*(self->allocated + self->step_size));
-    self->allocated += self->step_size;
+  self->items = realloc(self->items,
+                        sizeof(int)*(self->allocated + self->step_size));
+  self->allocated += self->step_size;
 }
 
 void int_array_free(int_array_ptr self)

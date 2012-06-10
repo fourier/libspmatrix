@@ -60,8 +60,7 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
   memset(temp,0,size);
 
   /* x = x_0 */
-  for ( i = 0; i < msize; ++ i)
-    x[i] = x0[i];
+  memcpy(x,x0,size);
 
   /* r_0 = b - A*x_0 */
   sp_matrix_yale_mv(self,b,r);
@@ -174,8 +173,7 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
   memset(temp,0,size);
 
   /* x = x_0 */
-  for ( i = 0; i < msize; ++ i)
-    x[i] = x0[i];
+  memcpy(x,x0,size);
 
   /* r_0 = b - A*x_0 */
   sp_matrix_yale_mv(self,b,r);
