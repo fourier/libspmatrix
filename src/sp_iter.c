@@ -80,7 +80,7 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
     for (i = 0; i < msize; ++ i)
     {
       a1 += r[i]*r[i];         /* (r_j,r_j) */
-      a2 += p[i]*temp[i];      /* (A*p_j,p_j) */
+      a2 += temp[i]*p[i];      /* (A*p_j,p_j) */
     }
 
     /*            (r_j,r_j) 
@@ -112,7 +112,7 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
     /* b_j = (r_{j+1},r_{j+1})/(r_j,r_j) */
     beta = a2/a1;
     
-    /* d_{j+1} = r_{j+1} + beta_j*d_j */
+    /* p_{j+1} = r_{j+1} + beta_j*p_j */
     for (i = 0; i < msize; ++ i)
       p[i] = r[i] + beta*p[i];
   }
@@ -428,32 +428,3 @@ void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
   }
 }
 
-
-#if 0
-void sp_matrix_solve(sp_matrix_ptr self,double* b,double* x)
-{
-  double tolerance = TOLERANCE;
-  int max_iter = MAX_ITER;
-  int i;
-  double tol = 0;
-  double* r = (double*)malloc(self->rows_count*sizeof(double));
-  memset(r,0,self->rows_count*sizeof(double));
-  /* reorder columns for to prepare to solve SLAE */
-  if (!self->ordered)
-    sp_matrix_reorder(self);
-  /* sp_matrix_solve_pcg(self,b,b,&max_iter,&tolerance,x); */
-  sp_matrix_solve_cg(self,b,b,&max_iter,&tolerance,x);
-  /* Calculare residual r = A*x-b */
-  sp_matrix_mv(self,x,r);
-  for ( i = 0; i < self->rows_count; ++ i)
-    r[i] -= b[i];
-  /* Find a norm of residual vector */
-  for ( i = 0; i < self->rows_count; ++ i)
-    tol += r[i]*r[i];
-  tol = sqrt(tol);
-  /* TODO: move iter, tolerance1 and tolerance2 to the output parameters */
-  LOGINFO("iter = %d, tolerance1 = %e, tolerance2 = %e\n",
-          max_iter,tolerance,tol);
-  free(r);
-}
-#endif

@@ -508,6 +508,8 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
          ++p)
       x[self->indicies[p]] = self->values[p];
     A_kk = self->values[p];
+    if (A_kk < 0 || is_almost_zero(A_kk))
+      _SP_CHOL_STOP;
     /* solve the SLAE L(1:k-1,1:k-1)*L(k,1:k-1)=A(1:k-1,k) */
     rowoffsets = symb->crs_indicies+symb->crs_offsets[k];
     if (!sp_matrix_yale_sparse_lower_solve(L,k,x,

@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
         sp_matrix_yale_printf2(&L);
         printf("Nonzeros size increase:");
         printf("from %d to %d is %.2f %% size increase\n",
-               mtx.nonzeros,L.nonzeros,L.nonzeros/(mtx.nonzeros/100.));
+               mtx.nonzeros,L.nonzeros,L.nonzeros/(mtx.nonzeros/100.)-100.0);
         printf("Cholesky symblic decomposition calculation time: ");
         print_time_difference(&t1,&t2);
         printf("Cholesky numeric decomposition calculation time: ");
