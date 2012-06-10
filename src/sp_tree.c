@@ -19,10 +19,9 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "sp_tree.h"
+#include "sp_mem.h"
 #include "sp_cont.h"
 
 
@@ -104,7 +103,7 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   int_stack_ptr stack = int_stack_alloc(size,1);
   /* allocate memory for childen
    * children of every node stored in the stack */
-  children = malloc(sizeof(int_stack_ptr)*size);
+  children = spalloc(sizeof(int_stack_ptr)*size);
   for ( i = 0; i < size; ++ i)
     children[i] = int_stack_alloc(1,2);
   /* now fill the stacks of children with the actual children
@@ -152,7 +151,7 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   for ( i = 0; i < size; ++ i)
     int_stack_free(children[i]);
   stack = int_stack_free(stack);
-  free(children);
+  spfree(children);
 }
 
 void tree_node_levels(int* tree, int size, int* level)

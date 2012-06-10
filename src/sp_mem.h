@@ -18,26 +18,15 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SP_LOG_H_
-#define _SP_LOG_H_
+void* spalloc(size_t size);
+void* spcalloc(size_t nmemb, size_t size);
+void* sprealloc(void* ptr, size_t size);
+void spfree(void* ptr);
 
-#ifdef USE_LOGGER
-#include "logger.h"
-#else
-#include <stdio.h>
-#ifndef LOGINFO
-#define LOGINFO(...) ;
-#endif
-#ifndef LOG
-#define LOG(...) printf(__VA_ARGS__),printf("\n");
-#endif
-#ifndef LOGWARN
-#define LOGWARN(...) printf(__VA_ARGS__),printf("\n");
-#endif
-#ifndef LOGERROR
-#define LOGERROR(...) fprintf(stderr,__VA_ARGS__),fprintf(stderr,"\n");
-#endif
-#endif
+/*
+ * Allocates the memory block of size bytes and copy the
+ * appropriate memory block pointed by src
+ * Returns the pointer to the newly allocated block
+ */
+void* memdup(const void* src, int bytes);
 
-
-#endif /* _SP_LOG_H_ */

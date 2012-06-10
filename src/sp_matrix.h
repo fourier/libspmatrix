@@ -186,18 +186,6 @@ void sp_matrix_skyline_free(sp_matrix_skyline_ptr self);
 void sp_matrix_yale_init(sp_matrix_yale_ptr self,
                          sp_matrix_ptr mtx);
 
-/*
- * Creates the sparse matrix in Yale format
- * using given size and row/column counts
- * offsets and sizes filled, indicies and values initialized to 0
- * and shall be filled manually
- */
-void sp_matrix_yale_init2(sp_matrix_yale_ptr self,
-                          sparse_storage_type type,
-                          int rows_count,
-                          int cols_count,
-                          int nonzeros,
-                          int* counts);
                           
 /*
  * Copy sparse matrix from mtx_from to mtx_to

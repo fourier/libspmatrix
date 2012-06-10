@@ -19,11 +19,10 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-
 #include "sp_cont.h"
+#include "sp_mem.h"
 
 
 /*
@@ -104,24 +103,24 @@ void int_array_init(int_array_ptr self, int initial_size, int step_size)
 {
   self->allocated = initial_size;
   self->step_size = step_size;
-  self->items = calloc(self->allocated,sizeof(int));
+  self->items = spcalloc(self->allocated,sizeof(int));
 }
 
 void int_array_extend(int_array_ptr self)
 {
-  self->items = realloc(self->items,
-                        sizeof(int)*(self->allocated + self->step_size));
+  self->items = sprealloc(self->items,
+                          sizeof(int)*(self->allocated + self->step_size));
   self->allocated += self->step_size;
 }
 
 void int_array_free(int_array_ptr self)
 {
-  free(self->items);
+  spfree(self->items);
 }
 
 int_stack_ptr int_stack_alloc(int initial_size, int step_size)
 {
-  int_stack_ptr stack = malloc(sizeof(int_stack));
+  int_stack_ptr stack = spalloc(sizeof(int_stack));
   stack->top = -1;
   int_array_init(&stack->data,initial_size,step_size);
   return stack;
@@ -133,7 +132,7 @@ int_stack_ptr int_stack_free(int_stack_ptr self)
   if (self)
   {
     int_array_free(&self->data);
-    free(self);
+    spfree(self);
     self = 0;
   }
   return self;
@@ -174,7 +173,7 @@ int int_stack_top(int_stack_ptr self)
 static
 int_queue_element* int_queue_element_alloc(int value, int_queue_element* next)
 {
-  int_queue_element* element = malloc(sizeof(int_queue_element));
+  int_queue_element* element = spalloc(sizeof(int_queue_element));
   element->value = value;
   element->next  = next;
   return element;
@@ -183,13 +182,13 @@ int_queue_element* int_queue_element_alloc(int value, int_queue_element* next)
 static
 int_queue_element* int_queue_element_free(int_queue_element* self)
 {
-  free(self);
+  spfree(self);
   return 0;
 }
 
 int_queue_ptr int_queue_alloc()
 {
-  int_queue_ptr self = malloc(sizeof(int_queue));
+  int_queue_ptr self = spalloc(sizeof(int_queue));
   memset(self,0, sizeof(int_queue));
   return self;
 }
@@ -201,7 +200,7 @@ int_queue_ptr int_queue_free(int_queue_ptr self)
   {
     while(!int_queue_isempty(self))
       int_queue_pop(self);
-    free(self);
+    spfree(self);
     self = 0;
   }
   return self;

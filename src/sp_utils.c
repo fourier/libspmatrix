@@ -20,10 +20,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 
 #include "sp_utils.h"
+#include "sp_mem.h"
 #include "sp_log.h"
 
 
@@ -63,7 +63,7 @@ int sp_istrcmp ( const char * str1, const char * str2 )
  */
 char* sp_strndup(const char *s, size_t n)
 {
-  char* str = malloc(n+1);
+  char* str = spalloc(n+1);
   memcpy(str,s,n);
   str[n] = '\0';
   return str;
@@ -134,7 +134,7 @@ char* sp_read_text_file(const char* filename)
   FILE* file;
   const int block_size = 1024;
   /* contents buffer */
-  char* contents = calloc(block_size+1,1);
+  char* contents = spcalloc(block_size+1,1);
   /* auxulary counters */
   int read_chunk = 0,read = 0;
 
@@ -142,7 +142,7 @@ char* sp_read_text_file(const char* filename)
   if (!file)
   {
     LOGERROR("Cannot read file %s", filename);
-    free(contents);
+    spfree(contents);
     return 0;
   }
   /* read file contents  */
@@ -151,7 +151,7 @@ char* sp_read_text_file(const char* filename)
     read_chunk = fread(contents+read,1,block_size, file);
     read += read_chunk;
     
-    contents = (char*)realloc(contents,read + block_size);
+    contents = (char*)sprealloc(contents,read + block_size);
   }
   contents[read] = '\0';
   /* close the file */
@@ -164,7 +164,7 @@ char* sp_read_text_file(const char* filename)
 int sp_extract_positional_int(const char* from, int size)
 {
   int result;
-  char* buf = malloc(size+1);
+  char* buf = spalloc(size+1);
   char* ptr = buf;
   int i = 0;
   while (i < size && *from)
@@ -174,7 +174,7 @@ int sp_extract_positional_int(const char* from, int size)
   }
   buf[size] = '\0';
   result = atoi(buf);
-  free(buf);
+  spfree(buf);
   return result;
 }
 
@@ -182,7 +182,7 @@ int sp_extract_positional_int(const char* from, int size)
 double sp_extract_positional_float(const char* from, int size)
 {
   double result;
-  char* buf = calloc(size+1,1);
+  char* buf = spcalloc(size+1,1);
   char* ptr = buf;
   int i = 0;
   while (i < size && *from)
@@ -195,7 +195,7 @@ double sp_extract_positional_float(const char* from, int size)
   /* try to parse strings like 0.156211824D+02 */
   while (*ptr) { if(*ptr == 'D') *ptr = 'E'; ++ptr; }
   result = atof(buf);
-  free(buf);
+  spfree(buf);
   return result;  
 }
 
@@ -481,12 +481,3 @@ const char* sp_extract_fortran_numbers(const char* string,
   return result;
 }
 
-void* memdup(const void* src, int bytes)
-{
-  void* result = malloc(bytes);
-  if (result)
-  {
-    memcpy(result,src,bytes);
-  }
-  return result;
-}

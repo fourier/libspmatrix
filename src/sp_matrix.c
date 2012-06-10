@@ -19,13 +19,13 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <math.h>
 #include <assert.h>
 
 #include "sp_matrix.h"
+#include "sp_mem.h"
+
 #include "sp_utils.h"
 #include "sp_tree.h"
 #include "sp_log.h"
@@ -33,6 +33,10 @@
 #define TRUE 1
 #define FALSE 0
 
+static int int_max(int x,int y)
+{
+  return x > y ? x : y;
+}
 void sp_matrix_init(sp_matrix_ptr mtx,
                     int rows,
                     int cols,
@@ -47,14 +51,14 @@ void sp_matrix_init(sp_matrix_ptr mtx,
     mtx->ordered = NOT_ORDERED;
     mtx->storage_type = type;
     n = type == CRS ? rows : cols;
-    mtx->storage = (indexed_array*)malloc(sizeof(indexed_array)*n);
+    mtx->storage = (indexed_array*)spalloc(sizeof(indexed_array)*n);
     /* create rows or cols with fixed bandwidth */
     for (i = 0; i < n; ++ i)
     {
       mtx->storage[i].width = bandwidth;
       mtx->storage[i].last_index = -1;
-      mtx->storage[i].indexes = (int*)malloc(sizeof(int)*bandwidth);
-      mtx->storage[i].values = (double*)malloc(sizeof(double)*bandwidth);
+      mtx->storage[i].indexes = (int*)spalloc(sizeof(int)*bandwidth);
+      mtx->storage[i].values = (double*)spalloc(sizeof(double)*bandwidth);
       memset(mtx->storage[i].indexes,0,sizeof(int)*bandwidth);
       memset(mtx->storage[i].values,0,sizeof(double)*bandwidth);
     }
@@ -70,10 +74,10 @@ void sp_matrix_free(sp_matrix_ptr mtx)
     n = mtx->storage_type  == CRS ? mtx->rows_count : mtx->cols_count;
     for (i = 0; i < n; ++ i)
     {
-      free(mtx->storage[i].indexes);
-      free(mtx->storage[i].values);
+      spfree(mtx->storage[i].indexes);
+      spfree(mtx->storage[i].values);
     }
-    free(mtx->storage);
+    spfree(mtx->storage);
     mtx->storage = (indexed_array*)0;
     mtx->cols_count = 0;
     mtx->rows_count = 0;
@@ -104,7 +108,7 @@ void sp_matrix_copy(sp_matrix_ptr mtx_from, sp_matrix_ptr mtx_to)
   mtx_to->ordered = mtx_from->ordered;
   mtx_to->storage_type = mtx_from->storage_type;
   mtx_to->storage =
-    (indexed_array*)malloc(sizeof(indexed_array)*n);
+    (indexed_array*)spalloc(sizeof(indexed_array)*n);
   /* copy rows */
   for (i = 0; i < n; ++ i)
   {
@@ -208,11 +212,13 @@ void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
   self->tr_nonzeros = l_count;
   
   /* allocate memory for arrays */
-  self->diag = (double*)malloc(sizeof(double)*mtx->rows_count);
-  self->lower_triangle = l_count ? (double*)malloc(sizeof(double)*l_count) : 0;
-  self->upper_triangle = u_count ? (double*)malloc(sizeof(double)*u_count) : 0;
-  self->jptr = l_count ? (int*)malloc(sizeof(int)*l_count)  : 0;
-  self->iptr = (int*)malloc(sizeof(int)*(mtx->rows_count+1));
+  self->diag = (double*)spalloc(sizeof(double)*mtx->rows_count);
+  self->lower_triangle =
+    l_count ? (double*)spalloc(sizeof(double)*l_count) : 0;
+  self->upper_triangle =
+    u_count ? (double*)spalloc(sizeof(double)*u_count) : 0;
+  self->jptr = l_count ? (int*)spalloc(sizeof(int)*l_count)  : 0;
+  self->iptr = (int*)spalloc(sizeof(int)*(mtx->rows_count+1));
 
   /* fill diagonal */
   for (i = 0; i < mtx->rows_count; ++ i)
@@ -265,11 +271,11 @@ void sp_matrix_skyline_free(sp_matrix_skyline_ptr self)
     self->cols_count = 0;
     self->nonzeros = 0;
     self->tr_nonzeros = 0;
-    free(self->diag);
-    free(self->lower_triangle);
-    free(self->upper_triangle);
-    free(self->jptr);
-    free(self->iptr);
+    spfree(self->diag);
+    spfree(self->lower_triangle);
+    spfree(self->upper_triangle);
+    spfree(self->jptr);
+    spfree(self->iptr);
   }
 }
 
@@ -289,9 +295,9 @@ void sp_matrix_yale_init(sp_matrix_yale_ptr self,
   self->cols_count = mtx->cols_count;
   self->nonzeros   = nonzeros;
   /* allocate memory for arrays */
-  self->offsets  = calloc(n+1,      sizeof(int));
-  self->indicies = calloc(nonzeros, sizeof(int));
-  self->values   = calloc(nonzeros, sizeof(double));
+  self->offsets  = spcalloc(n+1,      sizeof(int));
+  self->indicies = spcalloc(nonzeros, sizeof(int));
+  self->values   = spcalloc(nonzeros, sizeof(double));
   /* convert */
   /* loop by nonzero columns in row i */
   j = 0;
@@ -308,12 +314,18 @@ void sp_matrix_yale_init(sp_matrix_yale_ptr self,
   self->offsets[i] = nonzeros;
 }
 
-void sp_matrix_yale_init2(sp_matrix_yale_ptr self,
-                          sparse_storage_type type,
-                          int rows_count,
-                          int cols_count,
-                          int nonzeros,
-                          int* counts)
+/*
+ * Creates the sparse matrix in Yale format
+ * using given size and row/column counts
+ * offsets and sizes filled, indicies and values initialized to 0
+ * and shall be filled manually
+ */
+static void sp_matrix_yale_init2(sp_matrix_yale_ptr self,
+                                 sparse_storage_type type,
+                                 int rows_count,
+                                 int cols_count,
+                                 int nonzeros,
+                                 int* counts)
 {
   int i,j;
   int n = type == CRS ? rows_count : cols_count;
@@ -324,9 +336,9 @@ void sp_matrix_yale_init2(sp_matrix_yale_ptr self,
   self->cols_count = cols_count;
   self->nonzeros   = nonzeros;
   /* allocate memory for arrays */
-  self->offsets  = calloc(n+1,      sizeof(int));
-  self->indicies = calloc(nonzeros, sizeof(int));
-  self->values   = calloc(nonzeros, sizeof(double));
+  self->offsets  = spcalloc(n+1,      sizeof(int));
+  self->indicies = spcalloc(nonzeros, sizeof(int));
+  self->values   = spcalloc(nonzeros, sizeof(double));
   /* calculate offsets */
   j = 0;
   for (i = 0; i < n; ++ i)
@@ -358,9 +370,9 @@ void sp_matrix_yale_copy(sp_matrix_yale_ptr mtx_from,
 
 void sp_matrix_yale_free(sp_matrix_yale_ptr self)
 {
-  free(self->offsets);
-  free(self->indicies);
-  free(self->values);
+  spfree(self->offsets);
+  spfree(self->indicies);
+  spfree(self->values);
   memset(self,sizeof(sp_matrix_yale),0);
 }
 
@@ -422,10 +434,10 @@ double sp_matrix_element_add(sp_matrix_ptr self,int i, int j, double value)
     new_width = self->storage[I].width*2;
     if (new_width <= 0)             /* avoid crashes on bad bandwidth */
       new_width = 1;
-    indexes = (int*)realloc(self->storage[I].indexes,new_width*sizeof(int));
+    indexes = (int*)sprealloc(self->storage[I].indexes,new_width*sizeof(int));
     assert(indexes);
     self->storage[I].indexes = indexes;
-    values = (double*)realloc(self->storage[I].values,new_width*sizeof(double));
+    values = (double*)sprealloc(self->storage[I].values,new_width*sizeof(double));
     assert(values);
     self->storage[I].values = values;
     self->storage[I].width = new_width;
@@ -584,8 +596,9 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
                               sp_matrix_yale_ptr to)
 {
   int n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  int maxsize = int_max(self->rows_count,self->cols_count);
   int i,j,k,p;
-  int* offsets = calloc(n+1,sizeof(int));
+  int* offsets = spcalloc(maxsize+1,sizeof(int));
   /* 1. row/column counts shifted by 1 */
   for ( i = 0; i < self->nonzeros; ++i)
   {
@@ -593,7 +606,7 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
   }
   /* 2. initialize an empty matrix */
   sp_matrix_yale_init2(to,self->storage_type,
-                       self->rows_count,self->cols_count,
+                       self->cols_count,self->rows_count,
                        self->nonzeros,offsets+1);
 
   /* 3. offsets - partial sums of counts of row/columns */
@@ -614,7 +627,7 @@ void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,
       to->values[k]   = self->values[p];
     }
   }
-  free(offsets);
+  spfree(offsets);
 }
 
 int sp_matrix_yale_convert(sp_matrix_yale_ptr from,
@@ -625,6 +638,8 @@ int sp_matrix_yale_convert(sp_matrix_yale_ptr from,
     return 0;
   sp_matrix_yale_transpose(from,to);
   to->storage_type = type;
+  to->rows_count = from->rows_count;
+  to->cols_count = from->cols_count;
   return 1;
 }
 

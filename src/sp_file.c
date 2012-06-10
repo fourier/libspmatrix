@@ -19,11 +19,10 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 
 #include "sp_file.h"
+#include "sp_mem.h"
 #include "sp_utils.h"
 #include "sp_log.h"
 
@@ -105,7 +104,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
   /* extract object type */
   ptr = sp_extract_next_word(ptr,&word);
   header->object = !sp_istrcmp(word,"matrix") ? MM_MATRIX : MM_OTHER;
-  free((char*)word);
+  spfree((char*)word);
 
   /* extract storage type */
   ptr = sp_extract_next_word(ptr,&word);
@@ -118,7 +117,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
     LOGERROR("Unkown storage type: %s", word);
     ptr = contents;
   }
-  free((char*)word);
+  spfree((char*)word);
 
   /* extract elements type */
   ptr = sp_extract_next_word(ptr,&word);
@@ -135,7 +134,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
     LOGERROR("Unkown elements type: %s", word);
     ptr = contents;
   }
-  free((char*)word);
+  spfree((char*)word);
 
   /* extract portrait */
   ptr = sp_extract_next_word(ptr,&word);
@@ -152,7 +151,7 @@ static const char* mm_read_header(const char* contents, mm_header* header)
     LOGERROR("Unkown portrait type: %s", word);
     ptr = contents;
   }
-  free((char*)word);
+  spfree((char*)word);
 
   return ptr;
 }
@@ -281,7 +280,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
   }
 
   /* free resources */
-  free(contents);
+  spfree(contents);
   /* check for error */
   if ( element_number != nonzeros)
   {
@@ -302,7 +301,7 @@ static int hb_extract_positional_format(const char* from, int size,
                                         fortran_io_format* fmt)
 {
   int result = 0;
-  char* buf = malloc(size+1);
+  char* buf = spalloc(size+1);
   char* ptr = buf;
   int i = 0;
   while (i < size && *from)
@@ -312,7 +311,7 @@ static int hb_extract_positional_format(const char* from, int size,
   }
   buf[size] = '\0';
   result = sp_parse_fortran_format(buf,fmt);
-  free(buf);
+  spfree(buf);
   return result;
 }
 
@@ -500,7 +499,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   /* header parsing done, parsing the data */
   
   /* Section 1. pointers */
-  fortran_numbers = calloc(ptrfmt.repeat,sizeof(fortran_number));
+  fortran_numbers = spcalloc(ptrfmt.repeat,sizeof(fortran_number));
   n = 0;
   while (ptrcrd --)
   {
@@ -513,24 +512,24 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     {
       LOGERROR("Unable to parse pointers: %s", buf);
       fclose(file);
-      free(fortran_numbers);
-      free(colptr);
+      spfree(fortran_numbers);
+      spfree(colptr);
       return 0;
     }
-    colptr = colptr ? realloc(colptr, (n+extracted)*sizeof(int)) :
-      calloc(n+extracted,sizeof(int));
+    colptr = colptr ? sprealloc(colptr, (n+extracted)*sizeof(int)) :
+      spcalloc(n+extracted,sizeof(int));
     for (i = n; i < n + extracted; ++ i) 
       colptr[i] = fortran_numbers[i-n].integer;
     n += extracted;
   }
-  free(fortran_numbers);
+  spfree(fortran_numbers);
   if ( n != nrow + 1)
   {
     LOGERROR("Unable to parse row indicies: parsed = %d != "
              "%d nonzeros", n, nnzero);
     fclose(file);
-    free(colptr);
-    free(rowind);
+    spfree(colptr);
+    spfree(rowind);
     return 0;
   }
 
@@ -539,14 +538,14 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     LOGERROR("Unable to parse row indicies: last index = %d != "
              "%d nonzeros", colptr[nrow], nnzero);
     fclose(file);
-    free(colptr);
-    free(rowind);
+    spfree(colptr);
+    spfree(rowind);
     return 0;
   }
 
 
   /* Section 2. rows */
-  fortran_numbers  = calloc(indfmt.repeat, sizeof(fortran_number));
+  fortran_numbers  = spcalloc(indfmt.repeat, sizeof(fortran_number));
   n = 0;
   while (indcrd --)
   {
@@ -559,31 +558,31 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     {
       LOGERROR("Unable to parse row indicies: %s", buf);
       fclose(file);
-      free(fortran_numbers);
-      free(colptr);
-      free(rowind);
+      spfree(fortran_numbers);
+      spfree(colptr);
+      spfree(rowind);
       return 0;
     }
     
-    rowind = rowind ? realloc(rowind, (n+extracted)*sizeof(int)) :
-      calloc(n+extracted, sizeof(int));
+    rowind = rowind ? sprealloc(rowind, (n+extracted)*sizeof(int)) :
+      spcalloc(n+extracted, sizeof(int));
     for (i = n; i < n + extracted; ++ i) 
       rowind[i] = fortran_numbers[i-n].integer;
     n += extracted;
   }
-  free(fortran_numbers);
+  spfree(fortran_numbers);
   if ( n != nnzero)
   {
     LOGERROR("Unable to parse row indicies: parsed = %d != "
              "%d nonzeros", n, nnzero);
     fclose(file);
-    free(colptr);
-    free(rowind);
+    spfree(colptr);
+    spfree(rowind);
     return 0;
   }
 
   /* Section 3. values */
-  fortran_numbers  = calloc(valfmt.repeat, sizeof(fortran_number));
+  fortran_numbers  = spcalloc(valfmt.repeat, sizeof(fortran_number));
   n = 0;
   while (valcrd --)
   {
@@ -596,28 +595,28 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     {
       LOGERROR("Unable to parse values: %s", buf);
       fclose(file);
-      free(fortran_numbers);
-      free(colptr);
-      free(rowind);
-      free(values);
+      spfree(fortran_numbers);
+      spfree(colptr);
+      spfree(rowind);
+      spfree(values);
       return 0;
     }
     
-    values = values ? realloc(values, (n+extracted)*sizeof(double)) :
-      calloc(n+extracted, sizeof(double));
+    values = values ? sprealloc(values, (n+extracted)*sizeof(double)) :
+      spcalloc(n+extracted, sizeof(double));
     for (i = n; i < n + extracted; ++ i) 
       values[i] = fortran_numbers[i-n].real;
     n += extracted;
   }
-  free(fortran_numbers);
+  spfree(fortran_numbers);
   fclose(file);
   if ( n != nnzero)
   {
     LOGERROR("Unable to parse values: parsed = %d != "
             "%d nonzeros", n, nnzero);
-    free(colptr);
-    free(rowind);
-    free(values);
+    spfree(colptr);
+    spfree(rowind);
+    spfree(values);
     return 0;
   }
   LOGINFO("So far HB file %s parsed successfully",filename);
@@ -662,9 +661,9 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     }
     sp_matrix_yale_init(self,&mtx);
     sp_matrix_free(&mtx);
-    free(colptr);
-    free(rowind);
-    free(values);
+    spfree(colptr);
+    spfree(rowind);
+    spfree(values);
   }
   /*  */
   return 1;

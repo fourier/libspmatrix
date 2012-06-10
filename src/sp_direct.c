@@ -19,12 +19,12 @@
 */
 
 #include <assert.h>
-#include <stdlib.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
 
 #include "sp_direct.h"
+#include "sp_mem.h"
 #include "sp_tree.h"
 #include "sp_utils.h"
 #include "sp_log.h"
@@ -43,7 +43,7 @@ int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
   if ( !self || self->storage_type != CCS)
     return 0;
 
-  parents = malloc(sizeof(int)*self->rows_count);
+  parents = spalloc(sizeof(int)*self->rows_count);
 
   /* initialize tree */
   for ( k = 0; k < self->rows_count; ++ k)
@@ -70,7 +70,7 @@ int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
     for (i = 0; i < j; ++ i)
       tree[parents[i]] = k;
   }
-  free(parents);
+  spfree(parents);
   
   return 1;
 }
@@ -138,7 +138,7 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
   int n = self->rows_count;
   int i,j,k,p;
   /* array to store marked nodes. nonzero means node is marked */
-  char *marked = (char*)malloc(n);
+  char *marked = (char*)spalloc(n);
   memset(rowcounts,0,n*sizeof(int));
   memset(colcounts,0,n*sizeof(int));
 #define _TREE_MARK(i) {marked[(i)] = 1; ++rowcounts[k]; }
@@ -170,7 +170,7 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
     }
   }
 #undef _TREE_MARK
-  free(marked);
+  spfree(marked);
   return result;
 }
 
@@ -296,10 +296,10 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
   int result = 1;
   int count,i,j,p,k;
   int *offsets, *indicies;
-  offsets = calloc(self->rows_count + 1,sizeof(int));
-  symb->crs_indicies = calloc(symb->nonzeros,sizeof(int));
-  symb->ccs_indicies = calloc(symb->nonzeros,sizeof(int));
-  indicies = calloc(symb->nonzeros,sizeof(int));  
+  offsets = spcalloc(self->rows_count + 1,sizeof(int));
+  symb->crs_indicies = spcalloc(symb->nonzeros,sizeof(int));
+  symb->ccs_indicies = spcalloc(symb->nonzeros,sizeof(int));
+  indicies = spcalloc(symb->nonzeros,sizeof(int));  
   /* calculate offsets for CRS */
   j = 0;
   for (i = 0; i < self->rows_count; ++ i)
@@ -327,8 +327,8 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
       LOGERROR("sp_matrix_yale_chol_structure: count = %d, expected: %d."
                " Possibly not symmetric matrix",
                count,symb->crs_offsets[i+1]-symb->crs_offsets[i]);
-      free(offsets);
-      free(indicies);
+      spfree(offsets);
+      spfree(indicies);
       return 0;
     }
     /* so, a_ij != 0 where j in indicies array */
@@ -342,8 +342,8 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
     }
     memcpy(symb->crs_indicies+symb->crs_offsets[i],indicies,count*sizeof(int));
   }
-  free(offsets);
-  free(indicies);
+  spfree(offsets);
+  spfree(indicies);
   return result;
 }
 
@@ -359,16 +359,16 @@ int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
     do
     {
       memset(symb,0,sizeof(sp_chol_symbolic));
-      symb->etree = malloc(self->rows_count*sizeof(int));
+      symb->etree = spalloc(self->rows_count*sizeof(int));
       result = sp_matrix_yale_etree(self,symb->etree);
       _SYMB_VERIFY(result);
-      symb->rowcounts = malloc(self->rows_count*sizeof(int));
-      symb->colcounts = malloc(self->rows_count*sizeof(int));
+      symb->rowcounts = spalloc(self->rows_count*sizeof(int));
+      symb->colcounts = spalloc(self->rows_count*sizeof(int));
       result = sp_matrix_yale_chol_counts(self,symb->etree,
                                           symb->rowcounts,
                                           symb->colcounts);
       _SYMB_VERIFY(result);
-      symb->post = malloc(self->rows_count*sizeof(int));
+      symb->post = spalloc(self->rows_count*sizeof(int));
       tree_postorder_perm(symb->etree,self->rows_count,symb->post);
       /* calculate nonzeros */
       for (i = 0; i < self->rows_count; ++ i)
@@ -386,18 +386,18 @@ void sp_matrix_yale_symbolic_free(sp_chol_symbolic_ptr symb)
 {
   if (symb)
   {
-    free(symb->etree);
-    free(symb->post);
-    free(symb->rowcounts);
-    free(symb->colcounts);
+    spfree(symb->etree);
+    spfree(symb->post);
+    spfree(symb->rowcounts);
+    spfree(symb->colcounts);
     if (symb->crs_indicies)
-      free(symb->crs_indicies);
+      spfree(symb->crs_indicies);
     if (symb->crs_offsets)
-      free(symb->crs_offsets);
+      spfree(symb->crs_offsets);
     if (symb->ccs_indicies)
-      free(symb->ccs_indicies);
+      spfree(symb->ccs_indicies);
     if (symb->ccs_offsets)
-      free(symb->ccs_offsets);
+      spfree(symb->ccs_offsets);
     symb->nonzeros = 0;
     symb->etree = 0;
     symb->post = 0;
@@ -486,12 +486,12 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
   L->nonzeros = symb->nonzeros;
   L->offsets =  memdup(symb->ccs_offsets,(self->rows_count+1)*sizeof(int));
   L->indicies = memdup(symb->ccs_indicies,symb->nonzeros*sizeof(int));
-  L->values = calloc(symb->nonzeros,sizeof(double));
+  L->values = spcalloc(symb->nonzeros,sizeof(double));
   /* store offsets */
   offsets = memdup(symb->ccs_offsets,(self->rows_count+1)*sizeof(int));
   /* right-part vector */
-  x = calloc(self->rows_count,sizeof(double));
-#define _SP_CHOL_STOP {sp_matrix_yale_free(L);free(offsets);free(x);\
+  x = spcalloc(self->rows_count,sizeof(double));
+#define _SP_CHOL_STOP {sp_matrix_yale_free(L);spfree(offsets);spfree(x);\
     LOGERROR("Cholesky decomposition: error in %d row",k);return 0;}
   /* up-looking Cholesky */
   /* loop by rows, constructing one k-th row at a time */
@@ -532,8 +532,8 @@ int sp_matrix_yale_chol_numeric(sp_matrix_yale_ptr self,
     L->values[L->offsets[k]] = sqrt(value);
     offsets[k]++;
   }
-  free(x);
-  free(offsets);
+  spfree(x);
+  spfree(offsets);
 #undef SP_CHOL_STOP
   return result;
 }
@@ -577,7 +577,7 @@ int sp_matrix_yale_chol_numeric_solve(sp_matrix_yale_ptr L,
                                       double* x)
 {
   int result = 0;
-  double *y = calloc(L->rows_count,sizeof(double));
+  double *y = spcalloc(L->rows_count,sizeof(double));
   memset(x,0,L->rows_count*sizeof(double));
   /* SLAE: Ax=b
    * A=LL'
@@ -592,6 +592,6 @@ int sp_matrix_yale_chol_numeric_solve(sp_matrix_yale_ptr L,
     /* L'x = y  */
     result = sp_matrix_yale_lower_trans_solve(L,y,x);
   }
-  free(y);
+  spfree(y);
   return result;
 }

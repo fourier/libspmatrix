@@ -18,26 +18,12 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SP_LOG_H_
-#define _SP_LOG_H_
+#include <stdlib.h>
+#include "sp_log.h"
+#include "sp_err.h"
 
-#ifdef USE_LOGGER
-#include "logger.h"
-#else
-#include <stdio.h>
-#ifndef LOGINFO
-#define LOGINFO(...) ;
-#endif
-#ifndef LOG
-#define LOG(...) printf(__VA_ARGS__),printf("\n");
-#endif
-#ifndef LOGWARN
-#define LOGWARN(...) printf(__VA_ARGS__),printf("\n");
-#endif
-#ifndef LOGERROR
-#define LOGERROR(...) fprintf(stderr,__VA_ARGS__),fprintf(stderr,"\n");
-#endif
-#endif
-
-
-#endif /* _SP_LOG_H_ */
+void sp_error()
+{
+  LOGERROR("Unrecoverable error occured");
+  exit(1);
+}

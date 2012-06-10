@@ -18,26 +18,9 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SP_LOG_H_
-#define _SP_LOG_H_
+#ifndef _SP_ERR_H_
+#define _SP_ERR_H_
 
-#ifdef USE_LOGGER
-#include "logger.h"
-#else
-#include <stdio.h>
-#ifndef LOGINFO
-#define LOGINFO(...) ;
-#endif
-#ifndef LOG
-#define LOG(...) printf(__VA_ARGS__),printf("\n");
-#endif
-#ifndef LOGWARN
-#define LOGWARN(...) printf(__VA_ARGS__),printf("\n");
-#endif
-#ifndef LOGERROR
-#define LOGERROR(...) fprintf(stderr,__VA_ARGS__),fprintf(stderr,"\n");
-#endif
-#endif
+void sp_error();
 
-
-#endif /* _SP_LOG_H_ */
+#endif /* _SP_ERR_H_ */

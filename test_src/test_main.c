@@ -20,8 +20,8 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <memory.h>
+#include "sp_mem.h"
 
 #include "sp_matrix.h"
 #include "sp_direct.h"
@@ -85,37 +85,47 @@ static void yale_format()
    *
    * [ 1 2 0 0 ]
    * [ 0 3 9 0 ]
-   * [ 0 1 4 0 ]
+   * [ 0 1 4 1 ]
    */
   /* expected result for CRS: */
-  int offsets1[] = {0,2,4,6};
-  int indicies1[] = {0,1,1,2,1,2};
-  double values1[] = {1,2,3,9,1,4};
+  int offsets1[] = {0,2,4,7};
+  int indicies1[] = {0,1,1,2,1,2,3};
+  double values1[] = {1,2,3,9,1,4,1};
 
   double x[] = {1,2,3,4};
   double y[3] = {0};
-  double b[] = {5,33,14};
-  
+  double b[] = {5,33,18};
+  /*
+   * Converted to CCS:
+   */
+  int offsets2[] = {0,1,4,6,7};
+  int indicies2[] = {0,0,1,2,1,2,2};
+  double values2[] = {1,2,3,1,9,4,1};
+   
   /* expected result for CCS: */
-  int offsets2[] = {0,3,5,7,9,11};
-  int indicies2[] = {0,2,4,0,3,1,4,0,3,1,4};
-  double values2[] = {1,2,5,-3,4,-2,-5,-1,-4,3,6};
+  int offsets3[] = {0,3,5,7,9,11};
+  int indicies3[] = {0,2,4,0,3,1,4,0,3,1,4};
+  double values3[] = {1,2,5,-3,4,-2,-5,-1,-4,3,6};
 
   sp_matrix_init(&mtx,3,4,2,CRS);
   MTX(&mtx,0,0,1);MTX(&mtx,0,1,2);
   MTX(&mtx,1,1,3);MTX(&mtx,1,2,9);
-  MTX(&mtx,2,1,1);MTX(&mtx,2,2,4);
+  MTX(&mtx,2,1,1);MTX(&mtx,2,2,4);MTX(&mtx,2,3,1);
   
   sp_matrix_yale_init(&yale,&mtx);
   ASSERT_TRUE(memcmp(yale.offsets,offsets1,4*sizeof(int)) == 0);
-  ASSERT_TRUE(memcmp(yale.indicies,indicies1,6*sizeof(int)) == 0);
-  ASSERT_TRUE(memcmp(yale.values,values1,6*sizeof(double)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,indicies1,7*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,values1,7*sizeof(double)) == 0);
 
   sp_matrix_yale_mv(&yale,x,y);
   for (i = 0; i < 3; ++ i)
     ASSERT_TRUE(EQL(y[i],b[i]));
 
   sp_matrix_yale_convert_inplace(&yale,CCS);
+  ASSERT_TRUE(memcmp(yale.offsets,offsets2,5*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,indicies2,7*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,values2,7*sizeof(double)) == 0);
+  
   sp_matrix_yale_mv(&yale,x,y);
   for (i = 0; i < 3; ++ i)
     ASSERT_TRUE(EQL(y[i],b[i]));
@@ -144,9 +154,9 @@ static void yale_format()
   MTX(&mtx,4,0,5);MTX(&mtx,4,2,-5);MTX(&mtx,4,4,6);
   
   sp_matrix_yale_init(&yale,&mtx);
-  ASSERT_TRUE(memcmp(yale.offsets,offsets2,6*sizeof(int)) == 0);
-  ASSERT_TRUE(memcmp(yale.indicies,indicies2,11*sizeof(int)) == 0);
-  ASSERT_TRUE(memcmp(yale.values,values2,11*sizeof(double)) == 0);
+  ASSERT_TRUE(memcmp(yale.offsets,offsets3,6*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.indicies,indicies3,11*sizeof(int)) == 0);
+  ASSERT_TRUE(memcmp(yale.values,values3,11*sizeof(double)) == 0);
   
   sp_matrix_free(&mtx);
   sp_matrix_yale_free(&yale);
@@ -168,18 +178,18 @@ static void sparse_permutations()
 {
   /* Matrix(octave format)
      m = [1,2,0,-1;
-          0,-2,0,0;
-          2,1,0,-5;
-          0,0,2,3]
+     0,-2,0,0;
+     2,1,0,-5;
+     0,0,2,3]
   */
   /*
-     Permutations:
-     row permutation
-     p = [1,3,4,2]
-     column permutation
-     q = [2,1,3,4]
-     inverse row permutation
-     p = [1,4,2,3]
+    Permutations:
+    row permutation
+    p = [1,3,4,2]
+    column permutation
+    q = [2,1,3,4]
+    inverse row permutation
+    p = [1,4,2,3]
   */
   /* int p[4] =    {0,2,3,1}; */
   int pinv[4] = {0,3,1,2};
@@ -608,7 +618,7 @@ static void cholesky()
     }
   }
   /* verify CRS */
-  ereach = calloc(symb.nonzeros,sizeof(int));
+  ereach = spcalloc(symb.nonzeros,sizeof(int));
   for (i = 0; i < 7; ++ i)
   {
     count = sp_matrix_yale_ereach(&yale,symb.etree,i,ereach);
@@ -660,7 +670,7 @@ static void cholesky()
   /* clear symbolic decomposition */
   sp_matrix_yale_symbolic_free(&symb);
   /* clear ereach */
-  free(ereach);
+  spfree(ereach);
   /* clear matrix */
   sp_matrix_free(&mtx);
   sp_matrix_free(&Lmtx);
@@ -1143,7 +1153,7 @@ static void tree_search()
   search_result search;
 
   search.current = 0;
-  search.result  = malloc(11*sizeof(int));
+  search.result  = spalloc(11*sizeof(int));
 
   /* test Breadth First Search */
   tree_bfs(tree,11,mark_elt,&search);
@@ -1159,7 +1169,7 @@ static void tree_search()
   for ( i = 1; i < 11; ++ i)
     ASSERT_TRUE(search.result[i] == dfs[i]);
 
-  free(search.result);
+  spfree(search.result);
 }
 
 static void save_vector(int* v, int size, const char* fname)
@@ -1254,9 +1264,9 @@ static void big_matrix_from_file2()
      * last to operations(max and max) shall give 0
      */
     sp_matrix_yale_printf2(&yale);
-    etree = (int*)malloc(yale.rows_count*sizeof(int));
-    rowcounts = (int*)malloc(yale.rows_count*sizeof(int));
-    colcounts = (int*)malloc(yale.rows_count*sizeof(int));
+    etree = (int*)spalloc(yale.rows_count*sizeof(int));
+    rowcounts = (int*)spalloc(yale.rows_count*sizeof(int));
+    colcounts = (int*)spalloc(yale.rows_count*sizeof(int));
 
     ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
     j = 0;
@@ -1272,9 +1282,9 @@ static void big_matrix_from_file2()
     save_vector(rowcounts,yale.rows_count,"../octave-mm/rows.txt");
     save_vector(colcounts,yale.rows_count,"../octave-mm/cols.txt");
     
-    free(etree);
-    free(rowcounts);
-    free(colcounts);
+    spfree(etree);
+    spfree(rowcounts);
+    spfree(colcounts);
 
     /* test symbolic analysis */
     LOGTIC("symbolic analysis of big matrix");
@@ -1282,11 +1292,11 @@ static void big_matrix_from_file2()
     LOGTOC("symbolic analysis of big matrix");
     ASSERT_TRUE(result);
     /* test ereach */
-    ereach = (int*)malloc(yale.rows_count*sizeof(int));
+    ereach = (int*)spalloc(yale.rows_count*sizeof(int));
     for (i = 0; i < yale.rows_count; ++ i)
       ASSERT_TRUE(sp_matrix_yale_ereach(&yale,symb.etree,i,ereach)
                   == symb.rowcounts[i]);
-    free(ereach);
+    spfree(ereach);
 
     LOGTIC("numeric analysis of big matrix");    
     result = sp_matrix_yale_chol_numeric(&yale,&symb,&L);
@@ -1320,11 +1330,11 @@ static void big_matrix_from_file3()
     ASSERT_TRUE(result);
     printf("Symbolic analysis done\n");
     /* test ereach */
-    ereach = (int*)malloc(yale.rows_count*sizeof(int));
+    ereach = (int*)spalloc(yale.rows_count*sizeof(int));
     for (i = 0; i < yale.rows_count; ++ i)
       ASSERT_TRUE(sp_matrix_yale_ereach(&yale,symb.etree,i,ereach)
                   == symb.rowcounts[i]);
-    free(ereach);
+    spfree(ereach);
     printf("Ereach test done\n");
     LOGTIC("numeric analysis of big matrix 2");    
     result = sp_matrix_yale_chol_numeric(&yale,&symb,&L);
@@ -1334,9 +1344,9 @@ static void big_matrix_from_file3()
     
     /* test the SLAE solver */
     /* form the solution */
-    x = calloc(yale.rows_count,sizeof(double));
-    b = calloc(yale.rows_count,sizeof(double));
-    x_expected = calloc(yale.rows_count,sizeof(double));
+    x = spcalloc(yale.rows_count,sizeof(double));
+    b = spcalloc(yale.rows_count,sizeof(double));
+    x_expected = spcalloc(yale.rows_count,sizeof(double));
     for (i = 0; i < yale.rows_count; ++ i)
       x_expected[i] = pow(-1,i%3) * (i % 10);
     /* form the right-part */
@@ -1350,9 +1360,9 @@ static void big_matrix_from_file3()
         printf("%d: %e == %e\n",i,x_expected[i],x[i]);
       ASSERT_TRUE(fabs(x_expected[i]-x[i]) < 1e5);
     }
-    free(x);
-    free(x_expected);
-    free(b);
+    spfree(x);
+    spfree(x_expected);
+    spfree(b);
     sp_matrix_yale_save_file(&L,"L.mtx");
     sp_matrix_yale_save_file(&yale,"bcsstk18_2.mtx");
     sp_matrix_yale_free(&L);
@@ -1617,9 +1627,9 @@ int main(int argc, const char *argv[])
   SP_ADD_SUITE_TEST(suite1,etree_rowcolcounts);
   /* SP_ADD_SUITE_TEST(suite1,etree_rowcount); */
   SP_ADD_TEST(cholesky);
-  /* SP_ADD_TEST(big_matrix_from_file1); */
-  /* SP_ADD_TEST(big_matrix_from_file2); */
-  /* SP_ADD_TEST(big_matrix_from_file3); */
+  SP_ADD_TEST(big_matrix_from_file1);
+  SP_ADD_TEST(big_matrix_from_file2);
+  SP_ADD_TEST(big_matrix_from_file3);
 
   sp_run_tests(argc,argv);
 #ifdef USE_LOGGER

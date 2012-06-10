@@ -18,11 +18,12 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include <math.h>
+/* #include <stdlib.h> */
 #include <memory.h>
+#include <math.h>
 
 #include "sp_iter.h"
+#include "sp_mem.h"
 
 void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
                              double* b,
@@ -51,9 +52,9 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
   double* temp;
 
   /* allocate memory for vectors */
-  r = (double*)malloc(size);
-  p = (double*)malloc(size);
-  temp = (double*)malloc(size);
+  r = (double*)spalloc(size);
+  p = (double*)spalloc(size);
+  temp = (double*)spalloc(size);
   /* clear vectors */
   memset(r,0,size);
   memset(p,0,size);
@@ -119,9 +120,9 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
   *max_iter = j;
   *tolerance = residn;
   
-  free(r);
-  free(p);
-  free(temp);
+  spfree(r);
+  spfree(p);
+  spfree(temp);
 }
 
 
@@ -159,11 +160,11 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
   double* temp;
 
   /* allocate memory for vectors */
-  r = (double*)malloc(size);
-  r1 = (double*)malloc(size);
-  p = (double*)malloc(size);
-  z = (double*)malloc(size);
-  temp = (double*)malloc(size);
+  r = (double*)spalloc(size);
+  r1 = (double*)spalloc(size);
+  p = (double*)spalloc(size);
+  z = (double*)spalloc(size);
+  temp = (double*)spalloc(size);
   
   /* clear vectors */
   memset(r,0,size);
@@ -254,11 +255,11 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
   *tolerance = residn;
   
   /* free vectors */
-  free(r);
-  free(r1);
-  free(z);
-  free(p);
-  free(temp);
+  spfree(r);
+  spfree(r1);
+  spfree(z);
+  spfree(p);
+  spfree(temp);
 }
 
 void sp_matrix_create_ilu(sp_matrix_ptr self,sp_matrix_skyline_ilu_ptr ilu)
@@ -290,9 +291,9 @@ void sp_matrix_skyline_ilu_copy_init(sp_matrix_skyline_ilu_ptr self,
   /* copy parent member-wise */
   self->parent = *parent;
   /* allocate memory for ILU decomposition arrays */
-  self->ilu_diag = (double*)malloc(sizeof(double)*parent->rows_count);
-  self->ilu_lowertr = (double*)malloc(sizeof(double)*parent->tr_nonzeros);
-  self->ilu_uppertr = (double*)malloc(sizeof(double)*parent->tr_nonzeros);
+  self->ilu_diag = (double*)spalloc(sizeof(double)*parent->rows_count);
+  self->ilu_lowertr = (double*)spalloc(sizeof(double)*parent->tr_nonzeros);
+  self->ilu_uppertr = (double*)spalloc(sizeof(double)*parent->tr_nonzeros);
   /* clear arrays before construction of the ILU decomposition */
   memset(self->ilu_diag,0,sizeof(double)*parent->rows_count);
   memset(self->ilu_lowertr,0,sizeof(double)*parent->tr_nonzeros);
@@ -361,9 +362,9 @@ void sp_matrix_skyline_ilu_copy_init(sp_matrix_skyline_ilu_ptr self,
 
 void sp_matrix_skyline_ilu_free(sp_matrix_skyline_ilu_ptr self)
 {
-  free(self->ilu_diag);
-  free(self->ilu_lowertr);
-  free(self->ilu_uppertr);
+  spfree(self->ilu_diag);
+  spfree(self->ilu_lowertr);
+  spfree(self->ilu_uppertr);
   sp_matrix_skyline_free(&self->parent);
 }
 
