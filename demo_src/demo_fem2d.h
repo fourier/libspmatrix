@@ -34,12 +34,7 @@ typedef struct
   double y;
 } point_2d;
 
-typedef struct
-{
-  int p1;
-  int p2;
-  int p3;
-} triangle_3p;
+typedef int triangle_3p[3];
 
 typedef struct
 {
@@ -64,13 +59,53 @@ typedef struct
   prescribed_point* points;
 } prescr_boundary_2d;
 
+typedef struct
+{
+  int rows;
+  int cols;
+  double **A;
+} dense_mtx;
+
+
 void generate_brick_mesh(int N,int M,
                          double x, double y,
                          double dx, double dy,
                          geometry_2d* g,
                          prescr_boundary_2d* b);
 
+/* size of the triangular 2d - element */
 double element_size(geometry_2d* g, int element_no);
+/*
+ * local form function = local triangle coordinates L1,L2,L3
+ * for 3-nodes element
+ */
+double local(geometry_2d* g, int element_no, int l, double x, double y);
 
+/*
+ * Construct matrix of derivatives of shape functions - B
+ * for given element and in given point
+ */
+void create_b_matrix(geometry_2d* g, int element_no, dense_mtx* B);
 
+/*
+ * Construct local stiffness matrix for element element_no
+ */
+void create_local_mtx(geometry_2d* g, int element_no, dense_mtx* K);
+
+/*
+ * Operations on dense matricies
+ */
+
+/* initialize dense matrix rows x cols filled with zeros */
+void dense_mtx_init(dense_mtx* m, int rows, int cols);
+/* initialize dense matrix unity, same as MATLAB's eye(N)  */
+void dense_mtx_eye_init(dense_mtx* m, int N);
+/* free the memory for the dense matrix */
+void dense_mtx_free(dense_mtx* m);
+/* multiply dense matrix M = A*B, initializing the M matrix */
+void dense_mtx_mul_a_b(dense_mtx* A, dense_mtx* B, dense_mtx* M);
+/* multiply dense matrix M = A'*B, initializing the M matrix */
+void dense_mtx_mul_at_b(dense_mtx* A, dense_mtx* B, dense_mtx* M);
+/* print dense matrix */
+void dense_mtx_printf(dense_mtx* A);
 #endif /* _DEMO_FEM2D_H_ */
