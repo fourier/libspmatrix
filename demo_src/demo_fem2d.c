@@ -144,40 +144,6 @@ double element_size(geometry_2d* g, int element_no)
   return det3x3(el)/2.0;
 }
 
-double local(geometry_2d* g, int element_no,int l, double x, double y)
-{
-  double a = 0,b = 0,c = 0;
-  const double S = element_size(g,element_no);
-  const double x1 = g->points[g->triangles[element_no][0]].x;
-  const double y1 = g->points[g->triangles[element_no][0]].y;
-  const double x2 = g->points[g->triangles[element_no][1]].x;
-  const double y2 = g->points[g->triangles[element_no][1]].y;
-  const double x3 = g->points[g->triangles[element_no][2]].x;
-  const double y3 = g->points[g->triangles[element_no][2]].y;
-
-  switch (l)
-  {
-  case 0:
-    a = x2*y3-x3*y2;
-    b = y2-y3;
-    c = x3-x2;
-    break;
-  case 1:
-    a = x3*y1-x1*y3;
-    b = y3-y1;
-    c = x1-x3;
-    break;
-  case 2:
-    a = x1*y2-x2*y1;
-    b = y1-y2;
-    c = x2-x1;
-    break;
-  default:
-    break;
-  }
-  return 0.5*(a+b*x+c*y)/S;
-}
-
 void create_b_matrix(geometry_2d* g, int element_no, dense_mtx* B)
 {
   const double x1 = g->points[g->triangles[element_no][0]].x;
@@ -280,14 +246,6 @@ void dense_mtx_init(dense_mtx* m, int rows, int cols)
     m->A[i] = calloc(cols,sizeof(double));
 }
 
-void dense_mtx_eye_init(dense_mtx* m, int N)
-{
-  int i;
-  dense_mtx_init(m,N,N);
-  for (i = 0; i < N; ++ i)
-    m->A[i][i] = 1;
-}
-
 void dense_mtx_free(dense_mtx* m)
 {
   int i;
@@ -319,14 +277,3 @@ void dense_mtx_mul_at_b(dense_mtx* A, dense_mtx* B, dense_mtx* M)
 }
 
 
-void dense_mtx_printf(dense_mtx* A)
-{
-  int i,j;
-  printf("%dx%d:\n",A->rows,A->cols);
-  for (i = 0; i < A->rows; ++ i)
-  {
-    for (j = 0; j < A->cols; ++j )
-      printf("%e ",A->A[i][j]);
-    printf("\n");
-  }
-}
