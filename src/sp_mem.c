@@ -30,7 +30,7 @@ void* spalloc(size_t size)
   void* chunk = malloc(size);
   if (!chunk)
   {
-    LOGERROR("spalloc: cannot allocate memory block of size %d",size);
+    LOGERROR("spalloc: cannot allocate memory block of size %zd",size);
     sp_error();
   }
   return chunk;
@@ -41,7 +41,7 @@ void* spcalloc(size_t nmemb, size_t size)
   void* chunk = calloc(nmemb, size);
   if (!chunk)
   {
-    LOGERROR("spcalloc: cannot allocate memory block of size %d",
+    LOGERROR("spcalloc: cannot allocate memory block of size %zd",
              size*nmemb);    
     sp_error();
   }
@@ -53,7 +53,7 @@ void* sprealloc(void* ptr, size_t size)
   void* chunk = realloc(ptr, size);
   if (!chunk)
   {
-    LOGERROR("sprealloc: cannot reallocate memory block of size %d",size);
+    LOGERROR("sprealloc: cannot reallocate memory block of size %zd",size);
     sp_error();
   }
   return chunk;
