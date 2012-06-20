@@ -450,6 +450,50 @@ double sp_matrix_element_add(sp_matrix_ptr self,int i, int j, double value)
   return value;
 }
 
+void sp_matrix_cross_cancellation(sp_matrix_ptr self, int i)
+{
+  int k,l,size;
+  int n = self->storage_type == CRS ? self->rows_count : self->cols_count;
+  double *pvalue,value;
+  if (i < 0 || i >= n)
+    return;
+  /* store previous value */
+  pvalue = sp_matrix_element_ptr(self,i,i);
+  value = pvalue ? *pvalue : 0;
+  /* remove row/column */
+  spfree(self->storage[i].values);
+  spfree(self->storage[i].indexes);
+  /* free from remaining rows/columns */
+  for (k = 0; k < n; ++ k)
+  {
+    if (k == i) continue;
+    /* find ith element */
+    for (l = 0;
+         l <= self->storage[k].last_index &&
+           self->storage[k].indexes[l] != i;
+         ++l);
+    /* l - index of ith element */
+    if (l <= self->storage[k].last_index)
+    {
+      size = self->storage[k].last_index-l;
+      if (size)
+      {
+        memmove(self->storage[k].indexes+l,self->storage[k].indexes+l+1,
+                size*sizeof(int));
+        memmove(self->storage[k].values+l,self->storage[k].values+l+1,
+                size*sizeof(double));
+      }
+      self->storage[k].last_index--;
+    }
+  }
+  self->storage[i].values = spcalloc(1,sizeof(double));
+  self->storage[i].indexes = spcalloc(1,sizeof(int));
+  self->storage[i].last_index = 0;
+  self->storage[i].width = 1;
+  self->storage[i].indexes[0] = i;
+  self->storage[i].values[0] = value;
+}
+
 
 void sp_matrix_reorder(sp_matrix_ptr self)
 {

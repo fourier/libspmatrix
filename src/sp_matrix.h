@@ -212,6 +212,12 @@ double* sp_matrix_element_ptr(sp_matrix_ptr self,int i, int j);
 /* adds an element value to the matrix node (i,j) and return (i,j) */
 double sp_matrix_element_add(sp_matrix_ptr self,
                              int i, int j, double value);
+/*
+ * Cancellation(making all zeros) of the i-th row and column
+ * keeping the diagonal element the same
+ * Used in FEA procedures to apply prescribed BCs
+ */
+void sp_matrix_cross_cancellation(sp_matrix_ptr self, int i);
 
 /* shortcut for adding of the matrix elements */
 #define MTX(m,i,j,v) sp_matrix_element_add((m),(i),(j),(v));

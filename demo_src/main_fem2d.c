@@ -29,18 +29,8 @@
 
 static void apply_bc(sp_matrix_ptr m, int idx)
 {
-  int i,msize;
   double *pvalue;
-  msize = m->rows_count;
-  for (i = 0; i < msize; ++ i)
-  {
-    pvalue = sp_matrix_element_ptr(m,idx,i);
-    if (pvalue)
-      *pvalue = 0;
-    pvalue = sp_matrix_element_ptr(m,i,idx);
-    if (pvalue)
-      *pvalue = 0;
-  }
+  sp_matrix_cross_cancellation(m,idx);
   pvalue = sp_matrix_element_ptr(m,idx,idx);
   if (pvalue)
     *pvalue = 1;
