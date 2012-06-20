@@ -158,6 +158,8 @@ int main(int argc, const char* argv[])
   
   if (sp_matrix_yale_save_file(&yale,ptr))
   {
+    printf("Generated %d elements, %d nodes\n",
+           g.triangles_count,g.points_count);
     printf("Sparse matrix saved to %s\n", ptr);
     sp_matrix_yale_printf2(&yale);
   }
