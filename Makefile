@@ -25,7 +25,7 @@ COVERAGE :=
 
 ifdef LOGGER
  LOGGERINC = -I ../liblogger
- LOGGERLINK = -L../liblogger -llogger -lrt
+ LOGGERLINK = -L../liblogger -llogger 
  LOGGERCFLAGS = -DUSE_LOGGER
 endif
 
@@ -55,7 +55,11 @@ SOLVERCFLAGS = --std=gnu99
 
 INCLUDES = -I . $(LOGGERINC)
 LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
-SOLVERLINKFLAGS = -lrt
+SOLVERLINKFLAGS = 
+
+ifeq ($(PLATFORM),Linux)
+LINKFLAGS += -lrt
+endif
 
 LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
 TEST_SOURCES = $(wildcard $(TEST_SRC_DIR)/*.c)	
