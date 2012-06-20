@@ -190,7 +190,6 @@ void create_b_matrix(geometry_2d* g, int element_no, dense_mtx* B)
   double x21,x13,x32,y12,y31,y23;
   double A;
   dense_mtx_init(B,3,6);
-
   /* get derivatives */
   y23 = y2-y3;
 	y31 = y3-y1;
@@ -209,7 +208,7 @@ void create_b_matrix(geometry_2d* g, int element_no, dense_mtx* B)
   B->A[2][2] = x13; B->A[2][3] = y31;
   B->A[2][4] = x21; B->A[2][5] = y12;
   /* ... and divide by 2*A */
-  A = element_size(g,element_no)*2;
+  A = element_size(g,element_no)*2.0;
   for (i = 0; i < B->rows; ++ i)
     for (j = 0; j < B->cols; ++ j)
       B->A[i][j] /= A;
@@ -257,7 +256,10 @@ void create_local_mtx(geometry_2d* g, int element_no, dense_mtx* K)
   dense_mtx_mul_at_b(&B,elasticity_matrix(),&tmp);
   /* 2. K = tmp*B */
   dense_mtx_mul_a_b(&tmp,&B,K);
-
+  /*
+   * Integrate: since K = const, Integral(K) = K*A,
+   * A - size of the element
+   */
   for (i = 0; i < K->rows; ++ i)
     for (j = 0; j < K->cols; ++ j)
       K->A[i][j] *= A;
@@ -324,7 +326,7 @@ void dense_mtx_printf(dense_mtx* A)
   for (i = 0; i < A->rows; ++ i)
   {
     for (j = 0; j < A->cols; ++j )
-      printf("%f ",A->A[i][j]);
+      printf("%e ",A->A[i][j]);
     printf("\n");
   }
 }
