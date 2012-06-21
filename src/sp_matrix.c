@@ -173,7 +173,7 @@ int sp_matrix_convert_inplace(sp_matrix_ptr self,
 void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
 {
   /*
-   * Construct CSLR matrix from the sp_matrix
+   * Construct CSlR matrix from the sp_matrix
    * with symmetric portrait
    */
   int i,j,k,iptr,l_count,u_count,column;
@@ -262,6 +262,117 @@ void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
   /* finalize iptr array */
   self->iptr[i] = self->tr_nonzeros;
 }
+
+void sp_matrix_skyline_yale_init(sp_matrix_skyline_ptr self,
+                                 sp_matrix_yale_ptr mtx)
+{
+  int i,k,p,l_count,u_count;
+  double* diag; 
+  int* workspace;
+  int* indexes;
+
+  assert(sp_matrix_yale_properites(mtx) != PROP_GENERAL);
+  diag = spcalloc(mtx->rows_count,sizeof(double));
+  workspace = spcalloc(mtx->rows_count+1,sizeof(int));
+  indexes = workspace;
+  k = 0;
+  /* calculate number of diagonal elements */
+  for (i = 0; i < mtx->rows_count; ++ i)
+  {
+    for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
+      if ( mtx->indicies[p] == i ) /* diagonal element found */
+      {
+        diag[k] = mtx->values[p];
+        indexes[k] = i;
+        k++;
+      }
+  }
+  /* k - number of diagonal elements */
+  l_count = u_count = (mtx->nonzeros-k)/2;
+  self->tr_nonzeros = l_count;
+  /* allocate memory for arrays */
+  self->diag = (double*)spcalloc(mtx->rows_count,sizeof(double));
+  self->lower_triangle =
+    l_count ? (double*)spcalloc(l_count,sizeof(double)) : 0;
+  self->upper_triangle =
+    u_count ? (double*)spcalloc(u_count,sizeof(double)) : 0;
+  self->jptr = l_count ? (int*)spcalloc(l_count,sizeof(int))  : 0;
+  self->iptr = (int*)spcalloc(mtx->rows_count+1,sizeof(int));
+
+  /* fill diagonal */
+  for (i = 0; i < k; ++ i)
+    self->diag[indexes[i]] = diag[i];
+  /* depending on storage format start to fill lower/upper triangle */
+  if (mtx->storage_type == CRS)
+  {
+    /* fill lower triangle */
+    k = 0;
+    for (i = 0; i < mtx->rows_count; ++ i)
+    {
+      self->iptr[i] = k;
+      for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
+      {
+        if (mtx->indicies[p] < i) /* column index less than row */
+        {
+          self->jptr[k] = mtx->indicies[p];
+          self->lower_triangle[k] = mtx->values[p];
+          k++;
+        }
+      }
+    }
+    self->iptr[i] = k;
+    /* now fill upper triangle */
+    memcpy(workspace,self->iptr,(mtx->rows_count+1)*sizeof(int));
+    for (i = 0; i < mtx->rows_count; ++ i)
+    {
+      for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
+      {
+        if (mtx->indicies[p] > i) /* column index more than row */
+        {
+          self->upper_triangle[indexes[mtx->indicies[p]]] = 
+            mtx->values[p];
+          indexes[mtx->indicies[p]]++;
+        }
+      }
+    }
+  }
+  else                          /* CCS */
+  {
+    /* fill upper triangle */
+    k = 0;
+    for (i = 0; i < mtx->rows_count; ++ i)
+    {
+      self->iptr[i] = k;
+      for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
+      {
+        if (mtx->indicies[p] < i) /* column index less than row */
+        {
+          self->jptr[k] = mtx->indicies[p];
+          self->upper_triangle[k] = mtx->values[p];
+          k++;
+        }
+      }
+    }
+    self->iptr[i] = k;
+    /* now fill lower triangle */
+    memcpy(workspace,self->iptr,(mtx->rows_count+1)*sizeof(int));
+    for (i = 0; i < mtx->rows_count; ++ i)
+    {
+      for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
+      {
+        if (mtx->indicies[p] > i) /* column index more than row */
+        {
+          self->lower_triangle[indexes[mtx->indicies[p]]] = 
+            mtx->values[p];
+          indexes[mtx->indicies[p]]++;
+        }
+      }
+    }
+  }
+  spfree(diag);
+  spfree(workspace);
+}
+
 
 void sp_matrix_skyline_free(sp_matrix_skyline_ptr self)
 {
@@ -906,36 +1017,32 @@ void sp_matrix_dump(sp_matrix_ptr self, const char* filename)
 }
 
 
-void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self,const char* filename)
+void sp_matrix_skyline_printf(sp_matrix_skyline_ptr self)
 {
   int i;
-  FILE* f;
-  if ((f = fopen(filename,"w+")))
-  {
-    fprintf(f,"adiag = [");
-    for ( i = 0; i < self->rows_count; ++ i )
-      fprintf(f,"%f ",self->diag[i]);
-    fprintf(f,"]\n");
+  printf("adiag = [");
+  for ( i = 0; i < self->rows_count; ++ i )
+    printf("%f ",self->diag[i]);
+  printf("]\n");
 
-    fprintf(f,"altr = [");
-    for ( i = 0; i < self->tr_nonzeros; ++ i )
-      fprintf(f,"%f ",self->lower_triangle[i]);
-    fprintf(f,"]\n");
+  printf("altr = [");
+  for ( i = 0; i < self->tr_nonzeros; ++ i )
+    printf("%f ",self->lower_triangle[i]);
+  printf("]\n");
 
-    fprintf(f,"autr = [");
-    for ( i = 0; i < self->tr_nonzeros; ++ i )
-      fprintf(f,"%f ",self->upper_triangle[i]);
-    fprintf(f,"]\n");
+  printf("autr = [");
+  for ( i = 0; i < self->tr_nonzeros; ++ i )
+    printf("%f ",self->upper_triangle[i]);
+  printf("]\n");
   
-    fprintf(f,"jptr = [");
-    for ( i = 0; i < self->tr_nonzeros; ++ i )
-      fprintf(f,"%d ",self->jptr[i]+1);
-    fprintf(f,"]\n");
+  printf("jptr = [");
+  for ( i = 0; i < self->tr_nonzeros; ++ i )
+    printf("%d ",self->jptr[i]+1);
+  printf("]\n");
 
-    fprintf(f,"iptr = [");
-    for ( i = 0; i < self->rows_count; ++ i )
-      fprintf(f,"%d ",self->iptr[i]+1);
-    fprintf(f,"]\n");
-    fclose(f);
-  }
+  printf("iptr = [");
+  for ( i = 0; i < self->rows_count; ++ i )
+    printf("%d ",self->iptr[i]+1);
+  printf("%d ",self->iptr[i]);
+  printf("]\n");
 }

@@ -67,7 +67,7 @@ typedef struct
 typedef sp_matrix* sp_matrix_ptr;
 
 /*
- * Sparse matrix CSLR(Skyline) format
+ * Sparse matrix CS(lower triangle)R(Skyline) format
  * used in sparse iterative solvers
  * Constructed from Sparse Matrix with assumption of the symmetric
  * matrix portrait
@@ -165,14 +165,23 @@ int sp_matrix_convert_inplace(sp_matrix_ptr self,
 
 
 /*
- * Construct CSLR sparse matrix based on sp_matrix format
+ * Construct CSlR sparse matrix based on sp_matrix format
  * mtx - is the (reordered) sparse matrix to take data from
  * Acts as a copy-constructor
+ * Limitations: works only for CRS format
  */
 void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,
                             sp_matrix_ptr mtx);
 /*
- * Destructor for a sparse matrix in CSLR format
+ * Construct CSlR sparse matrix based on sp_matrix_yale format
+ * mtx - is the (reordered) sparse matrix to take data from
+ * Acts as a copy-constructor
+ */
+void sp_matrix_skyline_yale_init(sp_matrix_skyline_ptr self,
+                                 sp_matrix_yale_ptr mtx);
+
+/*
+ * Destructor for a sparse matrix in CSlR format
  * This function doesn't deallocate memory for the matrix itself,
  * only for its structures.
  */
@@ -287,6 +296,6 @@ void sp_matrix_dump(sp_matrix_ptr self, const char* filename);
 void sp_matrix_yale_printf(sp_matrix_yale_ptr self);
 /* Print the matrix stats to the stdout */
 void sp_matrix_yale_printf2(sp_matrix_yale_ptr self);
-void sp_matrix_skyline_dump(sp_matrix_skyline_ptr self, const char* filename);
+void sp_matrix_skyline_printf(sp_matrix_skyline_ptr self);
 
 #endif /* __SP_MATRIX_H__ */

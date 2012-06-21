@@ -367,6 +367,7 @@ static void cg_solver()
 static void ilu_and_skyline()
 {
   sp_matrix mtx;
+  sp_matrix_yale yale;
   sp_matrix_skyline m;
   sp_matrix_skyline_ilu ILU;
   double x_exact[] = {1,2,3,0,3,2,1};
@@ -433,12 +434,36 @@ static void ilu_and_skyline()
   sp_matrix_skyline_init(&m,&mtx);
   sp_matrix_skyline_ilu_copy_init(&ILU,&m);
 
+  /* test sp_matrix_format, CRS */
+  
   for (i = 0; i <  m.rows_count; ++ i)
     ASSERT_TRUE(fabs(ILU.ilu_diag[i] - lu_diag_expected[i]) < 1e-5);
-  
   for (i = 0; i <  m.tr_nonzeros; ++ i)
     ASSERT_TRUE(fabs(ILU.ilu_lowertr[i] - lu_lowertr_expected[i]) < 1e-5);
+  for (i = 0; i <  m.tr_nonzeros; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_uppertr[i] - lu_uppertr_expected[i]) < 1e-5);
 
+  /* test sp_matrix_yale CRS */
+  sp_matrix_yale_init(&yale,&mtx);
+  sp_matrix_skyline_ilu_free(&ILU);
+  sp_matrix_skyline_yale_init(&m,&yale);
+  sp_matrix_skyline_ilu_copy_init(&ILU,&m);
+  for (i = 0; i <  m.rows_count; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_diag[i] - lu_diag_expected[i]) < 1e-5);
+  for (i = 0; i <  m.tr_nonzeros; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_lowertr[i] - lu_lowertr_expected[i]) < 1e-5);
+  for (i = 0; i <  m.tr_nonzeros; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_uppertr[i] - lu_uppertr_expected[i]) < 1e-5);
+
+  /* test sp_matrix_yale CCS */
+  sp_matrix_yale_convert_inplace(&yale,CCS);
+  sp_matrix_skyline_ilu_free(&ILU);
+  sp_matrix_skyline_yale_init(&m,&yale);
+  sp_matrix_skyline_ilu_copy_init(&ILU,&m);
+  for (i = 0; i <  m.rows_count; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_diag[i] - lu_diag_expected[i]) < 1e-5);
+  for (i = 0; i <  m.tr_nonzeros; ++ i)
+    ASSERT_TRUE(fabs(ILU.ilu_lowertr[i] - lu_lowertr_expected[i]) < 1e-5);
   for (i = 0; i <  m.tr_nonzeros; ++ i)
     ASSERT_TRUE(fabs(ILU.ilu_uppertr[i] - lu_uppertr_expected[i]) < 1e-5);
   
@@ -471,6 +496,7 @@ static void ilu_and_skyline()
   
   sp_matrix_free(&mtx);
   sp_matrix_skyline_ilu_free(&ILU);
+  sp_matrix_yale_free(&yale);
 }
 
 static void pcg_ilu_solver()
