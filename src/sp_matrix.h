@@ -225,8 +225,9 @@ double sp_matrix_element_add(sp_matrix_ptr self,
  * Cancellation(making all zeros) of the i-th row and column
  * keeping the diagonal element the same
  * Used in FEA procedures to apply prescribed BCs
+ * Returns the diagonal (i,i) value
  */
-void sp_matrix_cross_cancellation(sp_matrix_ptr self, int i);
+double sp_matrix_cross_cancellation(sp_matrix_ptr self, int i);
 
 /* shortcut for adding of the matrix elements */
 #define MTX(m,i,j,v) sp_matrix_element_add((m),(i),(j),(v));

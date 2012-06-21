@@ -565,13 +565,12 @@ double sp_matrix_element_add(sp_matrix_ptr self,int i, int j, double value)
   return value;
 }
 
-void sp_matrix_cross_cancellation(sp_matrix_ptr self, int i)
+double sp_matrix_cross_cancellation(sp_matrix_ptr self, int i)
 {
   int k,l,size;
   int n = self->storage_type == CRS ? self->rows_count : self->cols_count;
   double *pvalue,value;
-  if (i < 0 || i >= n)
-    return;
+  assert(i >= 0 && i < n);
   /* store previous value */
   pvalue = sp_matrix_element_ptr(self,i,i);
   value = pvalue ? *pvalue : 0;
@@ -607,6 +606,7 @@ void sp_matrix_cross_cancellation(sp_matrix_ptr self, int i)
   self->storage[i].width = 1;
   self->storage[i].indexes[0] = i;
   self->storage[i].values[0] = value;
+  return value;
 }
 
 

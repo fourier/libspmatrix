@@ -211,6 +211,6 @@ int main(int argc, char *argv[])
     sp_matrix_yale_free(&mtx);
   }
   else
-    printf("Unable to load file %s\n",argv[1]);
+    fprintf(stderr,"Unable to load file %s\n",argv[1]);
   return 0;
 }

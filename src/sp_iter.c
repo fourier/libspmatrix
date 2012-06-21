@@ -99,9 +99,10 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
       r[i] -= alpha*temp[i]; 
 
     /* check for convergence */
-    residn = fabs(r[0]);
-    for (i = 1; i < msize; ++ i )
-      if (fabs(r[i]) > residn) residn = fabs(r[i]);
+    residn = 0;
+    for (i = 0; i < msize; ++ i )
+      residn += r[i]*r[i];
+    residn = sqrt(residn);
     if (residn < tol )
       break;
 
@@ -226,9 +227,10 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
       r[i] -= alpha*temp[i]; 
 
     /* check for convergence */
-    residn = fabs(r[0]);
-    for (i = 1; i < msize; ++ i )
-      if (fabs(r[i]) > residn) residn = fabs(r[i]);
+    residn = 0;
+    for (i = 0; i < msize; ++ i )
+      residn += r[i]*r[i];
+    residn = sqrt(residn);
     if (residn < tol )
       break;
 
