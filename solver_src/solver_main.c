@@ -107,6 +107,8 @@ int main(int argc, char *argv[])
   int i;
   sp_matrix_yale mtx,L;
   sp_chol_symbolic symb;
+  sp_matrix_skyline m;
+  sp_matrix_skyline_ilu ILU;
   struct timespec t1,t2,t3;
   double* x, *b, *x0;
   double desired_tolerance[3] = {1e-7,1e-12,1e-15};
@@ -139,6 +141,7 @@ int main(int argc, char *argv[])
         print_time_difference(&t1,&t2);
         printf("Cholesky numeric decomposition calculation time: ");
         print_time_difference(&t2,&t3);
+        
         /* verify SLAE */
         x0 = calloc(mtx.rows_count,sizeof(double));
         x = calloc(mtx.rows_count,sizeof(double));
@@ -172,6 +175,32 @@ int main(int argc, char *argv[])
           printf(" %e(iterations: %d) max error: ",desired_tolerance[i],iter);
           print_error(x0,x,mtx.rows_count);
         }
+        /* CG with ILU preconditioner */
+        portable_gettime(&t1);
+        sp_matrix_skyline_yale_init(&m,&mtx);
+        sp_matrix_skyline_ilu_copy_init(&ILU,&m);
+        portable_gettime(&t2);
+        printf("ILU decomposition total creation time: ");
+        print_time_difference(&t1,&t2);
+        for (i = 0; i < 3; ++ i)
+        {
+          tolerance = desired_tolerance[i];
+          iter = max_iter;
+          /* memset(x,0,mtx.rows_count*sizeof(double)); */
+          /* memcpy(x,b,mtx.rows_count*sizeof(double)); */
+          portable_gettime(&t1);
+          sp_matrix_yale_solve_cg(&mtx,b,b,&iter,&tolerance,x);
+          portable_gettime(&t2);
+          printf("Solving SLAE using PCG-ILU method");
+          printf(" with tolerance %e(iterations: %d) time: ",
+                 tolerance,iter);
+          print_time_difference(&t1,&t2);
+          printf("SLAE using PCG-ILU with tolerance");
+          printf(" %e(iterations: %d) max error: ",desired_tolerance[i],iter);
+          print_error(x0,x,mtx.rows_count);
+        }
+
+        
         sp_matrix_yale_free(&L);
         free(x0);
         free(x);
