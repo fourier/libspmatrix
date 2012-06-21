@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
           /* memset(x,0,mtx.rows_count*sizeof(double)); */
           /* memcpy(x,b,mtx.rows_count*sizeof(double)); */
           portable_gettime(&t1);
-          sp_matrix_yale_solve_cg(&mtx,b,b,&iter,&tolerance,x);
+          sp_matrix_yale_solve_pcg_ilu(&mtx,&ILU,b,b,&iter,&tolerance,x);
           portable_gettime(&t2);
           printf("Solving SLAE using PCG-ILU method");
           printf(" with tolerance %e(iterations: %d) time: ",
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
           print_error(x0,x,mtx.rows_count);
         }
 
-        
+        sp_matrix_skyline_ilu_free(&ILU);
         sp_matrix_yale_free(&L);
         free(x0);
         free(x);

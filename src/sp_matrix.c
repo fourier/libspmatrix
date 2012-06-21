@@ -276,6 +276,10 @@ void sp_matrix_skyline_yale_init(sp_matrix_skyline_ptr self,
   workspace = spcalloc(mtx->rows_count+1,sizeof(int));
   indexes = workspace;
   k = 0;
+
+  self->rows_count = mtx->rows_count;
+  self->cols_count = mtx->cols_count;
+  self->nonzeros = mtx->nonzeros;
   /* calculate number of diagonal elements */
   for (i = 0; i < mtx->rows_count; ++ i)
   {
