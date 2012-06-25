@@ -1,0 +1,26 @@
+-*- Mode: Outline -*-
+
+Current tasks for the libspmatrix.
+
+* Direct methods:
+
+** Cholesky decomposition
+*** Implement left-looking numeric Cholesky decomposition instead of
+    up-looking
+*** Compare the performance of the left-looking and up-looking numeric
+    Cholesky decomposition in the solvertest application
+*** Add calculation of the row/column counts using Skeleton matrix instead
+    of row subtrees, taking O(|A|) instead of O(|L|) operations
+*** Add support of the row/column reordering to the Cholesky method
+*** Implement 1-2 reordering techniques (nested dissection? Cuthil-McKee?
+    etc.)
+
+* Numeric methods
+** Implement QMR method
+
+* General issues
+** Add automatic smart bandwidth selection based on FEA-matricies
+   statistics in addition to the manual selection
+   
+
+
