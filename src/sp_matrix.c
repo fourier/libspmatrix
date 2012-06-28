@@ -33,10 +33,11 @@
 #define TRUE 1
 #define FALSE 0
 
-static int int_max(int x,int y)
+inline static int int_max(int x,int y)
 {
   return x > y ? x : y;
 }
+
 void sp_matrix_init(sp_matrix_ptr mtx,
                     int rows,
                     int cols,

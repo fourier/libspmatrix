@@ -1,5 +1,8 @@
 -*- Mode: Outline -*-
 
+TODO
+====
+
 Current tasks for the libspmatrix.
 
 * Direct methods:
@@ -21,6 +24,8 @@ Current tasks for the libspmatrix.
 * General issues
 ** Add automatic smart bandwidth selection based on FEA-matricies
    statistics in addition to the manual selection
-   
-
+** Start to write the documentation
+** Verify the consistency of init/free functions declarations and usage
+** Add indexed_array init/free/copy methods to sp_cont and refactor sp_matrix
+   using them
 
