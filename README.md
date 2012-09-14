@@ -35,6 +35,7 @@ Directory structure
 |-- bin - Contains binaries for utilities after the build
 |-- demo_src - Contains demo application implementing simple FEA task for 2D case
 |-- examples - Contains example matrices used for test purposes. All matrices are taken from MatrixMarket
+|-- inc - library include files 
 |-- lib - Output directory for the library binary
 |-- obj - generated objects
 |-- solver_src - Contains utility used to compare effectiveness of different SLAE solvers
