@@ -38,7 +38,7 @@ typedef sp_matrix_skyline_ilu* sp_matrix_skyline_ilu_ptr;
 
 
 /*
- * Conjugate Grade solver
+ * Conjugate Gradient solver
  * self - matrix in Yale format
  * b - right-part vector
  * x0 - first approximation of the solution
