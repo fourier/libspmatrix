@@ -26,6 +26,7 @@ Current tasks for the libspmatrix.
    statistics in addition to the manual selection
 ** Start to write the documentation
 ** Verify the consistency of init/free functions declarations and usage
-** Add indexed_array init/free/copy methods to sp_cont and refactor sp_matrix
-   using them
+** Add indexed_array init/free/copy methods to sp_cont and refactor sp_matrix using them
+** introduce inc directory in order to use just binary with headers
+** Create native Win32 version
 
