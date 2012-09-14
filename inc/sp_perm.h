@@ -28,4 +28,5 @@
  */
 void sp_perm_inverse(int* perm, int n, int* pinv);
 
+
 #endif /* _SP_PERM_H_ */

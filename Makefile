@@ -53,7 +53,7 @@ CFLAGS = -ggdb -g -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdecla
 LIBCFLAGS = --std=c99
 SOLVERCFLAGS = --std=gnu99
 
-INCLUDES = -I . $(LOGGERINC)
+INCLUDES = -I inc $(LOGGERINC)
 LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
 SOLVERLINKFLAGS = 
 
@@ -81,7 +81,7 @@ OUTPUT = $(OUTPUT_TEST) $(FEM2D_DEMO) $(OUTPUT_SOLVER)
 
 # dependencies, based on article http://make.paulandlesley.org/autodep.html
 # idea: generate dependencies, then replace "something.o : " with "something.o .deps/something.P : "
-MAKEDEPEND = @gcc -MM $(CFLAGS) $(INCLUDES) -I src -o $*.d $<; sed 's/\($*\)\.o[ :]*/$(OBJ_DIR)\/\1.o $(DEPS_DIR)\/$*.P : /g' < $*.d > $*.P; rm $*.d; mv $*.P $(DEPS_DIR)
+MAKEDEPEND = @gcc -MM $(CFLAGS) $(INCLUDES) -o $*.d $<; sed 's/\($*\)\.o[ :]*/$(OBJ_DIR)\/\1.o $(DEPS_DIR)\/$*.P : /g' < $*.d > $*.P; rm $*.d; mv $*.P $(DEPS_DIR)
 
 -include $(DEPENDS:%.o=%.P)
 
