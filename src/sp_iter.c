@@ -89,7 +89,7 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
   memcpy(x,x0,size);
 
   /* r_0 = b - A*x_0 */
-  sp_matrix_yale_mv(self,b,r);
+  sp_matrix_yale_mv(self,x0,r);
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
 
@@ -194,7 +194,7 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
   memcpy(x,x0,size);
 
   /* r_0 = b - A*x_0 */
-  sp_matrix_yale_mv(self,b,r);
+  sp_matrix_yale_mv(self,x0,r);
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
   
@@ -486,7 +486,7 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
   memcpy(x,x0,size);
 
   /* r_0 = b - A*x_0 */
-  sp_matrix_yale_mv(self,b,r);
+  sp_matrix_yale_mv(self,x0,r);
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
 
@@ -497,13 +497,12 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
   /* v_0 = A*u_0 */
   sp_matrix_yale_mv(self,u,v);
 
+  rho = prod(r1,r,msize);
+  tau = norm2(r,msize);
+  
   /* choose r^*_0 that rho_0 = (r^*_0,r_0) != 0 */
   memcpy(r1,r,size);
   r1[0] = 1;
-
-  rho = prod(r1,r,msize);
-
-  tau = norm2(r,msize);
   
   /* CG loop */
   for ( m = 0; m < max_iterations; m ++ )
@@ -530,7 +529,7 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
       w[i] -= alpha*temp[i];
 
     /* d_{m+1} = u_m + (theta^2_m/alpha_m)*eta_m*d_m */
-    c = theta*theta*eta/alpha;
+    c = theta*theta/alpha*eta;
     for (i = 0; i < msize; ++ i)
       d[i] = u[i] + c*d[i];
 
@@ -635,7 +634,7 @@ void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
   memcpy(x,x0,size);
 
   /* r_0 = b - A*x_0 */
-  sp_matrix_yale_mv(self,b,r);
+  sp_matrix_yale_mv(self,x0,r);
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
   /* r1 - arbitrary */
