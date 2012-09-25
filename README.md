@@ -10,10 +10,10 @@ Features
 --------
  * Support for different sparse matrix formats: CRS/CCS(3-arrays) or Yale format, CS(lower triangle)R(Skyline) format, internal dynamic-arrays based format
  * Solvers: 
-   ** Conjugate Gradient method
-   ** Preconditioned Conjugate Gradient(with ILU preconditioner)
-   ** Conjugate Gradient Squared method
-   ** Sparse Cholesky Solver (direct solver)
+   * Conjugate Gradient method
+   * Preconditioned Conjugate Gradient(with ILU preconditioner)
+   * Conjugate Gradient **Squared** method
+   * Sparse Cholesky Solver (direct solver)
  * Sparse matrix file input formats: Matrix Market, Harwell-Boeing
  * Sparse matrix file output formats: Matrix Market, txt 0-based triplet format (each line is 0-based triplet: row, column, value)
  * Sparse Cholesky Solver based on book (T.Davis Direct Solvers for Sparse Lineer systems), therefore supported operations like elimination tree construction, symbolic Cholesky decomposition, numeric Cholesky decomposition 
@@ -25,7 +25,7 @@ Typical usage
 -------------
 The typical usage is the following(dictated by the typical FEM-procedure):
  * Create the matrix of specified size in format allowing fast element insertion
- * Fill it with values (following the typical for the FEM schema: construct local stiffness matrix and distribute its values in global stiffness matrix by *adding* values to existing ones)
+ * Fill it with values (following the typical for the FEM schema: construct local stiffness matrix and distribute its values in global stiffness matrix by **adding** values to existing ones)
  * Compress (reorder) columns/rows in order to prepare to conversion to the format more appropriate for the computation purposes
  * Convert matrix to the appropriate format for faster SLAE solving
  * (If necessary create appropriate symbolic/numeric decompositions)
