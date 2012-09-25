@@ -25,6 +25,31 @@
 #include "sp_iter.h"
 #include "sp_mem.h"
 
+/*
+ * Scalar product x*y
+ */ 
+inline static double prod(double* x, double* y, int size)
+{
+  double r = 0;
+  int i = 0;
+  for ( ; i < size; ++ i)
+    r += x[i]*y[i];
+  return r;
+}
+
+/*
+ * Norm 2 of the vector x: norm2(x) = sqrt(x*x)
+ */ 
+inline static double norm2(double* x, int size)
+{
+  double r = 0;
+  int i = 0;
+  for ( ; i < size; ++ i)
+    r += x[i]*x[i];
+  return sqrt(r);
+}
+
+
 void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
                              double* b,
                              double* x0,
@@ -77,12 +102,8 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
     /* temp = A*p_j */
     sp_matrix_yale_mv(self,p,temp);
     /* compute (r_j,r_j) and (A*p_j,p_j) */
-    a1 = 0; a2 = 0;
-    for (i = 0; i < msize; ++ i)
-    {
-      a1 += r[i]*r[i];         /* (r_j,r_j) */
-      a2 += temp[i]*p[i];      /* (A*p_j,p_j) */
-    }
+    a1 = prod(r,r,msize);        /* (r_j,r_j) */
+    a2 = prod(temp,p,msize);     /* (A*p_j,p_j) */
 
     /*            (r_j,r_j) 
      * alpha_j = -----------
@@ -99,17 +120,12 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
       r[i] -= alpha*temp[i]; 
 
     /* check for convergence */
-    residn = 0;
-    for (i = 0; i < msize; ++ i )
-      residn += r[i]*r[i];
-    residn = sqrt(residn);
+    residn = norm2(r,msize);
     if (residn < tol )
       break;
 
     /* compute (r_{j+1},r_{j+1}) */
-    a2 = 0;
-    for (i = 0; i < msize; ++ i)
-      a2 += r[i]*r[i];
+    a2 = prod(r,r,msize);
 
     /* b_j = (r_{j+1},r_{j+1})/(r_j,r_j) */
     beta = a2/a1;
@@ -205,13 +221,8 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
     memset(temp,0,size);
     sp_matrix_yale_mv(self,p,temp);
     /* compute (r_j,z_j) and (A*p_j,p_j) */
-    a1 = 0; a2 = 0;
-    for (i = 0; i < msize; ++ i)
-    {
-      a1 += r[i]*z[i]; /* (r_j,z_j) */
-      a2 += p[i]*temp[i];      /* (A*p_j,p_j) */
-    }
-
+    a1 = prod(r,z,msize);       /* (r_j,z_j) */
+    a2 = prod(p,temp,msize);    /* (A*p_j,p_j) */
     /*            (r_j,z_j) 
      * alpha_j = -----------
      *           (A*p_j,p_j)
@@ -227,10 +238,7 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
       r[i] -= alpha*temp[i]; 
 
     /* check for convergence */
-    residn = 0;
-    for (i = 0; i < msize; ++ i )
-      residn += r[i]*r[i];
-    residn = sqrt(residn);
+    residn = norm2(r,msize);
     if (residn < tol )
       break;
 
@@ -242,9 +250,7 @@ void sp_matrix_yale_solve_pcg_ilu(sp_matrix_yale_ptr self,
 
     
     /* compute (r_{j+1},z_{j+1}) */
-    a2 = 0;
-    for (i = 0; i < msize; ++ i)
-      a2 += r[i]*z[i];
+    a2 = prod(r,z,msize);
 
     /* b_j = (r_{j+1},z_{j+1})/(r_j,z_j) */
     beta = a2/a1;
@@ -431,7 +437,7 @@ void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
   }
 }
 
-#if 0
+
 void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
                                 double* b,
                                 double* x0,
@@ -445,27 +451,36 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
    * Saad Y. Iterative methods for sparse linear systems (2ed., 2003)
    * page 235
    */
-   
+
   /* variables */
-  int i,j;
-  double alpha, beta,a1,a2;
+  int i,m;
+  double alpha, beta;
   double residn = 0;
+  double theta = 0, eta = 0, rho = 0;
+  double tau;
   int size = sizeof(double)*self->rows_count;
   int msize = self->rows_count;
   int max_iterations = *max_iter;
   double tol = *tolerance;
+  double c;
   double* r;              /* residual */
-  double* p;              /* search direction */
+  double* r1;              /* r^*_0 */
   double* temp;
-
+  double* d;
+  double* v;
+  double* w;
+  double* u;
+  
   /* allocate memory for vectors */
   r = (double*)spalloc(size);
-  p = (double*)spalloc(size);
+  r1 = (double*)spalloc(size);
   temp = (double*)spalloc(size);
-  /* clear vectors */
-  memset(r,0,size);
-  memset(p,0,size);
-  memset(temp,0,size);
+  d = (double*)spcalloc(msize,sizeof(double));
+  v = (double*)spcalloc(msize,sizeof(double));
+  w = (double*)spcalloc(msize,sizeof(double));
+  u = (double*)spcalloc(msize,sizeof(double));
+  /* d = 0 */
+  memset(d,0,size);
 
   /* x = x_0 */
   memcpy(x,x0,size);
@@ -475,64 +490,108 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
   for ( i = 0; i < msize; ++ i)
     r[i] = b[i] - r[i];
 
-  /* p_0 = r_0 */
-  memcpy(p,r,size);
+  /* w_0 = r_0 */
+  memcpy(w,r,size);
+  /* u_0 = r_0 */
+  memcpy(u,r,size);
+  /* v_0 = A*u_0 */
+  sp_matrix_yale_mv(self,u,v);
+
+  /* choose r^*_0 that rho_0 = (r^*_0,r_0) != 0 */
+  memcpy(r1,r,size);
+  r1[0] = 1;
+
+  rho = prod(r1,r,msize);
+
+  tau = norm2(r,msize);
   
   /* CG loop */
-  for ( j = 0; j < max_iterations; j ++ )
+  for ( m = 0; m < max_iterations; m ++ )
   {
-    /* temp = A*p_j */
-    sp_matrix_yale_mv(self,p,temp);
-    /* compute (r_j,r_j) and (A*p_j,p_j) */
-    a1 = 0; a2 = 0;
-    for (i = 0; i < msize; ++ i)
+    /* if m is even */
+    if ((m&1) == 0)
     {
-      a1 += r[i]*r[i];         /* (r_j,r_j) */
-      a2 += temp[i]*p[i];      /* (A*p_j,p_j) */
+      /* alpha_{m+1} = alpha_m */
+      /* u_{m+1} = u_m - alpha_m*v_m */
+      for (i = 0; i < msize; ++ i)
+        u[i] -= alpha*v[i];
+    }
+    else
+    {
+      /* alpha_m = rho_m/(v_m,r^*_0) */
+      alpha = rho/prod(v,r1,msize);
     }
 
-    /*            (r_j,r_j) 
-     * alpha_j = -----------
-     *           (A*p_j,p_j)
-     */                     
-    alpha = a1/a2;              
-                                
-    /* x_{j+1} = x_j+alpha_j*p_j */
+    /* temp = A*u_m */
+    sp_matrix_yale_mv(self,u,temp);
+
+    /* w_{m+1} = w_m - alpha_m*A*u_m */
     for (i = 0; i < msize; ++ i)
-      x[i] += alpha*p[i];
+      w[i] -= alpha*temp[i];
+
+    /* d_{m+1} = u_m + (theta^2_m/alpha_m)*eta_m*d_m */
+    c = theta*theta*eta/alpha;
+    for (i = 0; i < msize; ++ i)
+      d[i] = u[i] + c*d[i];
+
+    /* theta_{m+1} = norm2(w_{m+1})/tau_m */
+    theta = norm2(w,msize)/tau;
+
+    /* c_{m+1} = (1+theta^2_{m+1})^(-1/2) */
+    c = 1./sqrt(1+theta*theta);
+
+    /* tau_{m+1} = tau_m*theta_{m+1}*c_{m+1} */
+    tau *= theta*c;
+
+    /* eta_{m+1} = c^2_{m+1}*alpha_m */
+    eta = c*c*alpha;
     
-    /* r_{j+1} = r_j-alpha_j*A*p_j */
+    /* x_{m+1} = x_m+eta_{m+1}*d_{m+1} */
+    
     for (i = 0; i < msize; ++ i)
-      r[i] -= alpha*temp[i]; 
+      x[i] += eta*d[i];
 
     /* check for convergence */
-    residn = 0;
-    for (i = 0; i < msize; ++ i )
-      residn += r[i]*r[i];
-    residn = sqrt(residn);
-    if (residn < tol )
+    /*
+     * residual estimation:
+     * norm(b-A*x_m) <= sqrt(m+1)*tau_m
+     */
+    if (sqrt(m+1)*tau < tol )
       break;
 
-    /* compute (r_{j+1},r_{j+1}) */
-    a2 = 0;
-    for (i = 0; i < msize; ++ i)
-      a2 += r[i]*r[i];
+    /* if m is odd */
+    if ( m&1 )
+    {
+      /* store c = rho_{m-1} */
+      c = rho;
+      /* rho_{m+1} = w_{m+1}*r^*_0 */
+      rho = prod(w,r1,msize);
+      /* beta_{m-1} = rho_{m+1}/rho_{m-1} */
+      beta = rho/c;
+      /* u_{m+1} = w_{m+1} + beta_{m-1}*u_m */
+      for (i = 0; i < msize; ++ i)
+        u[i] = w[i] + beta*u[i];
+      /* v_{m+1} = A*u_{m+1} + beta_{m-1}*(A*u_m+beta_{m-1}*v_{m-1} */
+      for ( i = 0; i < msize; ++ i)
+        v[i] = beta*(temp[i]+beta*v[i]);
+      /* temp = A*u_{m+1} */
+      sp_matrix_yale_mv(self,u,temp);
+      for (i = 0; i < msize; ++ i)
+        v[i] += temp[i];
+    }
 
-    /* b_j = (r_{j+1},r_{j+1})/(r_j,r_j) */
-    beta = a2/a1;
-    
-    /* p_{j+1} = r_{j+1} + beta_j*p_j */
-    for (i = 0; i < msize; ++ i)
-      p[i] = r[i] + beta*p[i];
   }
-  *max_iter = j;
+  *max_iter = m;
   *tolerance = residn;
   
   spfree(r);
-  spfree(p);
   spfree(temp);
+  spfree(d);
+  spfree(v);
+  spfree(w);
+  spfree(u);
 }
-#endif
+
 
 void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
                               double* b,
@@ -595,12 +654,8 @@ void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
     /* temp = A*p_j */
     sp_matrix_yale_mv(self,p,temp);
     /* compute (r_j,r^*_0) and (A*p_j,r^*_0) */
-    a1 = 0; a2 = 0;
-    for (i = 0; i < msize; ++ i)
-    {
-      a1 += r[i]*r1[i];         /* (r_j,r^*_0) */
-      a2 += temp[i]*r1[i];      /* (A*p_j,r^*_0) */
-    }
+    a1 = prod(r,r1,msize);      /* (r_j,r^*_0) */
+    a2 = prod(temp,r1,msize);   /* (A*p_j,r^*_0) */
     /*                  
      *            (r_j,r^*_0) 
      * alpha_j = -----------
@@ -626,17 +681,12 @@ void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
       r[i] -= alpha*temp[i]; 
 
     /* check for convergence */
-    residn = 0;
-    for (i = 0; i < msize; ++ i )
-      residn += r[i]*r[i];
-    residn = sqrt(residn);
+    residn = norm2(r,msize);
     if (residn < tol )
       break;
 
     /* compute (r_{j+1},r^*_0) */
-    a2 = 0;
-    for (i = 0; i < msize; ++ i)
-      a2 += r[i]*r1[i];
+    a2 = prod(r,r1,msize);
 
     /* b_j = (r_{j+1},r^*_0)/(r_j,r^*_0) */
     beta = a2/a1;

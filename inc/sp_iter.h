@@ -125,7 +125,6 @@ void sp_matrix_skyline_ilu_lower_solve(sp_matrix_skyline_ilu_ptr self,
 void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
                                        double* b,
                                        double* x);
-#if 0
 /*
  * Transpose-Free Quasi-Minimal Residual solver
  * self - matrix in Yale format
@@ -143,7 +142,6 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
                                 int* max_iter,
                                 double* tolerance,
                                 double* x);
-#endif
 
 /*
  * Conjugate Gradient Squared solver

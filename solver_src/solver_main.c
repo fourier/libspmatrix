@@ -216,6 +216,23 @@ int main(int argc, char *argv[])
           printf(" %e(iterations: %d) max error: ",desired_tolerance[i],iter);
           print_error(x0,x,mtx.rows_count);
         }
+        for (i = 0; i < 3; ++ i)
+        {
+          tolerance = desired_tolerance[i];
+          iter = max_iter;
+          /* memset(x,0,mtx.rows_count*sizeof(double)); */
+          /* memcpy(x,b,mtx.rows_count*sizeof(double)); */
+          portable_gettime(&t1);
+          sp_matrix_yale_solve_tfqmr(&mtx,b,b,&iter,&tolerance,x);
+          portable_gettime(&t2);
+          printf("Solving SLAE using Transpose-Free QMR method");
+          printf(" with tolerance %e(iterations: %d) time: ",
+                 tolerance,iter);
+          print_time_difference(&t1,&t2);
+          printf("SLAE using Transpose-Free QMR with tolerance");
+          printf(" %e(iterations: %d) max error: ",desired_tolerance[i],iter);
+          print_error(x0,x,mtx.rows_count);
+        }
 
 
         sp_matrix_skyline_ilu_free(&ILU);
