@@ -249,6 +249,17 @@ int sp_matrix_nonzeros(sp_matrix_ptr self);
 void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y);
 
 /*
+ * Matrix-vector multiplication for matrix in Yale format
+ * y = A*(x1 + x2)
+ * Used in sp_matrix_yale_solve_cgs
+ */
+void sp_matrix_yale_mvsum(sp_matrix_yale_ptr self,
+                          double* x1,
+                          double* x2,
+                          double* y);
+
+
+/*
  * Transposes the matrix in Yale format
  */
 void sp_matrix_yale_transpose(sp_matrix_yale_ptr self,

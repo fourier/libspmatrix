@@ -125,6 +125,43 @@ void sp_matrix_skyline_ilu_lower_solve(sp_matrix_skyline_ilu_ptr self,
 void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
                                        double* b,
                                        double* x);
+#if 0
+/*
+ * Transpose-Free Quasi-Minimal Residual solver
+ * self - matrix in Yale format
+ * b - right-part vector
+ * x0 - first approximation of the solution
+ * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * will contain a number of iterations passed
+ * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * will contain norm of the residual at the end of iteration
+ * x - output vector
+ */
+void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
+                                double* b,
+                                double* x0,
+                                int* max_iter,
+                                double* tolerance,
+                                double* x);
+#endif
+
+/*
+ * Conjugate Gradient Squared solver
+ * self - matrix in Yale format
+ * b - right-part vector
+ * x0 - first approximation of the solution
+ * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * will contain a number of iterations passed
+ * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * will contain norm of the residual at the end of iteration
+ * x - output vector
+ */
+void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
+                              double* b,
+                              double* x0,
+                              int* max_iter,
+                              double* tolerance,
+                              double* x);
 
 
 #endif /* _SP_ITER_H_ */

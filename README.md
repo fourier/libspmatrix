@@ -9,7 +9,11 @@ Therefore all methods to solve linear algebraic equation systems implemented in 
 Features
 --------
  * Support for different sparse matrix formats: CRS/CCS(3-arrays) or Yale format, CS(lower triangle)R(Skyline) format, internal dynamic-arrays based format
- * Solvers: Conjugate Gradedient method, Preconditioned Conjugate Gradient(with ILU preconditioner), Sparse Cholesky Solver (direct solver)
+ * Solvers: 
+   ** Conjugate Gradient method
+   ** Preconditioned Conjugate Gradient(with ILU preconditioner)
+   ** Conjugate Gradient Squared method
+   ** Sparse Cholesky Solver (direct solver)
  * Sparse matrix file input formats: Matrix Market, Harwell-Boeing
  * Sparse matrix file output formats: Matrix Market, txt 0-based triplet format (each line is 0-based triplet: row, column, value)
  * Sparse Cholesky Solver based on book (T.Davis Direct Solvers for Sparse Lineer systems), therefore supported operations like elimination tree construction, symbolic Cholesky decomposition, numeric Cholesky decomposition 

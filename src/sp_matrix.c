@@ -732,6 +732,30 @@ void sp_matrix_yale_mv(sp_matrix_yale_ptr self,double* x, double* y)
   }
 }
 
+void sp_matrix_yale_mvsum(sp_matrix_yale_ptr self,
+                          double* x1,
+                          double* x2,
+                          double* y)
+{
+  int i,j,k;
+  memset(y,0,sizeof(double)*self->rows_count);
+  if (self->storage_type == CRS)
+  {
+    for ( i = 0; i < self->rows_count; ++ i)
+      for ( j = self->offsets[i]; j < self->offsets[i+1]; ++ j)
+      {
+        k = self->indicies[j];
+        y[i] += self->values[j]*(x1[k]+x2[k]);
+      }
+  }
+  else                          /* CCS */
+  {
+    for ( i = 0; i < self->cols_count; ++ i)
+      for ( j = self->offsets[i]; j < self->offsets[i+1]; ++ j)
+        y[self->indicies[j]] += self->values[j]*(x1[i]+x2[i]);
+  }
+}
+
 
 void sp_matrix_printf2(sp_matrix_ptr self)
 {

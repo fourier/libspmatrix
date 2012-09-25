@@ -431,3 +431,231 @@ void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
   }
 }
 
+#if 0
+void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
+                                double* b,
+                                double* x0,
+                                int* max_iter,
+                                double* tolerance,
+                                double* x)
+{
+  /* Transpose-Free Quasi-Minimal Residual Algorithm */
+  /*
+   * Based on the book:
+   * Saad Y. Iterative methods for sparse linear systems (2ed., 2003)
+   * page 235
+   */
+   
+  /* variables */
+  int i,j;
+  double alpha, beta,a1,a2;
+  double residn = 0;
+  int size = sizeof(double)*self->rows_count;
+  int msize = self->rows_count;
+  int max_iterations = *max_iter;
+  double tol = *tolerance;
+  double* r;              /* residual */
+  double* p;              /* search direction */
+  double* temp;
+
+  /* allocate memory for vectors */
+  r = (double*)spalloc(size);
+  p = (double*)spalloc(size);
+  temp = (double*)spalloc(size);
+  /* clear vectors */
+  memset(r,0,size);
+  memset(p,0,size);
+  memset(temp,0,size);
+
+  /* x = x_0 */
+  memcpy(x,x0,size);
+
+  /* r_0 = b - A*x_0 */
+  sp_matrix_yale_mv(self,b,r);
+  for ( i = 0; i < msize; ++ i)
+    r[i] = b[i] - r[i];
+
+  /* p_0 = r_0 */
+  memcpy(p,r,size);
+  
+  /* CG loop */
+  for ( j = 0; j < max_iterations; j ++ )
+  {
+    /* temp = A*p_j */
+    sp_matrix_yale_mv(self,p,temp);
+    /* compute (r_j,r_j) and (A*p_j,p_j) */
+    a1 = 0; a2 = 0;
+    for (i = 0; i < msize; ++ i)
+    {
+      a1 += r[i]*r[i];         /* (r_j,r_j) */
+      a2 += temp[i]*p[i];      /* (A*p_j,p_j) */
+    }
+
+    /*            (r_j,r_j) 
+     * alpha_j = -----------
+     *           (A*p_j,p_j)
+     */                     
+    alpha = a1/a2;              
+                                
+    /* x_{j+1} = x_j+alpha_j*p_j */
+    for (i = 0; i < msize; ++ i)
+      x[i] += alpha*p[i];
+    
+    /* r_{j+1} = r_j-alpha_j*A*p_j */
+    for (i = 0; i < msize; ++ i)
+      r[i] -= alpha*temp[i]; 
+
+    /* check for convergence */
+    residn = 0;
+    for (i = 0; i < msize; ++ i )
+      residn += r[i]*r[i];
+    residn = sqrt(residn);
+    if (residn < tol )
+      break;
+
+    /* compute (r_{j+1},r_{j+1}) */
+    a2 = 0;
+    for (i = 0; i < msize; ++ i)
+      a2 += r[i]*r[i];
+
+    /* b_j = (r_{j+1},r_{j+1})/(r_j,r_j) */
+    beta = a2/a1;
+    
+    /* p_{j+1} = r_{j+1} + beta_j*p_j */
+    for (i = 0; i < msize; ++ i)
+      p[i] = r[i] + beta*p[i];
+  }
+  *max_iter = j;
+  *tolerance = residn;
+  
+  spfree(r);
+  spfree(p);
+  spfree(temp);
+}
+#endif
+
+void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
+                              double* b,
+                              double* x0,
+                              int* max_iter,
+                              double* tolerance,
+                              double* x)
+{
+  /* Conjugate Gradient Squared Algorithm */
+  /*
+   * Based on the book:
+   * Saad Y. Iterative methods for sparse linear systems (2ed., 2003)
+   * page 229
+   */
+   
+  /* variables */
+  int i,j;
+  double alpha, beta,a1,a2;
+  double residn = 0;
+  int size = sizeof(double)*self->rows_count;
+  int msize = self->rows_count;
+  int max_iterations = *max_iter;
+  double tol = *tolerance;
+  double* r;              /* residual */
+  double* r1;             /* r^*_0 */
+  double* p;              /* search direction */
+  double* q;
+  double* u;
+  double* temp;
+
+  /* allocate memory for vectors */
+  r = (double*)spcalloc(msize,sizeof(double));
+  r1 = (double*)spcalloc(msize,sizeof(double));
+  p = (double*)spcalloc(msize,sizeof(double));
+  temp = (double*)spcalloc(msize,sizeof(double));
+  q = (double*)spcalloc(msize,sizeof(double));
+  u = (double*)spcalloc(msize,sizeof(double));
+
+
+  /* x = x_0 */
+  memcpy(x,x0,size);
+
+  /* r_0 = b - A*x_0 */
+  sp_matrix_yale_mv(self,b,r);
+  for ( i = 0; i < msize; ++ i)
+    r[i] = b[i] - r[i];
+  /* r1 - arbitrary */
+  memcpy(r1,r,size);
+  r1[0] = 1;
+  
+  /* p_0 = r_0 */
+  memcpy(p,r,size);
+
+  /* u_0 = r_0 */
+  memcpy(u,r,size);
+  
+  /* CGS loop */
+  for ( j = 0; j < max_iterations; j ++ )
+  {
+    /* temp = A*p_j */
+    sp_matrix_yale_mv(self,p,temp);
+    /* compute (r_j,r^*_0) and (A*p_j,r^*_0) */
+    a1 = 0; a2 = 0;
+    for (i = 0; i < msize; ++ i)
+    {
+      a1 += r[i]*r1[i];         /* (r_j,r^*_0) */
+      a2 += temp[i]*r1[i];      /* (A*p_j,r^*_0) */
+    }
+    /*                  
+     *            (r_j,r^*_0) 
+     * alpha_j = -----------
+     *           (A*p_j,r^*_0)
+     */                     
+    alpha = a1/a2;              
+
+    /*
+     * q_j = u_j - alpha_j*A*p_j
+     */
+    for (i = 0; i < msize; ++ i)
+      q[i] = u[i] - alpha*temp[i];
+           
+    /* x_{j+1} = x_j+alpha_j(u_j+q_j) */
+    for (i = 0; i < msize; ++ i)
+      x[i] += alpha*(u[i] + q[i]);
+
+    /* temp = A*(u_j+q_j) */
+    sp_matrix_yale_mvsum(self,u,q,temp);
+    
+    /* r_{j+1} = r_j-alpha_j*A*(u_j+q_j) */
+    for (i = 0; i < msize; ++ i)
+      r[i] -= alpha*temp[i]; 
+
+    /* check for convergence */
+    residn = 0;
+    for (i = 0; i < msize; ++ i )
+      residn += r[i]*r[i];
+    residn = sqrt(residn);
+    if (residn < tol )
+      break;
+
+    /* compute (r_{j+1},r^*_0) */
+    a2 = 0;
+    for (i = 0; i < msize; ++ i)
+      a2 += r[i]*r1[i];
+
+    /* b_j = (r_{j+1},r^*_0)/(r_j,r^*_0) */
+    beta = a2/a1;
+
+    /* u_{j+1} = r_{j+1} + b_j*q_j */
+    for (i = 0; i < msize; ++ i)
+      u[i] = r[i] + beta*q[i];
+    
+    /* p_{j+1} = u_{j+1} + beta_j*(q_j + b_j*p_j) */
+    for (i = 0; i < msize; ++ i)
+      p[i] = u[i] + beta*(q[i] + beta*p[i]);
+  }
+  *max_iter = j;
+  *tolerance = residn;
+  
+  spfree(r);
+  spfree(p);
+  spfree(temp);
+  spfree(r1);
+  spfree(q);
+  spfree(u);
+}
