@@ -62,7 +62,7 @@ How to create matrix
 There are 3 main ways to construct the matrix in this format:
  * Create it in the internal format and convert to the Yale format
  * Load it from the file
- * Operate with the Yale format directly. Use it on your risk.
+ * Operate with the Yale format directly. Use it on your own risk.
 
 Manual construction of the sparse matrix
 ----------------------------------------
@@ -126,7 +126,9 @@ Loading sparse matrices from files
 In order to load the matrix from file, there is one generic function **sp_matrix_yale_load_file**. It loads the file to Yale format at once. Supported file types:
  * MM (Matrix Market: http://math.nist.gov/MatrixMarket/formats.html#MMformat) (.mtx)
  * Harwell-Boeing(http://people.sc.fsu.edu/~jburkardt/data/hb/hb.html) format (.hb, .r[su]a)
+
 Not all variations of the Harwell-Boeing format supported. For instance complex, pattern, hermitian matrices not supported, as well as elemental(unassembled).
+
 Usage example(trivial):
 ```c
   sp_matrix_yale mtx;
