@@ -19,12 +19,13 @@ Current tasks for the libspmatrix.
     etc.)
 
 * Numeric methods
-** Implement QMR method
+** Implement sparse LU decomposition or Gauss method
+** Implement BICGSTAB method
 
 * General issues
 ** Add automatic smart bandwidth selection based on FEA-matricies
    statistics in addition to the manual selection
-** Start to write the documentation
+** Update documentation coverage
 ** Verify the consistency of init/free functions declarations and usage
 ** Add indexed_array init/free/copy methods to sp_cont and refactor sp_matrix using them
 ** Create native Win32 version
