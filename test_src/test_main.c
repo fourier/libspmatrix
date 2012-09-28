@@ -364,6 +364,46 @@ static void cg_solver()
   sp_matrix_yale_free(&yale);
 }
 
+static void tfqmr_solver()
+{
+  sp_matrix mtx;
+  sp_matrix_yale yale;
+  double v[3] = {0}, x[3] = {0}, z[3] = {0};
+  int max_iter = 20000;
+  const double desired_tolearance = 1e-10;
+  double tolerance = desired_tolearance;
+
+  /* matrix solver test  */
+
+  /*
+   * | 0  1  0 |   |-1   |   | 0   |
+   * | 0 -1 -1 | x | 0.5 | = |-1   | 
+   * | 1  0  2 |   | 1   |   | 0.5 |
+   */
+  memset(x,0,3);
+  v[0] = 0;
+  v[1] = -1;
+  v[2] = 0.5;
+  sp_matrix_init(&mtx,3,3,2,CRS);
+  
+  MTX(&mtx,0,1,1);
+  MTX(&mtx,1,1,-1); MTX(&mtx,1,2,-1);
+  MTX(&mtx,2,0,1);MTX(&mtx,2,2,2);
+
+  sp_matrix_reorder(&mtx);
+  sp_matrix_yale_init(&yale,&mtx);
+  sp_matrix_yale_solve_tfqmr(&yale,v,v,&max_iter,&tolerance,x);
+
+  /* check for convergence */
+  sp_matrix_yale_mv(&yale,x,z);
+  
+  tolerance = sqrt(pow(z[0]-v[0],2)+pow(z[1]-v[1],2)+pow(z[2]-v[2],2));
+  ASSERT_TRUE(tolerance < desired_tolearance*10);
+  
+  sp_matrix_free(&mtx);
+  sp_matrix_yale_free(&yale);
+}
+
 static void ilu_and_skyline()
 {
   sp_matrix mtx;
@@ -1636,6 +1676,7 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(sparse_permutations);
   SP_ADD_TEST(lower_triangular_solver);
   SP_ADD_TEST(cg_solver);
+  SP_ADD_TEST(tfqmr_solver);  
   SP_ADD_TEST(ilu_and_skyline);
   SP_ADD_TEST(pcg_ilu_solver);
   SP_ADD_TEST(load_from_files);

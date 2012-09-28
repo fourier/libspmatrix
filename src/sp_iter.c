@@ -456,7 +456,8 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
   int i,m;
   double alpha, beta;
   double residn = 0;
-  double theta = 0, eta = 0, rho = 0;
+  double theta = 0, eta = 0;
+  double rho[2] = {0};
   double tau;
   int size = sizeof(double)*self->rows_count;
   int msize = self->rows_count;
@@ -467,18 +468,21 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
   double* r1;              /* r^*_0 */
   double* temp;
   double* d;
-  double* v;
+  double* v[2];
   double* w;
-  double* u;
+  double* u[2];
   
   /* allocate memory for vectors */
   r = (double*)spalloc(size);
   r1 = (double*)spalloc(size);
   temp = (double*)spalloc(size);
   d = (double*)spcalloc(msize,sizeof(double));
-  v = (double*)spcalloc(msize,sizeof(double));
+  v[0] = (double*)spcalloc(msize,sizeof(double));
+  v[1] = (double*)spcalloc(msize,sizeof(double));
   w = (double*)spcalloc(msize,sizeof(double));
-  u = (double*)spcalloc(msize,sizeof(double));
+  u[0] = (double*)spcalloc(msize,sizeof(double));
+  u[1] = (double*)spcalloc(msize,sizeof(double));
+
   /* d = 0 */
   memset(d,0,size);
 
@@ -493,36 +497,35 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
   /* w_0 = r_0 */
   memcpy(w,r,size);
   /* u_0 = r_0 */
-  memcpy(u,r,size);
+  memcpy(u[1],r,size);
   /* v_0 = A*u_0 */
-  sp_matrix_yale_mv(self,u,v);
+  sp_matrix_yale_mv(self,u[1],v[1]);
 
-  rho = prod(r1,r,msize);
   tau = norm2(r,msize);
   
   /* choose r^*_0 that rho_0 = (r^*_0,r_0) != 0 */
   memcpy(r1,r,size);
   r1[0] = 1;
-  
-  /* CG loop */
+  /* rho_0 = (r^*_0,r_0) */
+  rho[0] = rho[1] = prod(r1,r,msize);
+  /* QMR loop */
   for ( m = 0; m < max_iterations; m ++ )
   {
+    /* store values from previous iterations */
+    memcpy(u[0],u[1],size);
     /* if m is even */
     if ((m&1) == 0)
     {
-      /* alpha_{m+1} = alpha_m */
+
+      /* alpha_{m+1} = alpha_m = rho_m/(v_m,r^*_0) */
+      alpha = rho[1]/prod(v[1],r1,msize);
       /* u_{m+1} = u_m - alpha_m*v_m */
       for (i = 0; i < msize; ++ i)
-        u[i] -= alpha*v[i];
-    }
-    else
-    {
-      /* alpha_m = rho_m/(v_m,r^*_0) */
-      alpha = rho/prod(v,r1,msize);
+        u[1][i] = u[0][i]-alpha*v[1][i]; /* u from old ? shall be u[1] */
     }
 
     /* temp = A*u_m */
-    sp_matrix_yale_mv(self,u,temp);
+    sp_matrix_yale_mv(self,u[0],temp);
 
     /* w_{m+1} = w_m - alpha_m*A*u_m */
     for (i = 0; i < msize; ++ i)
@@ -531,8 +534,8 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
     /* d_{m+1} = u_m + (theta^2_m/alpha_m)*eta_m*d_m */
     c = theta*theta/alpha*eta;
     for (i = 0; i < msize; ++ i)
-      d[i] = u[i] + c*d[i];
-
+      d[i] = u[0][i] + c*d[i];
+    
     /* theta_{m+1} = norm2(w_{m+1})/tau_m */
     theta = norm2(w,msize)/tau;
 
@@ -546,7 +549,6 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
     eta = c*c*alpha;
     
     /* x_{m+1} = x_m+eta_{m+1}*d_{m+1} */
-    
     for (i = 0; i < msize; ++ i)
       x[i] += eta*d[i];
 
@@ -555,40 +557,44 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
      * residual estimation:
      * norm(b-A*x_m) <= sqrt(m+1)*tau_m
      */
-    if (sqrt(m+1)*tau < tol )
+    residn = sqrt(m+1)*tau;
+    if ( residn < tol )
       break;
 
+    /* store values from previous iterations */
+    memcpy(v[0],v[1],size);
     /* if m is odd */
     if ( m&1 )
     {
-      /* store c = rho_{m-1} */
-      c = rho;
+      rho[0] = rho[1];
       /* rho_{m+1} = w_{m+1}*r^*_0 */
-      rho = prod(w,r1,msize);
+      rho[1] = prod(w,r1,msize);
       /* beta_{m-1} = rho_{m+1}/rho_{m-1} */
-      beta = rho/c;
+      beta = rho[1]/rho[0];
       /* u_{m+1} = w_{m+1} + beta_{m-1}*u_m */
       for (i = 0; i < msize; ++ i)
-        u[i] = w[i] + beta*u[i];
-      /* v_{m+1} = A*u_{m+1} + beta_{m-1}*(A*u_m+beta_{m-1}*v_{m-1} */
+        u[1][i] = w[i] + beta*u[1][i];
+      /* v_{m+1} = A*u_{m+1} + beta_{m-1}*(A*u_m+beta_{m-1}*v_{m-1}) */
       for ( i = 0; i < msize; ++ i)
-        v[i] = beta*(temp[i]+beta*v[i]);
+        v[1][i] = beta*(temp[i]+beta*v[0][i]);
       /* temp = A*u_{m+1} */
-      sp_matrix_yale_mv(self,u,temp);
+      sp_matrix_yale_mv(self,u[1],temp);
       for (i = 0; i < msize; ++ i)
-        v[i] += temp[i];
+        v[1][i] += temp[i];
     }
-
   }
   *max_iter = m;
   *tolerance = residn;
   
   spfree(r);
+  spfree(r1);
   spfree(temp);
   spfree(d);
-  spfree(v);
+  spfree(v[0]);
+  spfree(v[1]);
   spfree(w);
-  spfree(u);
+  spfree(u[0]);
+  spfree(u[1]);
 }
 
 
