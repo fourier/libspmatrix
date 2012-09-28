@@ -29,6 +29,7 @@
  * MM (Matrix Market) (*.mtx)
  * Harwell-Boeing format (*.hb, *.r[su]a)
  * if file is in Harwell-Boeing format, storage type is ignored
+ * Returns nonzero if successfull
  */
 int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
                              const char* filename,

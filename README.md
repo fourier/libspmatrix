@@ -3,7 +3,7 @@ libspmatrix Library Description
 
 Introduction
 ------------
-libspmatrix is a simple library for working with sparse matrices. It was designed to provide the generic sparse matrix techniques for the finite element analysis.
+libspmatrix is a simple library for working with sparse matrices of real values. It was designed to provide the generic sparse matrix techniques for the finite element analysis.
 Therefore all methods to solve linear algebraic equation systems implemented in the library requires matrices to be positive linear-definite. It supports different storage schemes as well as different file formats. 
 
 Features
@@ -91,7 +91,7 @@ sp_matrix_element_add(&mtx,0,1,1);
 sp_matrix_element_add(&mtx,1,1,-1); sp_matrix_element_add(&mtx,1,2,-1);
 sp_matrix_element_add(&mtx,2,0,1); sp_matrix_element_add(&mtx,2,2,2);
 ```
-However there is already exist a macro **MTX** for this operation:
+Alternatively one can use a macro **MTX** for this operation:
 ```c
 MTX(&mtx,0,1,1);
 MTX(&mtx,1,1,-1); MTX(&mtx,1,2,-1);
@@ -121,8 +121,16 @@ The Yale format structure could be freed in the same way:
 sp_matrix_yale_free(&yale);
 ```
 
-Loading sparse matrices from file
----------------------------------
-
-
+Loading sparse matrices from files
+----------------------------------
+In order to load the matrix from file, there is one generic function **sp_matrix_yale_load_file**. It loads the file to Yale format at once. Supported file types:
+ * MM (Matrix Market: http://math.nist.gov/MatrixMarket/formats.html#MMformat) (.mtx)
+ * Harwell-Boeing(http://people.sc.fsu.edu/~jburkardt/data/hb/hb.html) format (.hb, .r[su]a)
+Not all variations of the Harwell-Boeing format supported. For instance complex, pattern, hermitian matrices not supported, as well as elemental(unassembled).
+Usage example(trivial):
+```c
+  sp_matrix_yale mtx;
+  sp_matrix_yale_load_file(&mtx,"bcsstk09.rsa",CRS);
+```
+Third argument is a desired storage format, ignored in case of Harwell-Boeing format.
 
