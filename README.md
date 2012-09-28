@@ -49,23 +49,23 @@ Directory structure
 </pre>
 
 Getting started
----------------
+===============
 To use the library, build it (on Linux and MacOS X simply run **make**). The library itself will be generated in *lib/* directory. Link your sources against the library and add *inc/* as an include path to your project. 
 
 Matrix formats
-==============
+--------------
 The format used to operate with sparse matrices is Yale format(http://en.wikipedia.org/wiki/Sparse_matrix#Yale_format). The structure describing matrix in this format is **sp_matrix_yale**. 'Generic' matrix format used to create the matrix manually represented by the structure **sp_matrix**.
 Both declaration could be found in *sp_matrix.h* in *inc/* directory. In order to initialize and free structures of these formats the appropriate init/free functions used.
 
 How to create matrix
-====================
+--------------------
 There are 3 main ways to construct the matrix in this format:
  * Create it in the internal format and convert to the Yale format
  * Load it from the file
  * Operate with the Yale format directly. Use it on your risk.
 
 Manual construction of the sparse matrix
-========================================
+----------------------------------------
 Since Yale matrix format was designed to operate with matrices, not to create them, it is easier to create a matrix in any other format and convert it to the Yale format. The internal sparse matrix format is List of lists(LIL)-based format with dynamic arrays as an appropriate row/column storage(instead of lists).
 Lets introduce the matrix creation/conversion process by example.
 Suppose we want to create and convert to Yale format the matrix
@@ -85,30 +85,44 @@ sp_matrix_init(&mtx,3,3,2,CRS);
 ```
 Here second and third arguments are number of rows and columns, forth - bandwidth(approximate number of nonzero elements in row), fifth - storage format (stored row-wise)
 Now we can fill the matrix with values.
-Since by default matrix considered to be zero matrix, we can 'add' values to appropriate matrix position - the way sparse matrix constructed in FEM. We can use the function *sp_matrix_element_add* for this purpose. However there is already exists a macro **MTX** for this operation:
- 1. With the sp_matrix_element_add function call:
+Since by default matrix considered to be zero matrix, we can 'add' values to appropriate matrix position - the way sparse matrix constructed in FEM. We can use the function *sp_matrix_element_add* for this purpose:
 ```c
 sp_matrix_element_add(&mtx,0,1,1);
 sp_matrix_element_add(&mtx,1,1,-1); sp_matrix_element_add(&mtx,1,2,-1);
 sp_matrix_element_add(&mtx,2,0,1); sp_matrix_element_add(&mtx,2,2,2);
 ```
- 2. With the **MTX** macro
+However there is already exist a macro **MTX** for this operation:
 ```c
 MTX(&mtx,0,1,1);
 MTX(&mtx,1,1,-1); MTX(&mtx,1,2,-1);
 MTX(&mtx,2,0,1);MTX(&mtx,2,2,2);
 ```
-
 In order to modify matrix element one can get a *pointer* to this element:
 ```c
 double *pvalue = sp_matrix_element_ptr(&mtx,0,1);
 ```
 This function will return 0 if an element is not exist.
-
-
+It is recommended to 'reorder' the matrix elements using the function
+```c
+sp_matrix_reorder(&mtx);
+```
+to prepare conversion to the Yale format.
+However in most cases these operation will be performed automatically.
+Now we can init an appropriate Yale-format structure:
+```c
+sp_matrix_yale_init(&yale,&mtx);
+```
+From this moment we can free *mtx* structure
+```c
+sp_matrix_free(&mtx);
+```
+The Yale format structure could be freed in the same way:
+```c
+sp_matrix_yale_free(&yale);
+```
 
 Loading sparse matrices from file
-=================================
+---------------------------------
 
 
 
