@@ -42,9 +42,9 @@ typedef sp_matrix_skyline_ilu* sp_matrix_skyline_ilu_ptr;
  * self - matrix in Yale format
  * b - right-part vector
  * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * max_iter - pointer to maximum number of iterations, shall not be zero;
  * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * tolerance - pointer to desired tolerance value;
  * will contain norm of the residual at the end of iteration
  * x - output vector
  */
@@ -61,9 +61,9 @@ void sp_matrix_yale_solve_cg(sp_matrix_yale_ptr self,
  * self - matrix in Yale format
  * b - right-part vector
  * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * max_iter - pointer to maximum number of iterations, shall not be zero;
  * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * tolerance - pointer to desired tolerance value;
  * will contain norm of the residual at the end of iteration
  * x - output vector
  */
@@ -130,9 +130,9 @@ void sp_matrix_skyline_ilu_upper_solve(sp_matrix_skyline_ilu_ptr self,
  * self - matrix in Yale format
  * b - right-part vector
  * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * max_iter - pointer to maximum number of iterations, shall not be zero;
  * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * tolerance - pointer to desired tolerance value;
  * will contain norm of the residual at the end of iteration
  * x - output vector
  */
@@ -148,9 +148,9 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
  * self - matrix in Yale format
  * b - right-part vector
  * x0 - first approximation of the solution
- * max_iter - pointer to maximum number of iterations, MAX_ITER if zero;
+ * max_iter - pointer to maximum number of iterations, shall not be zero;
  * will contain a number of iterations passed
- * tolerance - pointer to desired tolerance value, TOLERANCE if zero;
+ * tolerance - pointer to desired tolerance value;
  * will contain norm of the residual at the end of iteration
  * x - output vector
  */
