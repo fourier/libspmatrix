@@ -151,7 +151,11 @@ void sp_matrix_yale_solve_tfqmr(sp_matrix_yale_ptr self,
  * max_iter - pointer to maximum number of iterations, shall not be zero;
  * will contain a number of iterations passed
  * tolerance - pointer to desired tolerance value;
- * will contain norm of the residual at the end of iteration
+ * tolerance is an estimated value in inequality
+ * norm(b-A*x_m) <= sqrt(m+1)*tau <= tolerance
+ * since residual norm(b-A*x_m) is not available directly in
+ * the method;
+ * will contain this estimation the end of iterations
  * x - output vector
  */
 void sp_matrix_yale_solve_cgs(sp_matrix_yale_ptr self,
