@@ -54,7 +54,7 @@ LIBCFLAGS = --std=c99
 SOLVERCFLAGS = --std=gnu99
 
 INCLUDES = -I inc $(LOGGERINC)
-LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
+LINKFLAGS = -L. -lspmatrix -lm -rdynamic $(LOGGERLINK) $(COVERAGELINK)
 SOLVERLINKFLAGS = 
 
 ifeq ($(PLATFORM),Linux)

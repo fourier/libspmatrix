@@ -127,21 +127,23 @@ int main(int argc, char *argv[])
     else
     {
       portable_gettime(&t2);
+      printf("Cholesky symblic decomposition calculation time: ");
+      print_time_difference(&t1,&t2);
+
       if(!sp_matrix_yale_chol_numeric(&mtx,&symb,&L))
         printf("Unable to create numeric Cholesky decomposition\n");
       else
       {
         portable_gettime(&t3);
+        printf("Cholesky numeric decomposition calculation time: ");
+        print_time_difference(&t2,&t3);
+  
         printf("Cholesky decomposition statistics:\n");
         sp_matrix_yale_printf2(&L);
         printf("Nonzeros size increase:");
         printf("from %d to %d is %.2f %% size increase\n",
                mtx.nonzeros,L.nonzeros,L.nonzeros/(mtx.nonzeros/100.)-100.0);
-        printf("Cholesky symblic decomposition calculation time: ");
-        print_time_difference(&t1,&t2);
-        printf("Cholesky numeric decomposition calculation time: ");
-        print_time_difference(&t2,&t3);
-        
+       
         /* verify SLAE */
         x0 = calloc(mtx.rows_count,sizeof(double));
         x = calloc(mtx.rows_count,sizeof(double));
