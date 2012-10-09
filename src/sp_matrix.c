@@ -1016,7 +1016,7 @@ void sp_matrix_yale_printf2(sp_matrix_yale_ptr self)
   printf("Size: %dx%d\n", self->rows_count,self->cols_count);
   printf("Nonzeros: %d\n", self->nonzeros);
   printf ("Fill factor: %.2f %%\n",
-          self->nonzeros/(self->rows_count*(self->cols_count)/100.0));
+          self->nonzeros/(self->rows_count*(self->cols_count/100.0)));
   printf("Avergare nonzeros per row: %d\n",
          (int)(self->nonzeros/(double)self->rows_count));
 }
