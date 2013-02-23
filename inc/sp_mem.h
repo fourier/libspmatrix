@@ -18,6 +18,8 @@
  along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+size_t spallocated();
+
 void* spalloc(size_t size);
 void* spcalloc(size_t nmemb, size_t size);
 void* sprealloc(void* ptr, size_t size);

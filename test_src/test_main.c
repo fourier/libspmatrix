@@ -1703,5 +1703,6 @@ int main(int argc, const char *argv[])
   /* finalize logger */
   logger_fini();
 #endif
+
   return 0;
 }

@@ -37,7 +37,7 @@ static void log_backtrace (void)
   strings = backtrace_symbols (array, size);
     
   for (i = 0; i < size; i++)
-    LOGERROR("#%d  %s", i, strings[i]);
+    LOGERROR("#%ld  %s", i, strings[i]);
      
   free (strings);
 }
