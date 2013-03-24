@@ -1,0 +1,240 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CFDA6B1316FD0D5600D4964D /* solver_main.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6B1216FD0D5600D4964D /* solver_main.c */; };
+		CFDA6B1516FD0D9000D4964D /* libspmatrix.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CFDA6B1416FD0D9000D4964D /* libspmatrix.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CFDA6B0316FD0D3F00D4964D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		CFDA6B0516FD0D3F00D4964D /* solver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = solver; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFDA6B1216FD0D5600D4964D /* solver_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = solver_main.c; sourceTree = "<group>"; };
+		CFDA6B1416FD0D9000D4964D /* libspmatrix.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libspmatrix.a; path = "../../../../../Library/Developer/Xcode/DerivedData/spmatrix-hgfllxllpwignadpxzjxsmhrxmnp/Build/Products/Debug/libspmatrix.a"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CFDA6B0216FD0D3F00D4964D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDA6B1516FD0D9000D4964D /* libspmatrix.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CFDA6AFC16FD0D3F00D4964D = {
+			isa = PBXGroup;
+			children = (
+				CFDA6B1616FD0D9900D4964D /* lib */,
+				CFDA6B1116FD0D5600D4964D /* solver_src */,
+				CFDA6B0616FD0D3F00D4964D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CFDA6B0616FD0D3F00D4964D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6B0516FD0D3F00D4964D /* solver */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CFDA6B1116FD0D5600D4964D /* solver_src */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6B1216FD0D5600D4964D /* solver_main.c */,
+			);
+			name = solver_src;
+			path = ../../solver_src;
+			sourceTree = "<group>";
+		};
+		CFDA6B1616FD0D9900D4964D /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6B1416FD0D9000D4964D /* libspmatrix.a */,
+			);
+			name = lib;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CFDA6B0416FD0D3F00D4964D /* solver */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFDA6B0E16FD0D3F00D4964D /* Build configuration list for PBXNativeTarget "solver" */;
+			buildPhases = (
+				CFDA6B0116FD0D3F00D4964D /* Sources */,
+				CFDA6B0216FD0D3F00D4964D /* Frameworks */,
+				CFDA6B0316FD0D3F00D4964D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = solver;
+			productName = solver;
+			productReference = CFDA6B0516FD0D3F00D4964D /* solver */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CFDA6AFD16FD0D3F00D4964D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = "Alexey Veretennikov";
+			};
+			buildConfigurationList = CFDA6B0016FD0D3F00D4964D /* Build configuration list for PBXProject "solver" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = CFDA6AFC16FD0D3F00D4964D;
+			productRefGroup = CFDA6B0616FD0D3F00D4964D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CFDA6B0416FD0D3F00D4964D /* solver */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CFDA6B0116FD0D3F00D4964D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDA6B1316FD0D5600D4964D /* solver_main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		CFDA6B0C16FD0D3F00D4964D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CFDA6B0D16FD0D3F00D4964D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		CFDA6B0F16FD0D3F00D4964D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../../../Library/Developer/Xcode/DerivedData/spmatrix-hgfllxllpwignadpxzjxsmhrxmnp/Build/Products/Debug\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = ../../inc;
+			};
+			name = Debug;
+		};
+		CFDA6B1016FD0D3F00D4964D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../../../Library/Developer/Xcode/DerivedData/spmatrix-hgfllxllpwignadpxzjxsmhrxmnp/Build/Products/Debug\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = ../../inc;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CFDA6B0016FD0D3F00D4964D /* Build configuration list for PBXProject "solver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFDA6B0C16FD0D3F00D4964D /* Debug */,
+				CFDA6B0D16FD0D3F00D4964D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFDA6B0E16FD0D3F00D4964D /* Build configuration list for PBXNativeTarget "solver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFDA6B0F16FD0D3F00D4964D /* Debug */,
+				CFDA6B1016FD0D3F00D4964D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CFDA6AFD16FD0D3F00D4964D /* Project object */;
+}

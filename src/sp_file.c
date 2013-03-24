@@ -33,6 +33,7 @@ typedef enum
 {
   FMT_MM,
   FMT_TXT,
+  FMT_DAT,
   FMT_UNSUPPORTED
 } supported_format;
 /*
@@ -42,6 +43,13 @@ typedef enum
 const char* MM_HEADER_STRING = "%%MatrixMarket";
 const char* MM_HEADER_OUTPUT_ABOUT = "% Created by libspmatrix (c) "
   "Alexey Veretennikov, https://github.com/fourier/libspmatrix\n";
+const char* DAT_HEADER_OUTPUT_ABOUT = "# Created by libspmatrix (c) "
+"Alexey Veretennikov, https://github.com/fourier/libspmatrix\n";
+const char* DAT_HEADER_FORMAT = "# name: %s\n"
+"# type: sparse matrix\n"
+"# nnz: %d\n"
+"# rows: %d\n"
+"# columns: %d\n";
 
 /*
  * length of the HB file line is 80, but sometimes it can be more
@@ -195,7 +203,7 @@ static int sp_matrix_yale_load_file_mm(sp_matrix_yale_ptr self,
   const char* ptr;
   const char* line;
   int block_number = 0;
-  int rows, cols, nonzeros;
+  int rows, cols, nonzeros = 0;
   int element_number = -1;
   int i,j;
   double value;
@@ -401,6 +409,12 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
   valcrd = sp_extract_positional_int(ptr,14);
   ptr += 14;
   rhscrd = sp_extract_positional_int(ptr,14);
+  if (totcrd != ptrcrd + indcrd + valcrd + rhscrd)
+  {
+    LOGERROR("Load file in HB format: total number of data lines %d not equal to %d+%d+%d+%d = %d",
+             totcrd, ptrcrd, indcrd, valcrd, rhscrd, ptrcrd + indcrd + valcrd + rhscrd);
+    return 0;
+  }
   if (rhscrd)
     LOGWARN("Right-part vector is not supported, ignoring");
   /*
@@ -523,7 +537,7 @@ static int sp_matrix_yale_load_file_hb(sp_matrix_yale_ptr self,
     n += extracted;
   }
   spfree(fortran_numbers);
-  if ( n != nrow + 1)
+  if ( n != nrow + 1 || !colptr)
   {
     LOGERROR("Unable to parse row indicies: parsed = %d != "
              "%d nonzeros", n, nnzero);
@@ -860,17 +874,12 @@ static supported_format guess_export_format(const char* filename)
     return FMT_MM;
   else if ( !sp_istrcmp(ext,"txt") )
     return FMT_TXT;
+  else if ( !sp_istrcmp(ext, "dat") )
+    return FMT_DAT;
   return FMT_UNSUPPORTED;
 }
 
-/*
- * Save the sparse martix from the file.
- * File format guessed from the extension
- * Currently supported formats:
- * MM (matrix market), file extension .mtx
- * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
- * Returns 0 if not possible to write(or unknown file format)
- */
+
 int sp_matrix_save_file(sp_matrix_ptr self, const char* filename)
 {
   supported_format fmt = guess_export_format(filename);
@@ -1038,6 +1047,41 @@ int sp_matrix_yale_save_file_txt(sp_matrix_yale_ptr self,const char* filename)
   return result;
 }
 
+static
+int sp_matrix_yale_save_file_dat(sp_matrix_yale_ptr self,const char* filename)
+{
+  int result = 1;
+  int matrix_type;
+  char buf[1024];
+  char* name = spalloc(strlen(filename)+1);
+  const char* ptr = filename;
+  int size;
+  FILE* file = fopen(filename,"wt+");
+  if (!file)
+  {
+    LOGERROR("Error opening file %s for writing",filename);
+    spfree(name);
+    return 0;
+  }
+  fwrite(DAT_HEADER_OUTPUT_ABOUT,1,strlen(DAT_HEADER_OUTPUT_ABOUT),file);
+  ptr = sp_parse_file_name(filename);
+  sp_parse_file_basename(ptr, name);
+  
+  size = sprintf(buf, DAT_HEADER_FORMAT,name,
+                 self->nonzeros,self->rows_count,self->cols_count);
+  fwrite(buf, 1, size, file);
+  spfree(name);
+  matrix_type = MM_GENERAL;
+  if (!sp_matrix_yale_save_file_triplet(self,file,matrix_type,0))
+  {
+    LOGERROR("Cannot save file!");
+    result = 0;
+  }
+  fflush(file);
+  fclose(file);
+  return result;
+}
+
 int sp_matrix_yale_save_file(sp_matrix_yale_ptr self, const char* filename)
 {
   supported_format fmt = guess_export_format(filename);
@@ -1045,9 +1089,34 @@ int sp_matrix_yale_save_file(sp_matrix_yale_ptr self, const char* filename)
   {
   case FMT_MM:  return sp_matrix_yale_save_file_mm(self,filename);
   case FMT_TXT: return sp_matrix_yale_save_file_txt(self,filename);
+  case FMT_DAT: return sp_matrix_yale_save_file_dat(self,filename);
   case FMT_UNSUPPORTED:
   default:
     break;
   }
   return 0;
+}
+
+void sp_save_int_vector(int* v, int size, const char* fname)
+{
+  int i = 0;
+  FILE *f = fopen(fname,"wt+");
+  if (f)
+  {
+    for (; i < size; ++ i)
+      fprintf(f,"%d\n", v[i]);
+    fclose(f);
+  }
+}
+
+void sp_save_double_vector(double* v, int size, const char* fname)
+{
+  int i = 0;
+  FILE *f = fopen(fname,"wt+");
+  if (f)
+  {
+    for (; i < size; ++ i)
+      fprintf(f,"%e\n", v[i]);
+    fclose(f);
+  }
 }

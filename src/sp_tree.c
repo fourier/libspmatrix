@@ -150,7 +150,7 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   }
   for ( i = 0; i < size; ++ i)
     int_stack_free(children[i]);
-  stack = int_stack_free(stack);
+  int_stack_free(stack);
   spfree(children);
 }
 

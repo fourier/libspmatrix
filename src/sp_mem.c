@@ -43,6 +43,8 @@ void* spalloc(size_t size)
   {
     LOGERROR("spalloc: cannot allocate memory block of size %zd",size);
     sp_error();
+    /* never happens but keep the compiler happy */
+    return 0;
   }
   *(size_t*)(chunk) = size;
   allocated += size;
@@ -70,6 +72,8 @@ void* sprealloc(void* ptr, size_t size)
   {
     LOGERROR("sprealloc: cannot reallocate memory block of size %zd",size);
     sp_error();
+    /* never happens but keep the compiler happy */
+    return 0;
   }
   *(size_t*)(chunk) = size;
   allocated += (size - old_sz); 
@@ -84,7 +88,7 @@ void spfree(void* ptr)
   free(CHUNK_HEAD(ptr));
 }
 
-void* memdup(const void* src, int bytes)
+void* memdup(const void* src, size_t bytes)
 {
   void* result = spalloc(bytes);
   if (result)

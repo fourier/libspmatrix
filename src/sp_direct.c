@@ -136,7 +136,7 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
 {
   int result = 1;
   int n = self->rows_count;
-  int i,j,k,p;
+  int j,k,p;
   /* array to store marked nodes. nonzero means node is marked */
   char *marked = (char*)spalloc(n);
   memset(rowcounts,0,n*sizeof(int));
@@ -145,8 +145,6 @@ int sp_matrix_yale_chol_counts(sp_matrix_yale_ptr self,
   for (k = 0; k < n; ++ k)      /* loop by rows */
   {
     memset(marked,0,n);          /* clear all marks */
-    i = 0;                       /* initialize number of row subtrees
-                                  * containing k to zero */
     /* loop by nonzero rows in the column, or nonzero cols in
      * the row, depending on storage schema */
     for ( p = self->offsets[k]; p < self->offsets[k+1]; ++p )
@@ -338,6 +336,7 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
       /* a_ij != 0  */
       /* algoritm is the same as in sp_matrix_yale_transpose */
       k = offsets[j]++;
+      /* FIXME: overflow here on fea_big.mtx */
       symb->ccs_indicies[k] = i;
     }
     memcpy(symb->crs_indicies+symb->crs_offsets[i],indicies,count*sizeof(int));
@@ -346,7 +345,6 @@ int sp_matrix_yale_chol_structure(sp_matrix_yale_ptr self,
   spfree(indicies);
   return result;
 }
-
 
 int sp_matrix_yale_chol_symbolic(sp_matrix_yale_ptr self,
                                  sp_chol_symbolic_ptr symb)

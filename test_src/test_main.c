@@ -1238,18 +1238,6 @@ static void tree_search()
   spfree(search.result);
 }
 
-static void save_vector(int* v, int size, const char* fname)
-{
-  int i = 0;
-  FILE *f = fopen(fname,"wt+");
-  if (f)
-  {
-    for (; i < size; ++ i)
-      fprintf(f,"%d\n", v[i]);
-    fclose(f);
-  }
-}
-
 static void print_props(sp_matrix_yale_ptr yale)
 {
   matrix_properties props = sp_matrix_yale_properites(yale);
@@ -1344,9 +1332,9 @@ static void big_matrix_from_file2()
     ASSERT_TRUE(sp_matrix_yale_chol_counts(&yale,etree,rowcounts,colcounts));
     for (i = 0; i < yale.rows_count; ++ i)
       etree[i]++;
-    save_vector(etree,yale.rows_count,"../octave-mm/etree.txt");
-    save_vector(rowcounts,yale.rows_count,"../octave-mm/rows.txt");
-    save_vector(colcounts,yale.rows_count,"../octave-mm/cols.txt");
+    sp_save_int_vector(etree,yale.rows_count,"../octave-mm/etree.txt");
+    sp_save_int_vector(rowcounts,yale.rows_count,"../octave-mm/rows.txt");
+    sp_save_int_vector(colcounts,yale.rows_count,"../octave-mm/cols.txt");
     
     spfree(etree);
     spfree(rowcounts);

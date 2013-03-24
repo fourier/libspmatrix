@@ -42,13 +42,20 @@ int sp_matrix_yale_load_file(sp_matrix_yale_ptr self,
  * MM (matrix market), file extension .mtx
  * see http://math.nist.gov/MatrixMarket/formats.html#MMformat
  * txt, 0-based triplet format, each line is 0-based tripet:
- * row, col, value
+ *  row, col, value
+ * dat, octave triplet format(for CCS-stored matricies, converted otherwise)
  * Returns 0 if not possible to write(or unknown file format)
  * Side-effect: matrix gets ordered
  */
 int sp_matrix_save_file(sp_matrix_ptr self, const char* filename);
 int sp_matrix_yale_save_file(sp_matrix_yale_ptr self, const char* filename);
 
+/*
+ * Save the vector of size `size` to the file `fname`
+ * in order to read by octave, matlab or other tools
+ */
+void sp_save_int_vector(int* v, int size, const char* fname);
+void sp_save_double_vector(double* v, int size, const char* fname);
 
 
 #endif /* _SP_FILE_H_ */

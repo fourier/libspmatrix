@@ -77,6 +77,16 @@ char* sp_strndup(const char *s, size_t n);
 const char* sp_parse_file_extension(const char* filename);
 
 /*
+ * Extract file name from the path
+ */
+const char* sp_parse_file_name(const char* filename);
+
+/*
+ * Extract file name without extension
+ */
+void sp_parse_file_basename(const char* filename, char* basename);
+
+/*
  * Skip whitespaces
  */
 const char* sp_skip_whitespaces(const char* line);
@@ -101,7 +111,7 @@ char* sp_read_text_file(const char* filename);
 
 
 /* Extracts the integer of size bytes from the buffer from */
-int sp_extract_positional_int(const char* from, int size);
+int sp_extract_positional_int(const char* from, size_t size);
 
 /* Extracts the float of size bytes from the buffer from */
 double sp_extract_positional_float(const char* from, int size);

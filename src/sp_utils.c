@@ -69,6 +69,11 @@ char* sp_strndup(const char *s, size_t n)
   return str;
 }
 
+static const char* ptr_after_char(const char* str,char c)
+{
+  const char* ptr = strrchr(str, c);
+  return ptr ? ptr + 1 : ptr;
+}
 
 
 /*
@@ -76,16 +81,41 @@ char* sp_strndup(const char *s, size_t n)
  */
 const char* sp_parse_file_extension(const char* filename)
 {
+  return ptr_after_char(filename,'.');
+}
+
+/*
+ * Extract file name from the path
+ */
+const char* sp_parse_file_name(const char* filename)
+{
+  const char* ptr = ptr_after_char(filename,'/');
+  return ptr ? ptr : filename;
+}
+
+/*
+ * Extract file name without extension. Naive implementation
+ * cannot handle full paths like /the/path.to/file
+ * where the result will be /the/path
+ */
+void sp_parse_file_basename(const char* filename, char* basename)
+{
   const char* ptr;
-  int len = strlen(filename);
-  ptr = filename + len;
-  while (len)
+  size_t count, size;
+  count = size = strlen(filename);
+  ptr = filename + count;
+  while (count)
   {
-    ptr--,len--;
+    ptr--,count--;
     if ( *ptr == '.' )
       break;
   }
-  return len ? ptr + 1 : 0;
+  if (!count) 
+    count = size;
+  
+  memcpy(basename,filename,count);
+  basename[count] = 0;
+  
 }
 
 /*
@@ -136,7 +166,7 @@ char* sp_read_text_file(const char* filename)
   /* contents buffer */
   char* contents = spcalloc(block_size+1,1);
   /* auxulary counters */
-  int read_chunk = 0,read = 0;
+  size_t read_chunk = 0,read = 0;
 
   file = fopen(filename,"rt");
   if (!file)
@@ -161,12 +191,12 @@ char* sp_read_text_file(const char* filename)
 
 
 /* Extracts the integer of size bytes from the buffer from */
-int sp_extract_positional_int(const char* from, int size)
+int sp_extract_positional_int(const char* from, size_t size)
 {
   int result;
   char* buf = spalloc(size+1);
   char* ptr = buf;
-  int i = 0;
+  size_t i = 0;
   while (i < size && *from)
   {
     *ptr++ = *from++;

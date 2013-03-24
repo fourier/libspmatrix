@@ -1,0 +1,246 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CFDA6AEE16FD0A2D00D4964D /* libspmatrix.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CFDA6AED16FD0A2D00D4964D /* libspmatrix.a */; };
+		CFDA6AF316FD0CBC00D4964D /* demo_fem2d.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6AF016FD0CBC00D4964D /* demo_fem2d.c */; };
+		CFDA6AF416FD0CBC00D4964D /* main_fem2d.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6AF216FD0CBC00D4964D /* main_fem2d.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CFDA6ADA16FD09F700D4964D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		CFDA6ADC16FD09F700D4964D /* demo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = demo; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFDA6AED16FD0A2D00D4964D /* libspmatrix.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libspmatrix.a; path = "../../../../../Library/Developer/Xcode/DerivedData/spmatrix-hgfllxllpwignadpxzjxsmhrxmnp/Build/Products/Debug/libspmatrix.a"; sourceTree = "<group>"; };
+		CFDA6AF016FD0CBC00D4964D /* demo_fem2d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = demo_fem2d.c; sourceTree = "<group>"; };
+		CFDA6AF116FD0CBC00D4964D /* demo_fem2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = demo_fem2d.h; sourceTree = "<group>"; };
+		CFDA6AF216FD0CBC00D4964D /* main_fem2d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main_fem2d.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CFDA6AD916FD09F700D4964D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDA6AEE16FD0A2D00D4964D /* libspmatrix.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CFDA6AD316FD09F700D4964D = {
+			isa = PBXGroup;
+			children = (
+				CFDA6AFB16FD0D0000D4964D /* lib */,
+				CFDA6AEF16FD0CBC00D4964D /* demo_src */,
+				CFDA6ADD16FD09F700D4964D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CFDA6ADD16FD09F700D4964D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6ADC16FD09F700D4964D /* demo */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CFDA6AEF16FD0CBC00D4964D /* demo_src */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6AF016FD0CBC00D4964D /* demo_fem2d.c */,
+				CFDA6AF116FD0CBC00D4964D /* demo_fem2d.h */,
+				CFDA6AF216FD0CBC00D4964D /* main_fem2d.c */,
+			);
+			name = demo_src;
+			path = ../../demo_src;
+			sourceTree = "<group>";
+		};
+		CFDA6AFB16FD0D0000D4964D /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6AED16FD0A2D00D4964D /* libspmatrix.a */,
+			);
+			name = lib;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CFDA6ADB16FD09F700D4964D /* demo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFDA6AE516FD09F700D4964D /* Build configuration list for PBXNativeTarget "demo" */;
+			buildPhases = (
+				CFDA6AD816FD09F700D4964D /* Sources */,
+				CFDA6AD916FD09F700D4964D /* Frameworks */,
+				CFDA6ADA16FD09F700D4964D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = demo;
+			productName = demo;
+			productReference = CFDA6ADC16FD09F700D4964D /* demo */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CFDA6AD416FD09F700D4964D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = "Alexey Veretennikov";
+			};
+			buildConfigurationList = CFDA6AD716FD09F700D4964D /* Build configuration list for PBXProject "demo" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = CFDA6AD316FD09F700D4964D;
+			productRefGroup = CFDA6ADD16FD09F700D4964D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CFDA6ADB16FD09F700D4964D /* demo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CFDA6AD816FD09F700D4964D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDA6AF316FD0CBC00D4964D /* demo_fem2d.c in Sources */,
+				CFDA6AF416FD0CBC00D4964D /* main_fem2d.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		CFDA6AE316FD09F700D4964D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = ../../inc;
+			};
+			name = Debug;
+		};
+		CFDA6AE416FD09F700D4964D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = ../../inc;
+			};
+			name = Release;
+		};
+		CFDA6AE616FD09F700D4964D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../../../Library/Developer/Xcode/DerivedData/spmatrix-hgfllxllpwignadpxzjxsmhrxmnp/Build/Products/Debug\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CFDA6AE716FD09F700D4964D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../../../Library/Developer/Xcode/DerivedData/spmatrix-hgfllxllpwignadpxzjxsmhrxmnp/Build/Products/Debug\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CFDA6AD716FD09F700D4964D /* Build configuration list for PBXProject "demo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFDA6AE316FD09F700D4964D /* Debug */,
+				CFDA6AE416FD09F700D4964D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFDA6AE516FD09F700D4964D /* Build configuration list for PBXNativeTarget "demo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFDA6AE616FD09F700D4964D /* Debug */,
+				CFDA6AE716FD09F700D4964D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CFDA6AD416FD09F700D4964D /* Project object */;
+}

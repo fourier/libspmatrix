@@ -245,14 +245,17 @@ void sp_matrix_skyline_init(sp_matrix_skyline_ptr self,sp_matrix_ptr mtx)
           iptr  = l_count;
         /* fill lower triangle values */
         column = mtx->storage[i].indexes[j];
-        self->jptr[l_count] = column;
-        self->lower_triangle[l_count] = mtx->storage[i].values[j];
+        if (self->jptr)
+          self->jptr[l_count] = column;
+        if (self->lower_triangle)
+          self->lower_triangle[l_count] = mtx->storage[i].values[j];
         /* fill upper triangle values - column-wise */
         for ( k = 0; k <= mtx->storage[column].last_index; ++ k)
           if (mtx->storage[column].indexes[k] == i)
           {
-            self->upper_triangle[l_count] =
-              mtx->storage[column].values[k];
+            if (self->upper_triangle)
+              self->upper_triangle[l_count] =
+                mtx->storage[column].values[k];
             break;
           }
         l_count ++;
@@ -317,7 +320,7 @@ void sp_matrix_skyline_yale_init(sp_matrix_skyline_ptr self,
       self->iptr[i] = k;
       for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
       {
-        if (mtx->indicies[p] < i) /* column index less than row */
+        if (mtx->indicies[p] < i && l_count) /* column index less than row */
         {
           self->jptr[k] = mtx->indicies[p];
           self->lower_triangle[k] = mtx->values[p];
@@ -350,7 +353,7 @@ void sp_matrix_skyline_yale_init(sp_matrix_skyline_ptr self,
       self->iptr[i] = k;
       for (p = mtx->offsets[i]; p < mtx->offsets[i+1]; ++ p)
       {
-        if (mtx->indicies[p] < i) /* column index less than row */
+        if (mtx->indicies[p] < i && l_count) /* column index less than row */
         {
           self->jptr[k] = mtx->indicies[p];
           self->upper_triangle[k] = mtx->values[p];

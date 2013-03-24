@@ -30,5 +30,5 @@ void spfree(void* ptr);
  * appropriate memory block pointed by src
  * Returns the pointer to the newly allocated block
  */
-void* memdup(const void* src, int bytes);
+void* memdup(const void* src, size_t bytes);
 

@@ -28,16 +28,16 @@
 static void log_backtrace (void)
 {
   void *array[30];
-  size_t size;
+  int size;
   char **strings;
-  size_t i;
+  int i;
 
   /* number of stack frames obtained */
   size = backtrace (array, 30);
   strings = backtrace_symbols (array, size);
     
   for (i = 0; i < size; i++)
-    LOGERROR("#%ld  %s", i, strings[i]);
+    LOGERROR("#%d  %s", i, strings[i]);
      
   free (strings);
 }

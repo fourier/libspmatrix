@@ -1,0 +1,309 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CFDA6A5316FD070900D4964D /* sp_cont.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4816FD070900D4964D /* sp_cont.h */; };
+		CFDA6A5416FD070900D4964D /* sp_direct.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4916FD070900D4964D /* sp_direct.h */; };
+		CFDA6A5516FD070900D4964D /* sp_err.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4A16FD070900D4964D /* sp_err.h */; };
+		CFDA6A5616FD070900D4964D /* sp_file.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4B16FD070900D4964D /* sp_file.h */; };
+		CFDA6A5716FD070900D4964D /* sp_iter.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4C16FD070900D4964D /* sp_iter.h */; };
+		CFDA6A5816FD070900D4964D /* sp_log.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4D16FD070900D4964D /* sp_log.h */; };
+		CFDA6A5916FD070900D4964D /* sp_matrix.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4E16FD070900D4964D /* sp_matrix.h */; };
+		CFDA6A5A16FD070900D4964D /* sp_mem.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A4F16FD070900D4964D /* sp_mem.h */; };
+		CFDA6A5B16FD070900D4964D /* sp_perm.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A5016FD070900D4964D /* sp_perm.h */; };
+		CFDA6A5C16FD070900D4964D /* sp_tree.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A5116FD070900D4964D /* sp_tree.h */; };
+		CFDA6A5D16FD070900D4964D /* sp_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = CFDA6A5216FD070900D4964D /* sp_utils.h */; };
+		CFDA6A6816FD071300D4964D /* sp_cont.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A5E16FD071300D4964D /* sp_cont.c */; };
+		CFDA6A6916FD071300D4964D /* sp_direct.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A5F16FD071300D4964D /* sp_direct.c */; };
+		CFDA6A6A16FD071300D4964D /* sp_err.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6016FD071300D4964D /* sp_err.c */; };
+		CFDA6A6B16FD071300D4964D /* sp_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6116FD071300D4964D /* sp_file.c */; };
+		CFDA6A6C16FD071300D4964D /* sp_iter.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6216FD071300D4964D /* sp_iter.c */; };
+		CFDA6A6D16FD071300D4964D /* sp_matrix.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6316FD071300D4964D /* sp_matrix.c */; };
+		CFDA6A6E16FD071300D4964D /* sp_mem.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6416FD071300D4964D /* sp_mem.c */; };
+		CFDA6A6F16FD071300D4964D /* sp_perm.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6516FD071300D4964D /* sp_perm.c */; };
+		CFDA6A7016FD071300D4964D /* sp_tree.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6616FD071300D4964D /* sp_tree.c */; };
+		CFDA6A7116FD071300D4964D /* sp_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = CFDA6A6716FD071300D4964D /* sp_utils.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		CFDA6A3F16FD06EE00D4964D /* libspmatrix.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libspmatrix.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFDA6A4816FD070900D4964D /* sp_cont.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_cont.h; path = ../../inc/sp_cont.h; sourceTree = "<group>"; };
+		CFDA6A4916FD070900D4964D /* sp_direct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_direct.h; path = ../../inc/sp_direct.h; sourceTree = "<group>"; };
+		CFDA6A4A16FD070900D4964D /* sp_err.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_err.h; path = ../../inc/sp_err.h; sourceTree = "<group>"; };
+		CFDA6A4B16FD070900D4964D /* sp_file.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_file.h; path = ../../inc/sp_file.h; sourceTree = "<group>"; };
+		CFDA6A4C16FD070900D4964D /* sp_iter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_iter.h; path = ../../inc/sp_iter.h; sourceTree = "<group>"; };
+		CFDA6A4D16FD070900D4964D /* sp_log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_log.h; path = ../../inc/sp_log.h; sourceTree = "<group>"; };
+		CFDA6A4E16FD070900D4964D /* sp_matrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_matrix.h; path = ../../inc/sp_matrix.h; sourceTree = "<group>"; };
+		CFDA6A4F16FD070900D4964D /* sp_mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_mem.h; path = ../../inc/sp_mem.h; sourceTree = "<group>"; };
+		CFDA6A5016FD070900D4964D /* sp_perm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_perm.h; path = ../../inc/sp_perm.h; sourceTree = "<group>"; };
+		CFDA6A5116FD070900D4964D /* sp_tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_tree.h; path = ../../inc/sp_tree.h; sourceTree = "<group>"; };
+		CFDA6A5216FD070900D4964D /* sp_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sp_utils.h; path = ../../inc/sp_utils.h; sourceTree = "<group>"; };
+		CFDA6A5E16FD071300D4964D /* sp_cont.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_cont.c; path = ../../src/sp_cont.c; sourceTree = "<group>"; };
+		CFDA6A5F16FD071300D4964D /* sp_direct.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_direct.c; path = ../../src/sp_direct.c; sourceTree = "<group>"; };
+		CFDA6A6016FD071300D4964D /* sp_err.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_err.c; path = ../../src/sp_err.c; sourceTree = "<group>"; };
+		CFDA6A6116FD071300D4964D /* sp_file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_file.c; path = ../../src/sp_file.c; sourceTree = "<group>"; };
+		CFDA6A6216FD071300D4964D /* sp_iter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_iter.c; path = ../../src/sp_iter.c; sourceTree = "<group>"; };
+		CFDA6A6316FD071300D4964D /* sp_matrix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_matrix.c; path = ../../src/sp_matrix.c; sourceTree = "<group>"; };
+		CFDA6A6416FD071300D4964D /* sp_mem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_mem.c; path = ../../src/sp_mem.c; sourceTree = "<group>"; };
+		CFDA6A6516FD071300D4964D /* sp_perm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_perm.c; path = ../../src/sp_perm.c; sourceTree = "<group>"; };
+		CFDA6A6616FD071300D4964D /* sp_tree.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_tree.c; path = ../../src/sp_tree.c; sourceTree = "<group>"; };
+		CFDA6A6716FD071300D4964D /* sp_utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sp_utils.c; path = ../../src/sp_utils.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CFDA6A3C16FD06EE00D4964D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CFDA6A3616FD06EE00D4964D = {
+			isa = PBXGroup;
+			children = (
+				CFDA6A4716FD06FA00D4964D /* inc */,
+				CFDA6A4616FD06F300D4964D /* src */,
+				CFDA6A4016FD06EE00D4964D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CFDA6A4016FD06EE00D4964D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6A3F16FD06EE00D4964D /* libspmatrix.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CFDA6A4616FD06F300D4964D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6A5E16FD071300D4964D /* sp_cont.c */,
+				CFDA6A5F16FD071300D4964D /* sp_direct.c */,
+				CFDA6A6016FD071300D4964D /* sp_err.c */,
+				CFDA6A6116FD071300D4964D /* sp_file.c */,
+				CFDA6A6216FD071300D4964D /* sp_iter.c */,
+				CFDA6A6316FD071300D4964D /* sp_matrix.c */,
+				CFDA6A6416FD071300D4964D /* sp_mem.c */,
+				CFDA6A6516FD071300D4964D /* sp_perm.c */,
+				CFDA6A6616FD071300D4964D /* sp_tree.c */,
+				CFDA6A6716FD071300D4964D /* sp_utils.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		CFDA6A4716FD06FA00D4964D /* inc */ = {
+			isa = PBXGroup;
+			children = (
+				CFDA6A4816FD070900D4964D /* sp_cont.h */,
+				CFDA6A4916FD070900D4964D /* sp_direct.h */,
+				CFDA6A4A16FD070900D4964D /* sp_err.h */,
+				CFDA6A4B16FD070900D4964D /* sp_file.h */,
+				CFDA6A4C16FD070900D4964D /* sp_iter.h */,
+				CFDA6A4D16FD070900D4964D /* sp_log.h */,
+				CFDA6A4E16FD070900D4964D /* sp_matrix.h */,
+				CFDA6A4F16FD070900D4964D /* sp_mem.h */,
+				CFDA6A5016FD070900D4964D /* sp_perm.h */,
+				CFDA6A5116FD070900D4964D /* sp_tree.h */,
+				CFDA6A5216FD070900D4964D /* sp_utils.h */,
+			);
+			name = inc;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		CFDA6A3D16FD06EE00D4964D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDA6A5316FD070900D4964D /* sp_cont.h in Headers */,
+				CFDA6A5416FD070900D4964D /* sp_direct.h in Headers */,
+				CFDA6A5516FD070900D4964D /* sp_err.h in Headers */,
+				CFDA6A5616FD070900D4964D /* sp_file.h in Headers */,
+				CFDA6A5716FD070900D4964D /* sp_iter.h in Headers */,
+				CFDA6A5816FD070900D4964D /* sp_log.h in Headers */,
+				CFDA6A5916FD070900D4964D /* sp_matrix.h in Headers */,
+				CFDA6A5A16FD070900D4964D /* sp_mem.h in Headers */,
+				CFDA6A5B16FD070900D4964D /* sp_perm.h in Headers */,
+				CFDA6A5C16FD070900D4964D /* sp_tree.h in Headers */,
+				CFDA6A5D16FD070900D4964D /* sp_utils.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		CFDA6A3E16FD06EE00D4964D /* spmatrix */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFDA6A4316FD06EE00D4964D /* Build configuration list for PBXNativeTarget "spmatrix" */;
+			buildPhases = (
+				CFDA6A3B16FD06EE00D4964D /* Sources */,
+				CFDA6A3C16FD06EE00D4964D /* Frameworks */,
+				CFDA6A3D16FD06EE00D4964D /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = spmatrix;
+			productName = spmatrix;
+			productReference = CFDA6A3F16FD06EE00D4964D /* libspmatrix.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CFDA6A3716FD06EE00D4964D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = "Alexey Veretennikov";
+			};
+			buildConfigurationList = CFDA6A3A16FD06EE00D4964D /* Build configuration list for PBXProject "spmatrix" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = CFDA6A3616FD06EE00D4964D;
+			productRefGroup = CFDA6A4016FD06EE00D4964D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CFDA6A3E16FD06EE00D4964D /* spmatrix */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CFDA6A3B16FD06EE00D4964D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDA6A6816FD071300D4964D /* sp_cont.c in Sources */,
+				CFDA6A6916FD071300D4964D /* sp_direct.c in Sources */,
+				CFDA6A6A16FD071300D4964D /* sp_err.c in Sources */,
+				CFDA6A6B16FD071300D4964D /* sp_file.c in Sources */,
+				CFDA6A6C16FD071300D4964D /* sp_iter.c in Sources */,
+				CFDA6A6D16FD071300D4964D /* sp_matrix.c in Sources */,
+				CFDA6A6E16FD071300D4964D /* sp_mem.c in Sources */,
+				CFDA6A6F16FD071300D4964D /* sp_perm.c in Sources */,
+				CFDA6A7016FD071300D4964D /* sp_tree.c in Sources */,
+				CFDA6A7116FD071300D4964D /* sp_utils.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		CFDA6A4116FD06EE00D4964D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CFDA6A4216FD06EE00D4964D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		CFDA6A4416FD06EE00D4964D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
+			};
+			name = Debug;
+		};
+		CFDA6A4516FD06EE00D4964D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CFDA6A3A16FD06EE00D4964D /* Build configuration list for PBXProject "spmatrix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFDA6A4116FD06EE00D4964D /* Debug */,
+				CFDA6A4216FD06EE00D4964D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFDA6A4316FD06EE00D4964D /* Build configuration list for PBXNativeTarget "spmatrix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFDA6A4416FD06EE00D4964D /* Debug */,
+				CFDA6A4516FD06EE00D4964D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CFDA6A3716FD06EE00D4964D /* Project object */;
+}
