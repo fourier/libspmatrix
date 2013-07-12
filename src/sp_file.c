@@ -25,6 +25,7 @@
 #include "sp_mem.h"
 #include "sp_utils.h"
 #include "sp_log.h"
+#include "sp_cont.h"
 
 /*
  * Enum - supported export formats
@@ -1119,4 +1120,33 @@ void sp_save_double_vector(double* v, int size, const char* fname)
       fprintf(f,"%e\n", v[i]);
     fclose(f);
   }
+}
+
+int sp_load_int_vector(int** v, int* size, const char* fname)
+{
+  int result = 0;
+  int i = 0;
+  int x;
+  FILE *f = fopen(fname,"rt");
+  int_array arr;
+  if (f)
+  {
+    int_array_init(&arr, 10, 10);
+    while (fscanf(f, "%d\n", &x) == 1)
+    {
+      int_array_add(&arr, x);
+      i++;
+    }
+    *v = arr.items;
+    *size = i;
+    fclose(f);
+    result = 1;
+  }
+  return result;
+}
+
+
+int sp_load_double_vector(double** v, int* size, const char* fname)
+{
+  return 0;
 }

@@ -101,6 +101,7 @@ void indexed_array_printf(indexed_array_ptr self)
 
 void int_array_init(int_array_ptr self, int initial_size, int step_size)
 {
+  self->current = 0;
   self->allocated = initial_size;
   self->step_size = step_size;
   self->items = spcalloc(self->allocated,sizeof(int));
@@ -116,6 +117,13 @@ void int_array_extend(int_array_ptr self)
 void int_array_free(int_array_ptr self)
 {
   spfree(self->items);
+}
+
+void int_array_add(int_array_ptr self, int value)
+{
+  if (self->current >= self->allocated)
+    int_array_extend(self);
+  self->items[self->current++] = value;
 }
 
 int_stack_ptr int_stack_alloc(int initial_size, int step_size)

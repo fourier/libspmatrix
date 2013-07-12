@@ -57,5 +57,7 @@ int sp_matrix_yale_save_file(sp_matrix_yale_ptr self, const char* filename);
 void sp_save_int_vector(int* v, int size, const char* fname);
 void sp_save_double_vector(double* v, int size, const char* fname);
 
+int sp_load_int_vector(int** v, int* size, const char* fname);
+int sp_load_double_vector(double** v, int* size, const char* fname);
 
 #endif /* _SP_FILE_H_ */

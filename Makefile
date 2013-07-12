@@ -113,17 +113,17 @@ $(LIB_OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 # compile test sources
 $(TEST_OBJECTS): $(OBJ_DIR)/%.o:$(TEST_SRC_DIR)/%.c
 	$(MAKEDEPEND)
-	$(CC) $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 # compile demo sources
 $(DEMO_OBJECTS): $(OBJ_DIR)/%.o:$(DEMO_SRC_DIR)/%.c
 	$(MAKEDEPEND)
-	$(CC) $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) $(LIBCFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 # compile solver test sources
 $(SOLVER_OBJECTS): $(OBJ_DIR)/%.o:$(SOLVER_SRC_DIR)/%.c
 	$(MAKEDEPEND)
-	$(CC) $(CFLAGS) $(SOLVERCFLAGS) $(DEFINES) $(INCLUDES) -I $(SRC_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) $(SOLVERCFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 
 # link binaries

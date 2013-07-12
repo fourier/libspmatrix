@@ -44,7 +44,7 @@ typedef struct
   int allocated;
   int step_size;
   int* items;
-  
+  int current;
 } int_array;
 typedef int_array* int_array_ptr;
 
@@ -92,6 +92,7 @@ void indexed_array_printf(indexed_array_ptr self);
 void int_array_init(int_array_ptr self, int initial_size, int step_size);
 void int_array_extend(int_array_ptr self);
 void int_array_free(int_array_ptr self);
+void int_array_add(int_array_ptr self, int value);
 
 
 /*
