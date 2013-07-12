@@ -861,6 +861,42 @@ static int sp_matrix_save_file_txt(sp_matrix_ptr self, const char* filename)
   return result;
 }
 
+static int sp_matrix_save_file_dat(sp_matrix_ptr self, const char* filename)
+{
+  int result = 1;
+  int matrix_type;
+  int size,nonzeros;
+  char buf[1024];
+  char* name = spalloc(strlen(filename)+1);
+  const char* ptr = filename;
+  FILE* file = fopen(filename,"wt+");
+  
+  if (!file)
+  {
+    LOGERROR("Error opening file %s for writing",filename);
+    return 0;
+  }
+  fwrite(DAT_HEADER_OUTPUT_ABOUT,1,strlen(DAT_HEADER_OUTPUT_ABOUT),file);
+  ptr = sp_parse_file_name(filename);
+  sp_parse_file_basename(ptr, name);
+  /* TODO: find number of nonzeros */
+  nonzeros = 0;
+  size = sprintf(buf, DAT_HEADER_FORMAT,name,
+                 nonzeros,self->rows_count,self->cols_count);
+  fwrite(buf, 1, size, file);
+  spfree(name);
+
+  matrix_type = MM_GENERAL; /* sp_matrix_type_mm(self); */
+  if (!sp_matrix_save_file_triplet(self,file,matrix_type,0))
+  {
+    LOGERROR("Cannot save file!");
+    result = 0;
+  }
+  fflush(file);
+  fclose(file);
+  return result;
+}
+
 
 static supported_format guess_export_format(const char* filename)
 {
@@ -888,6 +924,7 @@ int sp_matrix_save_file(sp_matrix_ptr self, const char* filename)
   {
   case FMT_MM:  return sp_matrix_save_file_mm(self,filename);
   case FMT_TXT: return sp_matrix_save_file_txt(self,filename);
+  case FMT_DAT: return sp_matrix_save_file_dat(self,filename);
   case FMT_UNSUPPORTED:
   default:
     break;
@@ -1148,5 +1185,18 @@ int sp_load_int_vector(int** v, int* size, const char* fname)
 
 int sp_load_double_vector(double** v, int* size, const char* fname)
 {
+  (void)v;
+  (void)size;
+  (void)fname;
   return 0;
 }
+
+
+
+
+
+
+
+
+
+
