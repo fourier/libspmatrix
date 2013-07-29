@@ -1591,6 +1591,43 @@ static void yale_properties()
   sp_matrix_yale_free(&ysymp);
 }
 
+
+static void big_etree_postorder()
+{
+  int result;
+  int* etree = 0;
+  int* post_expected = 0;
+  int* post = 0;
+  int size,i;
+  EXPECT_TRUE((result = sp_load_int_vector(&etree,
+                                           &size,
+                                           "data/big_etree.txt")));
+  if (result)
+  {
+    EXPECT_TRUE((result = sp_load_int_vector(&post_expected,&i,
+                                             "data/big_etree_postorder.txt")));
+    if (result)
+    {
+      ASSERT_TRUE(size == i);
+      post = spcalloc(size, sizeof(int));
+      tree_postorder_perm(etree,size,post);
+      /* compare */
+      for (i = 0; i < size; ++ i)
+      {
+        if (post[i] != post_expected[i])
+        {
+          printf("Error! post[%d] = %d not equal post_expected[%d] = %d\n", i, post[i], i, post_expected[i]);
+        }
+        ASSERT_TRUE(post[i] == post_expected[i]);
+      }
+      /*sp_save_int_vector(post, size, "/Users/alexeyv/Sources/Science/libspmatrix/post.txt");*/
+    }
+  }
+  spfree(etree);
+  spfree(post_expected);
+  spfree(post);
+}
+
 #if 0
 static void lower_solve()
 {
@@ -1673,6 +1710,7 @@ int main(int argc, const char *argv[])
   SP_ADD_TEST(tree_search);
   SP_ADD_TEST(yale_transpose_convert);
   SP_ADD_TEST(yale_properties);
+  SP_ADD_TEST(big_etree_postorder);
   /* SP_ADD_TEST(lower_solve); */
   
   suite1 = sp_add_suite("etree",test_etree_init,test_etree_fini);

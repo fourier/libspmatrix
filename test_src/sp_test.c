@@ -27,6 +27,13 @@
 #include <assert.h>
 #include <setjmp.h>
 
+struct sp_test_suite
+{
+  const char* test_suite_name;
+  void (*test_suite_init)();
+  void (*test_suite_fini)();
+};
+
 /*
  * Structure encapsulating test
  */
@@ -64,7 +71,7 @@ typedef struct sp_test_suite_list_tag
 {
   struct sp_test_suite_list_tag* next;
   sp_test_queue_ptr tests;
-  sp_test_suite_ptr suite;
+  sp_test_suite* suite;
 } sp_test_suite_list;
 typedef sp_test_suite_list* sp_test_suite_list_ptr;
 
@@ -268,7 +275,7 @@ void sp_run_tests(int argc, const char* argv[])
   }
 }
 
-sp_test_suite_ptr sp_add_suite(const char* name,
+sp_test_suite* sp_add_suite(const char* name,
                                void(*test_suite_init)(),
                                void(*test_suite_fini)())
 {
@@ -300,7 +307,7 @@ sp_test_suite_ptr sp_add_suite(const char* name,
   return suite->suite;
 }
 
-void sp_add_suite_test(sp_test_suite_ptr suite,
+void sp_add_suite_test(sp_test_suite* suite,
                        test_func_t func,
                        const char* name)
 {
