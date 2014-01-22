@@ -39,6 +39,120 @@
 #define LOGTOC(x);
 #endif
 
+
+
+int tr(int n, void* arg)
+{
+  printf("%c", ((char*)arg)[n]);
+  return 0;
+}
+void dfs()
+{
+  char arg[] = "ABCDEF";
+  int tree[] = {-1, 0, 0, 1, 2, 2};
+  printf("========Tree traversal(preorder):\n");
+  forest_dfs_preorder(tree, 6, tr, arg);
+  printf("\n");
+  printf("========Tree traversal(postorder):\n");
+  forest_dfs_postorder(tree, 6, tr, arg);
+  printf("\n");
+
+}
+
+void tst()
+{
+  dfs();
+  int tree[] = {3,3,4,4,-1};
+  int etree[] = {5,2,7,5,7,6,8,9,9,10,-1};
+  int_stack_ptr stack;
+  int i,j;
+  ASSERT_TRUE(tree_is_etree(etree,11));
+  printf("\nChildren:\n");
+  for (j = 0; j < 11; ++ j)
+  {
+    printf("Children of %d: ", j+1);
+    stack = tree_children(etree, 11, j);
+    while (!int_stack_isempty(stack))
+    {
+      printf("%d ", int_stack_top(stack)+1);
+      int_stack_pop(stack);
+    }
+    printf("\n");
+    int_stack_free(stack);
+  }
+  printf("\nRoots:");
+  stack = tree_roots(etree, 11);
+  while (!int_stack_isempty(stack))
+  {
+    printf("%d ", int_stack_top(stack)+1);
+    int_stack_pop(stack);
+  }
+  printf("\n");
+  int_stack_free(stack);
+  
+}
+
+
+static int is_tree_postordered(int* tree, int* post, int size)
+{
+  /* if post is postordering permutation:
+   * post[k] = i means node i of the originar tree is node k of
+   * the postordered
+   */
+  int i,top,desc_count;
+  int_stack_ptr* children;
+  int result = 1;
+  int* ptree;
+  int* pinv;
+  tst();
+  /* allocate memory for childen
+   * children of every node stored in the stack */
+  children = spalloc(sizeof(int_stack_ptr)*size);
+  for ( i = 0; i < size; ++ i )
+    children[i] = int_stack_alloc(1,2);
+  /* create the postordered tree */
+  ptree = spalloc(sizeof(int)*size);
+  pinv = spalloc(sizeof(int)*size);
+  sp_perm_inverse(post,size,pinv);
+    
+  for (i = 0; i < size; ++ i)
+    ptree[pinv[i]] = tree[i];
+  for (i = 0; i < size; ++ i)
+    printf("%d ", ptree[i]+1);
+
+  /* fill the stacks of children with the actual children
+   * in reverse order to keep children in the stack in ascending order
+   * i.e. ->[1 2 3] */
+  for ( i = size -1 ; i >= 0; -- i )
+    if (ptree[i] != -1)          /* if i has parent (tree[i]) */
+      int_stack_push(children[ptree[i]],i);
+
+  /* now iterate over all nodes with children and verify what
+   * the following condition for the post-ordered graph is fullfilled:
+   * "In a postordered tree, the d proper descendants of any node k are
+   * nodes k-d through k-1
+   */
+  for (i = 0; i < size; ++ i)
+  {
+    desc_count = int_stack_size(children[i]);
+    printf("Node %d, children:", i+1);
+    while(!int_stack_isempty(children[i]))
+    {
+      top = int_stack_top(children[i]);
+      printf("%d ", top+1);
+      int_stack_pop(children[i]);
+    }
+    printf("\n");
+  }
+  
+  
+  for ( i = 0; i < size; ++ i)
+    int_stack_free(children[i]);
+  spfree(children);
+  spfree(ptree);
+  return result;
+}
+
 static void sp_matrix_create_convert()
 {
   sp_matrix mtx,mtx2,mtx3;
@@ -901,7 +1015,7 @@ static void etree_postorder()
   /*       printf("A_%d,%d ",j+1,i+1); */
   /*   printf("\n"); */
   /* } */
-
+  tst();
   ASSERT_TRUE(sp_matrix_yale_etree(&yale,etree));
   
   tree_postorder_perm(etree,11,postorder);
@@ -1230,7 +1344,7 @@ static void tree_search()
 
   /* test Deep First Search */
   search.current = 0;
-  tree_dfs(tree,11,mark_elt,&search);
+  forest_dfs_preorder(tree,11,mark_elt,&search);
   ASSERT_TRUE(search.result[0] == dfs[0]);
   for ( i = 1; i < 11; ++ i)
     ASSERT_TRUE(search.result[i] == dfs[i]);
@@ -1604,6 +1718,8 @@ static void big_etree_postorder()
                                            "data/big_etree.txt")));
   if (result)
   {
+    ASSERT_TRUE(tree_is_etree(etree,size));
+
     EXPECT_TRUE((result = sp_load_int_vector(&post_expected,&i,
                                              "data/big_etree_postorder.txt")));
     if (result)
@@ -1611,6 +1727,7 @@ static void big_etree_postorder()
       ASSERT_TRUE(size == i);
       post = spcalloc(size, sizeof(int));
       tree_postorder_perm(etree,size,post);
+      sp_save_int_vector(post, size, "data/big_etree_postorder_libspmatrix.txt");
       /* compare */
       for (i = 0; i < size; ++ i)
       {

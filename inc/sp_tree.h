@@ -21,7 +21,25 @@
 #ifndef _SP_TREE_H_
 #define _SP_TREE_H_
 
+#include "sp_cont.h"
+
+#define EMPTY_PARENT -1
 typedef int (*traverse_func_t)(int n, void*);
+
+/*
+ * Depth First Search of the tree(or forest), applying the function 
+ * func of type traverse_func_t with the argument arg to every
+ * traversed node in pre order
+ */
+void forest_dfs_preorder(int* tree, int size, traverse_func_t func, void* arg);
+
+void forest_dfs_postorder(int* tree, int size, traverse_func_t func, void* arg);
+
+void tree_dfs_preorder(int* tree, int size, int root, traverse_func_t func, void* arg);
+
+void tree_dfs_postorder(int* tree, int size, int root, traverse_func_t func, void* arg);
+
+
 
 /*
  * Depth First Search of the tree(or forest), applying the function
@@ -30,12 +48,17 @@ typedef int (*traverse_func_t)(int n, void*);
  */
 void tree_dfs(int* tree, int size, traverse_func_t func, void* arg);
 
+
 /*
  * Breadth First Search of the tree(or forest), applying the function
  * func of type traverse_func_t with the argument arg to every
  * traversed node
  */
 void tree_bfs(int* tree, int size, traverse_func_t func, void* arg);
+
+
+int_stack_ptr tree_children(int* tree, int size, int k);
+int_stack_ptr tree_roots(int* tree, int size);
 
 /*
  * Postorder the tree. A postordered tree is the tree where for every
@@ -103,6 +126,8 @@ void tree_first_descendant(int* tree, int size, int* postorder, int* first);
  * Elimination tree
  * */
 int tree_find(int* tree, int size, int value);
+
+int tree_is_etree(int* tree, int size);
 
 /*
  * Prints the tree of the specified size to the STDOUT in DOT format.

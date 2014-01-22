@@ -143,7 +143,7 @@ $(OUTPUT_LIB): $(LIB_OBJECTS) $(LIB_DIR)
 	ranlib $(OUTPUT_LIB)
 
 lint:
-	splint $(LIB_SOURCES)
+	splint -preproc $(DEFINES) $(INCLUDES) $(LIB_SOURCES)
 
 test: $(OUTPUT_TEST)
 	./$(OUTPUT_TEST)

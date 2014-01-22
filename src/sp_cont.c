@@ -177,6 +177,11 @@ int int_stack_top(int_stack_ptr self)
   return INT_MAX;
 }
 
+int int_stack_size(int_stack_ptr self)
+{
+  return self->top + 1;
+}
+
 
 static
 int_queue_element* int_queue_element_alloc(int value, int_queue_element* next)

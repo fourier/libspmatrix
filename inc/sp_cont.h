@@ -113,6 +113,8 @@ void int_stack_pop(int_stack_ptr self);
 int int_stack_isempty(int_stack_ptr self);
 /* returns value of the element on top of the stack */
 int int_stack_top(int_stack_ptr self);
+/* returns the number of items in the stack */
+int int_stack_size(int_stack_ptr self);
 
 /*
  * Queue functions

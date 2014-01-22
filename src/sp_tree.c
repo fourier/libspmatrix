@@ -25,7 +25,7 @@
 #include "sp_cont.h"
 
 
-void tree_dfs(int* tree, int size, traverse_func_t func, void* arg)
+void forest_dfs_preorder(int* tree, int size, traverse_func_t func, void* arg)
 {
   int i,j,current;
   /* initialize container */
@@ -33,7 +33,7 @@ void tree_dfs(int* tree, int size, traverse_func_t func, void* arg)
   /* loop by all roots in the forest */
   for ( i = 0; i < size; ++ i)
   {
-    if (tree[i] == -1)
+    if (tree[i] == EMPTY_PARENT)
     {
       int_stack_push(stack,i);
       /* start to walk through the tree starting with roots */
@@ -53,6 +53,59 @@ void tree_dfs(int* tree, int size, traverse_func_t func, void* arg)
   int_stack_free(stack);
 }
 
+void tree_dfs_preorder(int* tree, int size, int root, traverse_func_t func, void* arg)
+{
+  int j,current;
+  /* initialize container */
+  int_stack_ptr stack = int_stack_alloc(size,1);
+  int_stack_push(stack,root);
+  /* start to walk through the tree starting with roots */
+  while (!int_stack_isempty(stack))
+  {
+    current = int_stack_top(stack);
+    int_stack_pop(stack);
+    if (func(current,arg))      /* if predicate func is true, break */
+      break;
+    /* find all children and push them into container */
+    for ( j = 0; j < size; ++ j)
+      if (tree[j] == current)   /* current is the parent of j */
+        int_stack_push(stack,j);
+  }
+  int_stack_free(stack);
+}
+
+static int dfs_postorder_helper(int n, void* arg)
+{
+  int_stack_push((int_stack_ptr)arg,n);
+  return 0;
+}
+
+void forest_dfs_postorder(int* tree, int size, traverse_func_t func, void* arg)
+{
+  int_stack_ptr stack = int_stack_alloc(size,1);
+  forest_dfs_preorder(tree, size, dfs_postorder_helper, stack);
+  while(!int_stack_isempty(stack))
+  {
+    func(int_stack_top(stack), arg);
+    int_stack_pop(stack);
+  }
+  int_stack_free(stack);
+}
+
+void tree_dfs_postorder(int* tree, int size, int root, traverse_func_t func, void* arg)
+{
+  int_stack_ptr stack = int_stack_alloc(size,1);
+  tree_dfs_preorder(tree, size, root, dfs_postorder_helper, stack);
+  while(!int_stack_isempty(stack))
+  {
+    func(int_stack_top(stack), arg);
+    int_stack_pop(stack);
+  }
+  int_stack_free(stack);
+}
+
+
+
 void tree_bfs(int* tree, int size, traverse_func_t func, void* arg)
 {
   int i,j,current;
@@ -61,7 +114,7 @@ void tree_bfs(int* tree, int size, traverse_func_t func, void* arg)
   /* loop by all roots in the forest */
   for ( i = 0; i < size; ++ i)
   {
-    if (tree[i] == -1)
+    if (tree[i] == EMPTY_PARENT)
     {
       int_queue_push(queue,i);
       /* start to walk through the tree starting with roots */
@@ -81,7 +134,157 @@ void tree_bfs(int* tree, int size, traverse_func_t func, void* arg)
   int_queue_free(queue);
 }
 
+int_stack_ptr tree_children(int* tree, int size, int k)
+{
+  int i;
+  /* initialize stack */
+  int_stack_ptr children = int_stack_alloc(1,1);
+  for (i = 0; i < size; ++ i)
+    if (tree[i] == k)
+      int_stack_push(children,i);
+  return children;
+}
+
+int_stack_ptr tree_roots(int* tree, int size)
+{
+  return tree_children(tree, size, EMPTY_PARENT);
+}
+
+struct postorder_perm_helper
+{
+  int k;
+  int* post;
+};
+
+static int tree_postorder_perm_helper(int n, void* arg)
+{
+  struct postorder_perm_helper* helper = (struct postorder_perm_helper*)arg;
+  helper->post[helper->k] = n;
+  helper->k++;
+  return 0;
+}
+
+/* recursive version: a working code for reference only, not actual use */
+
+static int dfs_recursive			/* return the new value of k */
+(
+    int p,		/* start a DFS at node p */
+    int k,		/* start the node numbering at k */
+    int Post [ ],	/* Post ordering, modified on output */
+    int Head [ ],	/* Head [p] = youngest child of p; EMPTY on output */
+    int Next [ ]	/* Next [j] = sibling of j; unmodified */
+)
+{
+    int j ;
+    /* start a DFS at each child of node p */
+    for (j = Head [p] ; j != EMPTY_PARENT ; j = Next [j])
+    {
+	/* start a DFS at child node j */
+	k = dfs_recursive (j, k, Post, Head, Next) ;
+    }
+    Post [k++] = p ;	/* order node p as the kth node */
+    Head [p] = EMPTY_PARENT ;	/* link list p no longer needed */
+    return (k) ;	/* the next node will be numbered k */
+}
+
+static int dfs_iterative		/* return the new value of k */
+(
+    int p,		/* start the DFS at a root node p */
+    int k,		/* start the node numbering at k */
+    int Post [ ],	/* Post ordering, modified on output */
+    int Head [ ],	/* Head [p] = youngest child of p; EMPTY on output */
+    int Next [ ],	/* Next [j] = sibling of j; unmodified */
+    int Pstack [ ]	/* workspace of size n, undefined on input or output */
+)
+{
+  int j, phead ;
+
+  /* put the root node on the stack */
+  Pstack [0] = p ;
+  phead = 0 ;
+  /* while the stack is not empty, do: */
+  while (phead >= 0)
+  {
+    /* grab the node p from top of the stack and get its youngest child j */
+    p = Pstack [phead] ;
+    j = Head [p] ;
+    if (j == EMPTY_PARENT)
+    {
+	    /* all children of p ordered.  remove p from stack and order it */
+	    phead-- ;
+	    Post [k++] = p ;	/* order node p as the kth node */
+    }
+    else
+    {
+	    /* leave p on the stack.  Start a DFS at child node j by putting
+	     * j on the stack and removing j from the list of children of p. */
+	    Head [p] = Next [j] ;
+	    Pstack [++phead] = j ;
+    }
+  }
+  return (k) ;	/* the next node will be numbered k */
+}
+
+
 void tree_postorder_perm(int* tree, int size, int* postorder)
+{
+  int j,p;
+  int* Next = spalloc(sizeof(int)*size);
+  int* Head = spalloc(sizeof(int)*size);
+  int* Pstack = spalloc(sizeof(int)*size);
+
+  for (j = 0; j < size; ++ j) Next[j] = Head[j] = EMPTY_PARENT;
+  	/* in reverse order so children are in ascending order in each list */
+	for (j = size-1 ; j >= 0 ; j--)
+	{
+	    p = tree [j] ;
+	    if (p >= 0 && p < size)
+	    {
+        /* add j to the list of children for node p */
+        Next [j] = Head [p] ;
+        Head [p] = j ;
+	    }
+	}
+	/* Head [p] = j if j is the youngest (least-numbered) child of p */
+	/* Next [j1] = j2 if j2 is the next-oldest sibling of j1 */
+
+  int k = 0;
+  for ( j = 0 ; j < size; ++ j)
+    if ( tree[j] == EMPTY_PARENT )
+//      dfs_recursive(j, k, postorder, Head, Next);
+      dfs_iterative(j, k, postorder, Head, Next, Pstack);
+
+  
+}
+
+
+void tree_postorder_perm2(int* tree, int size, int* postorder)
+{
+  /* Algorithm:
+   * 
+   * function postorder(T)
+   * k = 0
+   * for each root node j in T do
+   *   dfstree j
+   *
+   * function dfstree(j)
+   * for each child i of j do
+   *   dfstree(i)
+   * post[k] = j
+   * k = k + 1
+   */
+
+  int i;
+  struct postorder_perm_helper helper;
+  helper.k = 0;
+  helper.post = postorder;
+  for ( i = 0 ; i < size; ++ i)
+    if ( tree[i] == EMPTY_PARENT )
+      tree_dfs_postorder(tree, size, i, tree_postorder_perm_helper, &helper);
+}
+
+
+void tree_postorder_perm1(int* tree, int size, int* postorder)
 {
   /* Algorithm:
    * 
@@ -110,7 +313,7 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
    * in reverse order to keep children in the stack in ascending order
    * i.e. ->[1 2 3] */
   for ( i = size -1 ; i >= 0; -- i)
-    if (tree[i] != -1)
+    if (tree[i] != EMPTY_PARENT)          /* if i has parent (tree[i]) */
       int_stack_push(children[tree[i]],i);
 
   /* loop by all roots in the forest */
@@ -118,7 +321,7 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   {
     /* root node in the forest. if forest is the 1 tree, only one
      * root will exist */
-    if (tree[i] == -1)
+    if (tree[i] == EMPTY_PARENT)
     {
       int_stack_push(stack,i);
       /* start to walk through the tree starting with roots */
@@ -162,7 +365,7 @@ void tree_node_levels(int* tree, int size, int* level)
     level[i] = 0;
     /* calculate level of i-th node */
     j = tree[i];
-    for ( ; j != -1; j = tree[j])
+    for ( ; j != EMPTY_PARENT; j = tree[j])
       level[i] ++;
   }
 }
@@ -179,13 +382,13 @@ void tree_first_descendant(int* tree, int size, int* postorder, int* first)
   int i,j,k;
 
   for ( i = 0; i < size; ++ i)
-    first[i] = -1;
+    first[i] = EMPTY_PARENT;
   for ( i = 0; i < size; ++ i)
   {
     k = postorder[i];        /* k is the node i in postordered tree */
     /* printf("node %d, postordered: %d\n",k+1,i+1); */
     /* traverse up the tree */
-    for ( j = k; j != -1 && first[j] == -1; j = tree[j]) 
+    for ( j = k; j != EMPTY_PARENT && first[j] == EMPTY_PARENT; j = tree[j]) 
     {
       first[j] = i;
       /* printf("traverse up to node %d\n",j+1); */
@@ -201,11 +404,23 @@ int tree_find(int* tree, int size, int value)
   for (i = 0; i < size; ++ i)
   {
     temp = tree[value];
-    if ( temp == -1)
+    if ( temp == EMPTY_PARENT)
       return value;
     value = temp;
   }
   return value;
+}
+
+int tree_is_etree(int* tree, int size)
+{
+  int result = 1, i = 0;
+  for ( ; i < size; ++ i)
+    if (tree[i] <= i && tree[i] != EMPTY_PARENT)
+    {
+      result = 0;
+      break;
+    }
+  return result;
 }
 
 void tree_dot_printf(int* tree, int size)
@@ -216,7 +431,7 @@ void tree_dot_printf(int* tree, int size)
     printf("digraph etree {\n  rankdir = BT;\n");
     printf("  d2tgraphstyle=\"scale=0.4\"\n  node [shape=circle];\n");
     for (; i < size; ++ i)
-      if (tree[i] != -1)
+      if (tree[i] != EMPTY_PARENT)
         printf("  %d->%d\n",i+1,tree[i]+1);
     printf("}\n");
   }
