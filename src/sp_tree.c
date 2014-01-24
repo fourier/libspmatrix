@@ -225,8 +225,7 @@ static int dfs_iterative		/* return the new value of k */
   return (k) ;	/* the next node will be numbered k */
 }
 
-
-void tree_postorder_perm(int* tree, int size, int* postorder)
+static void tree_postorder_perm3(int* tree, int size, int* postorder, int iterative)
 {
   int j,p;
   int* Next = spalloc(sizeof(int)*size);
@@ -251,14 +250,18 @@ void tree_postorder_perm(int* tree, int size, int* postorder)
   int k = 0;
   for ( j = 0 ; j < size; ++ j)
     if ( tree[j] == EMPTY_PARENT )
-//      dfs_recursive(j, k, postorder, Head, Next);
-      dfs_iterative(j, k, postorder, Head, Next, Pstack);
+    {
+        if (iterative)
+            dfs_iterative(j, k, postorder, Head, Next, Pstack);
+        else
+            dfs_recursive(j, k, postorder, Head, Next);
+    }
 
   
 }
 
 
-void tree_postorder_perm2(int* tree, int size, int* postorder)
+static void tree_postorder_perm2(int* tree, int size, int* postorder)
 {
   /* Algorithm:
    * 
@@ -283,8 +286,53 @@ void tree_postorder_perm2(int* tree, int size, int* postorder)
       tree_dfs_postorder(tree, size, i, tree_postorder_perm_helper, &helper);
 }
 
+/* depth-first search and postorder of a tree rooted at node j */
+int cs_tdfs (int j, int k, int *head, const int *next, int *post, int *stack)
+{
+    int i, p, top = 0 ;
+    if (!head || !next || !post || !stack) return (-1) ;    /* check inputs */
+    stack [0] = j ;                 /* place j on the stack */
+    while (top >= 0)                /* while (stack is not empty) */
+    {
+        p = stack [top] ;           /* p = top of stack */
+        i = head [p] ;              /* i = youngest child of p */
+        if (i == -1)
+        {
+            top-- ;                 /* p has no unordered children left */
+            post [k++] = p ;        /* node p is the kth postordered node */
+        }
+        else
+        {
+            head [p] = next [i] ;   /* remove i from children of p */
+            stack [++top] = i ;     /* start dfs on child node i */
+        }
+    }
+    return (k) ;
+}
 
-void tree_postorder_perm1(int* tree, int size, int* postorder)
+/* post order a forest */
+static void tree_postorder_perm4(int* tree, int size, int* postorder)
+{
+    int j, k = 0, *w, *head, *next, *stack ;
+    w = spalloc (3*size*sizeof (int)) ;                 /* get workspace */
+    head = w ; next = w + size ; stack = w + 2*size ;
+    for (j = 0 ; j < size ; j++) head [j] = -1 ;           /* empty linked lists */
+    for (j = size-1 ; j >= 0 ; j--)            /* traverse nodes in reverse order*/
+    {
+        if (tree [j] == -1) continue ;    /* j is a root */
+        next [j] = head [tree [j]] ;      /* add j to list of its parent */
+        head [tree [j]] = j ;
+    }
+    for (j = 0 ; j < size ; j++)
+    {
+        if (tree [j] != -1) continue ;    /* skip j if it is not a root */
+        k = cs_tdfs (j, k, head, next, postorder, stack) ;
+    }
+    spfree(w);
+}
+
+
+static void tree_postorder_perm1(int* tree, int size, int* postorder)
 {
   /* Algorithm:
    * 
@@ -355,6 +403,13 @@ void tree_postorder_perm1(int* tree, int size, int* postorder)
     int_stack_free(children[i]);
   int_stack_free(stack);
   spfree(children);
+}
+
+
+void tree_postorder_perm(int* tree, int size, int* postorder)
+{
+    /*tree_postorder_perm3(tree, size, postorder, 1);*/
+    tree_postorder_perm4(tree, size, postorder);
 }
 
 void tree_node_levels(int* tree, int size, int* level)

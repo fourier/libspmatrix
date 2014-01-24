@@ -1739,10 +1739,11 @@ static void big_etree_postorder()
       }
       /*sp_save_int_vector(post, size, "/Users/alexeyv/Sources/Science/libspmatrix/post.txt");*/
     }
+    spfree(etree);
+    spfree(post_expected);
+    spfree(post);
   }
-  spfree(etree);
-  spfree(post_expected);
-  spfree(post);
+
 }
 
 #if 0
