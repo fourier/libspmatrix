@@ -61,6 +61,7 @@ int sp_matrix_yale_etree(sp_matrix_yale_ptr self, int* tree)
       {
         /* find the root for the i in the previous elimination tree */
         parents[j] = tree_find(tree,self->rows_count,i);
+        /*parents[j] = i < j ? parents[i] : tree_find(tree,self->rows_count,i);*/
         /* increase the number of roots found (number of nonzeros)
          * above diagonal*/
         j++;
