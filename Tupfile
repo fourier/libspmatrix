@@ -35,6 +35,24 @@ endif
 INCLUDES = -I inc -I .
 LINKFLAGS = -L. -L lib -lspmatrix -lm
 
+LOGGER_DIR = ../../liblogger
+LOGGER_LIBDIR = ../../liblogger
+LOGGERINC = -I $(LOGGER_DIR)
+LOGGERLINK = -llogger 
+LOGGERCFLAGS = -DUSE_LOGGER
+
+ifeq (@(RELEASE),0)
+  LOGGER_LIBDIR = $(LOGGER_LIBDIR)/debug
+else
+  LOGGER_LIBDIR = $(LOGGER_LIBDIR)/release
+endif
+
+ifeq (@(LOGGER),1)
+  CFLAGS += $(LOGGERCFLAGS)
+  INCLUDES += $(LOGGERINC)
+  LINKFLAGS += $(LOGGERLINK) -L $(LOGGER_LIBDIR)
+endif
+
 BIN_DIR = bin
 LIB_DIR = lib
 SRC_DIR = src
