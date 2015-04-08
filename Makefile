@@ -35,7 +35,10 @@ ifdef COVERAGE
 endif
 
 PLATFORM = $(shell uname)
-CC = gcc
+
+ifeq ($(CC),cc)
+	override CC = gcc
+endif
 
 OBJ_DIR = obj
 SRC_DIR = src
@@ -54,11 +57,11 @@ LIBCFLAGS = --std=c99
 SOLVERCFLAGS = --std=gnu99
 
 INCLUDES = -I inc $(LOGGERINC)
-LINKFLAGS = -L. -lspmatrix -lm -rdynamic $(LOGGERLINK) $(COVERAGELINK)
+LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
 SOLVERLINKFLAGS = 
 
 ifeq ($(PLATFORM),Linux)
-LINKFLAGS += -lrt
+  LINKFLAGS += -lrt
 endif
 
 LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
