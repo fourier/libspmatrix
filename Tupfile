@@ -33,7 +33,7 @@ else
 endif
 
 INCLUDES = -I inc -I .
-LINKFLAGS = -L. -lspmatrix -lm
+LINKFLAGS = -L. -L lib -lspmatrix -lm
 
 BIN_DIR = bin
 LIB_DIR = lib
@@ -60,10 +60,20 @@ SOLVER_SOURCES = $(SOLVER_SRC_DIR)/*.c
 # library binary
 : {LIB_OBJS} |> $(AR) cr %o %f ; ranlib %o |> $(OUTPUT_LIB)
 
-# test object
-#: foreach $(TEST_SRCS) |> !cc |> {TEST_OBJ}
+# test objects
+: foreach $(TEST_SOURCES) |> !cc |> {TEST_OBJ}
 
 # test binary
-#: {TEST_OBJ} | $(OUTPUT_LIB) |> $(CC) %f -o %o $(LINKFLAGS) |> $(OUTPUT)
+: {TEST_OBJ} | $(OUTPUT_LIB) |> $(CC) %f -o %o $(LINKFLAGS) |> $(OUTPUT_TEST)
 
+# solver objects
+: foreach $(SOLVER_SOURCES) |> !cc |> {SOLVER_OBJ}
 
+# solver binary
+: {SOLVER_OBJ} | $(OUTPUT_LIB) |> $(CC) %f -o %o $(LINKFLAGS) |> $(OUTPUT_SOLVER)
+
+# FEM2D demo objects
+: foreach $(DEMO_SOURCES) |> !cc |> {DEMO_OBJ}
+
+# solver binary
+: {DEMO_OBJ} | $(OUTPUT_LIB) |> $(CC) %f -o %o $(LINKFLAGS) |> $(FEM2D_DEMO)
