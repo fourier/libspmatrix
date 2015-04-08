@@ -1,0 +1,69 @@
+# -*- Mode: tup; -*-
+
+# Copyright (C) 2015 Alexey Veretennikov (alexey dot veretennikov at gmail.com)
+# 
+#	This file is part of libspmatrix.
+#
+# libspmatrix is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# libspmatrix is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with libspmatrix.  If not, see <http://www.gnu.org/licenses/>.
+
+CC = gcc 
+AR = ar
+
+# C standard used
+CSTD = --std=c99
+CFLAGS = $(CSTD) -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations -Wmissing-include-dirs
+
+ifeq (@(RELEASE),0)
+  CFLAGS += -ggdb -pg 
+  GEN_CFLAGS += -ggdb -pg 
+else
+  CFLAGS += -O3 
+  GEN_CFLAGS += -O3
+endif
+
+INCLUDES = -I inc -I .
+LINKFLAGS = -L. -lspmatrix -lm
+
+BIN_DIR = bin
+LIB_DIR = lib
+SRC_DIR = src
+TEST_SRC_DIR = test_src
+DEMO_SRC_DIR = demo_src
+SOLVER_SRC_DIR = solver_src
+
+OUTPUT_TEST = $(BIN_DIR)/spmatrixtest
+OUTPUT_LIB = $(LIB_DIR)/libspmatrix.a
+FEM2D_DEMO = $(BIN_DIR)/demo_fem2d
+OUTPUT_SOLVER = $(BIN_DIR)/solvertest
+
+LIB_SOURCES = $(SRC_DIR)/*.c
+TEST_SOURCES = $(TEST_SRC_DIR)/*.c
+DEMO_SOURCES = $(DEMO_SRC_DIR)/*.c
+SOLVER_SOURCES = $(SOLVER_SRC_DIR)/*.c
+
+!cc = |> $(CC) $(CFLAGS) $(INCLUDES) -c %f -o %o |> %B.o
+
+# library objects
+: foreach $(LIB_SOURCES) |> !cc |> {LIB_OBJS}
+
+# library binary
+: {LIB_OBJS} |> $(AR) cr %o %f ; ranlib %o |> $(OUTPUT_LIB)
+
+# test object
+#: foreach $(TEST_SRCS) |> !cc |> {TEST_OBJ}
+
+# test binary
+#: {TEST_OBJ} | $(OUTPUT_LIB) |> $(CC) %f -o %o $(LINKFLAGS) |> $(OUTPUT)
+
+
