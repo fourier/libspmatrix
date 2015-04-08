@@ -51,10 +51,10 @@ DEPS_DIR = .deps
 df = $(DEPS_DIR)/$(*F)
 
 CFLAGS = -ggdb -g -pedantic -Wall -Wextra -Wswitch-default -Wswitch-enum -Wdeclaration-after-statement -Wmissing-declarations -Wmissing-include-dirs $(INCLUDES) $(LOGGERCFLAGS) $(COVERAGECFLAGS)
-# this option not works for gcc 3.4.4
-# -Wmissing-include-dirs
+
 LIBCFLAGS = --std=c99
-SOLVERCFLAGS = --std=gnu99
+SOLVERCFLAGS = --std=c99
+
 
 INCLUDES = -I inc $(LOGGERINC)
 LINKFLAGS = -L. -lspmatrix -lm $(LOGGERLINK) $(COVERAGELINK)
