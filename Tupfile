@@ -53,6 +53,13 @@ ifeq (@(LOGGER),1)
   LINKFLAGS += $(LOGGERLINK) -L $(LOGGER_LIBDIR)
 endif
 
+ifeq (@(TUP_PLATFORM),linux)
+  # adding -D_GNU_SOURCE in order to use clock_gettime, since it is not a standard but rather POSIX
+  CFLAGS += -D_GNU_SOURCE
+  # link aganst rt on linux to have clock_gettime available
+  LINKFLAGS += -lrt 
+endif
+
 BIN_DIR = bin
 LIB_DIR = lib
 SRC_DIR = src

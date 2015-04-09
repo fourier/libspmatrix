@@ -62,6 +62,8 @@ SOLVERLINKFLAGS =
 
 ifeq ($(PLATFORM),Linux)
   LINKFLAGS += -lrt
+  # adding -D_GNU_SOURCE in order to use clock_gettime, since it is not a standard but rather POSIX
+  CFLAGS += -D_GNU_SOURCE
 endif
 
 LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
