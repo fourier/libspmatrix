@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/fourier/libspmatrix.svg?branch=master)](https://travis-ci.org/fourier/libspmatrix)
+
 libspmatrix Library Description
 ===============================
 
